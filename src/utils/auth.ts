@@ -43,3 +43,76 @@ export function getCurrentUser(): User | null {
   const data = localStorage.getItem(STORAGE_KEY)
   return data ? (JSON.parse(data) as User) : null
 }
+
+export function purchasePackage(
+  packageId: string,
+  childName?: string,
+  childAge?: number,
+  gender?: string,
+  theme?: string,
+  colorPreference?: string,
+): void {
+  const user = getCurrentUser()
+  if (user && !user.purchasedPackages.includes(packageId)) {
+    user.purchasedPackages.push(packageId)
+
+    if (childName && childAge) {
+      user.children.push({
+        name: childName,
+        age: childAge,
+        packageId,
+        purchaseDate: new Date().toISOString(),
+        gender,
+        theme,
+        colorPreference,
+      })
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  }
+}
+
+export function purchaseAdditionalChild(
+  packageId: string,
+  childName: string,
+  childAge: number,
+  gender?: string,
+  theme?: string,
+  colorPreference?: string,
+): void {
+  const user = getCurrentUser()
+  if (user) {
+    user.children.push({
+      name: childName,
+      age: childAge,
+      packageId,
+      purchaseDate: new Date().toISOString(),
+      gender,
+      theme,
+      colorPreference,
+    })
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  }
+}
+
+export function hasPurchased(packageId: string): boolean {
+  const user = getCurrentUser()
+  return user?.purchasedPackages.includes(packageId) ?? false
+}
+
+export function getChildForPackage(packageId: string): ChildInfo | undefined {
+  const user = getCurrentUser()
+  return user?.children.find((child) => child.packageId === packageId)
+}
+
+export function getChildrenForPackage(packageId: string): ChildInfo[] {
+  const user = getCurrentUser()
+  return user?.children.filter((child) => child.packageId === packageId) || []
+}
+
+export function getYearsSincePurchase(purchaseDate: string): number {
+  const purchase = new Date(purchaseDate)
+  const now = new Date()
+  return (now.getTime() - purchase.getTime()) / (1000 * 60 * 60 * 24 * 365)
+}

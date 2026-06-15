@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AboutPage } from './pages/AboutPage'
+import { AccountPage } from './pages/AccountPage'
 import { LandingPage } from './pages/LandingPage'
+import { PackageDetailPage } from './pages/PackageDetailPage'
 import { PackagePreviewPage } from './pages/PackagePreviewPage'
 import { LoginPage } from './pages/LoginPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
@@ -18,7 +20,8 @@ export default function App() {
         <Route path="/preview/recommended" element={<PackagePreviewPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/account" element={<PlaceholderPage title="החשבון שלי" />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/package/:packageId" element={<PackageDetailPage />} />
         <Route path="/tips" element={<TipsPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
