@@ -10,14 +10,14 @@ import {
 } from 'lucide-react'
 import { Header } from '../components/Header'
 import { Slider } from '../components/ui/slider'
-
-interface AdditionalChild {
-  name: string
-  age: number
-  gender: 'boy' | 'girl' | 'unisex' | ''
-  theme: string
-  colorPreference: string
-}
+import {
+  COLOR_PREFERENCES,
+  genderLabel,
+  getSiblingStepInfo,
+  QUESTIONNAIRE_THEMES,
+  totalQuestionnaireSteps,
+  type QuestionnaireChild,
+} from '../utils/questionnaire'
 
 interface FormData {
   childName: string
@@ -26,43 +26,13 @@ interface FormData {
   theme: string
   colorPreference: string
   wallDesignOption: string
-  additionalChildren: AdditionalChild[]
+  additionalChildren: QuestionnaireChild[]
 }
 
-const themes = [
-  'מסע בחלל',
-  "גיבורי על ג'וניור",
-  'עולם הדינוזאורים',
-  'חוקר טבע קטן',
-]
-
-const colorPreferences = [
-  {
-    name: 'חמים טבעיים 🪵',
-    benefit:
-      'תחושת בית: פלטת מקרקעת שיוצרת חמימות מיידית וגדלה עם הילד באהבה.',
-    colors: ['#D4A574', '#8B7355', '#A0826D'],
-  },
-  {
-    name: 'כחולים מרגיעים 🌊',
-    benefit: 'לילות שקטים: גוונים קרירים המעודדים ויסות רגשי וסביבת שינה מרגיעה.',
-    colors: ['#4A7C9E', '#7BA4C7', '#B0D4E8'],
-  },
-  {
-    name: 'ירוקים מרעננים 🍃',
-    benefit: 'אנרגיה של צמיחה: גוונים שמכניסים חיות וסקרנות לחדר מואר ומלא השראה.',
-    colors: ['#7CB342', '#9CCC65', '#C5E1A5'],
-  },
-  {
-    name: 'אפורים אלמותיים 🌫️',
-    benefit: 'הבחירה החכמה: מראה נקי שיוצר שקט בעין ונותן במה לאישיות של הילד.',
-    colors: ['#8E8E8E', '#A8A8A8', '#C5C5C5'],
-  },
-  {
-    name: 'צבעוניים שמחים 🌈',
-    benefit: 'חגיגה יצירתית: שילוב הרמוני שמעודד חיוניות בלי ליצור עומס ויזואלי.',
-    colors: ['#E57373', '#FFB74D', '#81C784'],
-  },
+const genderOptions = [
+  { value: 'boy' as const, label: 'בן', icon: 'user' },
+  { value: 'girl' as const, label: 'בת', icon: 'girl' },
+  { value: 'unisex' as const, label: 'ניטרלי', icon: 'users' },
 ]
 
 function GenderIcon({ type, size = 'lg' }: { type: string; size?: 'lg' | 'sm' }) {
@@ -93,6 +63,153 @@ function GenderIcon({ type, size = 'lg' }: { type: string; size?: 'lg' | 'sm' })
   return <User className={dim} strokeWidth={1.5} color={color} />
 }
 
+function ThemePicker({
+  childName,
+  gender,
+  value,
+  onChange,
+}: {
+  childName: string
+  gender: string
+  value: string
+  onChange: (theme: string) => void
+}) {
+  return (
+    <div>
+      <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
+        איזה נושא {childName}{' '}
+        {gender === 'boy' ? 'אוהב' : gender === 'girl' ? 'אוהבת' : 'אוהב/ת'}?
+      </h2>
+      <p className="mb-6 text-[#6B6B6B]">בחר/י נושא או תחום עניין מועדף</p>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {QUESTIONNAIRE_THEMES.map((theme) => (
+          <button
+            key={theme}
+            type="button"
+            onClick={() => onChange(theme)}
+            className={`rounded-sm border-2 p-4 text-center transition-all ${
+              value === theme
+                ? 'border-[#C8B6A6] bg-[#F9F7F4]'
+                : 'border-[#E8DED2] hover:border-[#D4C4B0]'
+            }`}
+          >
+            {theme}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ColorPicker({
+  childName,
+  value,
+  onChange,
+}: {
+  childName: string
+  value: string
+  onChange: (colorPreference: string) => void
+}) {
+  return (
+    <div>
+      <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
+        מה העדפת הצבעים של {childName}?
+      </h2>
+      <p className="mb-6 text-[#6B6B6B]">בחר/י את סכמת הצבעים המועדפת</p>
+      <div className="grid gap-4 md:grid-cols-2">
+        {COLOR_PREFERENCES.map((pref) => (
+          <button
+            key={pref.name}
+            type="button"
+            onClick={() => onChange(pref.name)}
+            className={`rounded-sm border-2 p-5 text-right transition-all ${
+              value === pref.name
+                ? 'border-[#C8B6A6] bg-[#F9F7F4]'
+                : 'border-[#E8DED2] hover:border-[#D4C4B0]'
+            }`}
+          >
+            <div className="mb-3 flex gap-2">
+              {pref.colors.map((color) => (
+                <div
+                  key={color}
+                  className="h-8 w-8 rounded-full border border-[#E8DED2]"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+            <h3 className="mb-2 text-lg font-normal text-[#4A3728]">{pref.name}</h3>
+            <p className="text-sm leading-relaxed text-[#6B6B6B]">{pref.benefit}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WallDesignPicker({
+  childName,
+  value,
+  onChange,
+}: {
+  childName: string
+  value: string
+  onChange: (wallDesignOption: string) => void
+}) {
+  return (
+    <div>
+      <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
+        איך תרצו לעצב את הקיר המרכזי של {childName}?
+      </h2>
+      <p className="mb-6 text-[#6B6B6B]">בחר/י את האופציה המתאימה לחדר שלו/ה</p>
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => onChange('paint')}
+          className={`w-full rounded-sm border-2 p-6 text-right transition-all ${
+            value === 'paint'
+              ? 'border-[#C8B6A6] bg-[#F9F7F4]'
+              : 'border-[#E8DED2] hover:border-[#D4C4B0]'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="mb-3 inline-block rounded-sm bg-[#F9F7F4] px-4 py-2 text-xl font-normal text-[#4A3728]">
+                קיר כוח בצביעה
+              </h3>
+              <p className="text-sm text-[#6B6B6B]">
+                צביעת קיר אחד — עבודה פשוטה של כשעתיים, בסיס על-זמני שמתאים לכל גיל.
+              </p>
+            </div>
+            <Paintbrush className="h-12 w-12 shrink-0 text-[#C8B6A6]" strokeWidth={1.5} />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChange('covering')}
+          className={`w-full rounded-sm border-2 p-6 text-right transition-all ${
+            value === 'covering'
+              ? 'border-[#C8B6A6] bg-[#F9F7F4]'
+              : 'border-[#E8DED2] hover:border-[#D4C4B0]'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="mb-3 inline-block rounded-sm bg-[#F9F7F4] px-4 py-2 text-xl font-normal text-[#4A3728]">
+                חיפוי קיר דקורטיבי
+              </h3>
+              <p className="text-sm text-[#6B6B6B]">
+                פתרון מעוצב ללא לכלוך של צבע, עם אפשרות להסרה בקלות.
+              </p>
+            </div>
+            <Scroll className="h-12 w-12 shrink-0 text-[#C8B6A6]" strokeWidth={1.5} />
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function QuestionnairePage() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
@@ -110,7 +227,7 @@ export function QuestionnairePage() {
   const [newChildAge, setNewChildAge] = useState(5)
   const [newChildGender, setNewChildGender] = useState<'boy' | 'girl' | 'unisex' | ''>('')
 
-  const totalSteps = 4 + 2 * (1 + formData.additionalChildren.length)
+  const totalSteps = totalQuestionnaireSteps(formData.additionalChildren.length)
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -141,18 +258,15 @@ export function QuestionnairePage() {
     if (step === 5) return formData.colorPreference !== ''
     if (step === 6) return formData.wallDesignOption !== ''
 
-    const childStepStart = 7
-    if (step >= childStepStart) {
-      const additionalChildIndex = Math.floor((step - childStepStart) / 2)
-      const isThemeStep = (step - childStepStart) % 2 === 0
-      if (additionalChildIndex < formData.additionalChildren.length) {
-        if (isThemeStep) {
-          return formData.additionalChildren[additionalChildIndex].theme !== ''
-        }
-        return formData.additionalChildren[additionalChildIndex].colorPreference !== ''
-      }
-    }
-    return false
+    const siblingStep = getSiblingStepInfo(step)
+    if (!siblingStep) return false
+
+    const child = formData.additionalChildren[siblingStep.childIndex]
+    if (!child) return false
+
+    if (siblingStep.stepType === 'theme') return child.theme !== ''
+    if (siblingStep.stepType === 'color') return child.colorPreference !== ''
+    return child.wallDesignOption !== ''
   }
 
   const handleAddChild = () => {
@@ -167,6 +281,7 @@ export function QuestionnairePage() {
             gender: newChildGender,
             theme: '',
             colorPreference: '',
+            wallDesignOption: '',
           },
         ],
       })
@@ -178,17 +293,23 @@ export function QuestionnairePage() {
   }
 
   const handleRemoveChild = (index: number) => {
-    setFormData({
-      ...formData,
-      additionalChildren: formData.additionalChildren.filter((_, i) => i !== index),
-    })
+    const additionalChildren = formData.additionalChildren.filter((_, i) => i !== index)
+    const newTotal = totalQuestionnaireSteps(additionalChildren.length)
+    setFormData({ ...formData, additionalChildren })
+    if (step > newTotal) setStep(newTotal)
   }
 
-  const genderOptions = [
-    { value: 'boy' as const, label: 'בן', icon: 'user' },
-    { value: 'girl' as const, label: 'בת', icon: 'girl' },
-    { value: 'unisex' as const, label: 'ניטרלי', icon: 'users' },
-  ]
+  const updateSibling = (index: number, partial: Partial<QuestionnaireChild>) => {
+    const updated = [...formData.additionalChildren]
+    updated[index] = { ...updated[index], ...partial }
+    setFormData({ ...formData, additionalChildren: updated })
+  }
+
+  const siblingStep = getSiblingStepInfo(step)
+  const activeSibling =
+    siblingStep && siblingStep.childIndex < formData.additionalChildren.length
+      ? formData.additionalChildren[siblingStep.childIndex]
+      : null
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
@@ -210,6 +331,12 @@ export function QuestionnairePage() {
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
+          {activeSibling && (
+            <p className="mt-3 text-center text-sm text-[#C8B6A6]">
+              מגדירים את החבילה של {activeSibling.name} ({genderLabel(activeSibling.gender)},{' '}
+              {activeSibling.age} שנים)
+            </p>
+          )}
         </div>
 
         <div className="rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm md:p-12">
@@ -268,10 +395,10 @@ export function QuestionnairePage() {
               </h2>
               <p className="mb-6 text-[#6B6B6B]">עיצובים מותאמים לגיל עושים את כל ההבדל</p>
 
-              <div className="mb-8">
+              <div className="mb-8" dir="ltr">
                 <div className="mb-6 text-center">
                   <span className="text-5xl font-light text-[#C8B6A6]">{formData.age}</span>
-                  <span className="mr-2 text-2xl text-[#8B8B8B]">שנים</span>
+                  <span className="ml-2 text-2xl text-[#8B8B8B]">שנים</span>
                 </div>
                 <Slider
                   value={[parseInt(formData.age, 10)]}
@@ -292,7 +419,8 @@ export function QuestionnairePage() {
               <div className="mt-8 border-t border-[#E8DED2] pt-8">
                 <h3 className="mb-4 text-xl font-light text-[#4A4A4A]">יש לכם עוד ילדים?</h3>
                 <p className="mb-4 text-base font-normal text-[#7BA05B]">
-                  הוסיפו אח או אחות וקבלו 20% הנחה על כל חבילה נוספת!
+                  הוסיפו אח/אחות — לכל ילד/ה תבחרו נושא, צבעים וקיר בנפרד, עם 20% הנחה על כל
+                  חבילה נוספת!
                 </p>
 
                 {formData.additionalChildren.map((child, index) => (
@@ -301,12 +429,7 @@ export function QuestionnairePage() {
                     className="mb-2 flex items-center justify-between rounded-sm bg-[#F9F7F4] p-4"
                   >
                     <span className="text-[#4A4A4A]">
-                      {child.name} ({child.age} שנים) -{' '}
-                      {child.gender === 'boy'
-                        ? 'בן'
-                        : child.gender === 'girl'
-                          ? 'בת'
-                          : 'ניטרלי'}
+                      {child.name} ({child.age} שנים, {genderLabel(child.gender)})
                     </span>
                     <button
                       type="button"
@@ -359,11 +482,11 @@ export function QuestionnairePage() {
                         ))}
                       </div>
                     </div>
-                    <div>
+                    <div dir="ltr">
                       <label className="mb-2 block text-sm text-[#6B6B6B]">גיל</label>
                       <div className="mb-2 text-center">
                         <span className="text-2xl font-light text-[#C8B6A6]">{newChildAge}</span>
-                        <span className="mr-2 text-lg text-[#8B8B8B]">שנים</span>
+                        <span className="ml-2 text-lg text-[#8B8B8B]">שנים</span>
                       </div>
                       <Slider
                         value={[newChildAge]}
@@ -372,6 +495,10 @@ export function QuestionnairePage() {
                         max={12}
                         step={1}
                       />
+                      <div className="mt-2 flex justify-between text-sm text-[#8B8B8B]">
+                        <span>1</span>
+                        <span>12</span>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -406,229 +533,58 @@ export function QuestionnairePage() {
           )}
 
           {step === 4 && (
-            <div>
-              <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                איזה נושא {formData.childName}{' '}
-                {formData.gender === 'boy'
-                  ? 'אוהב'
-                  : formData.gender === 'girl'
-                    ? 'אוהבת'
-                    : 'אוהב/ת'}
-                ?
-              </h2>
-              <p className="mb-6 text-[#6B6B6B]">בחר/י נושא או תחום עניין מועדף</p>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {themes.map((theme) => (
-                  <button
-                    key={theme}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, theme })}
-                    className={`rounded-sm border-2 p-4 text-center transition-all ${
-                      formData.theme === theme
-                        ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                        : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                    }`}
-                  >
-                    {theme}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ThemePicker
+              childName={formData.childName}
+              gender={formData.gender}
+              value={formData.theme}
+              onChange={(theme) => setFormData({ ...formData, theme })}
+            />
           )}
 
           {step === 5 && (
-            <div>
-              <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                מה העדפת הצבעים של {formData.childName}?
-              </h2>
-              <p className="mb-6 text-[#6B6B6B]">בחר/י את סכמת הצבעים המועדפת</p>
-              <div className="grid gap-4 md:grid-cols-2">
-                {colorPreferences.map((pref) => (
-                  <button
-                    key={pref.name}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, colorPreference: pref.name })}
-                    className={`rounded-sm border-2 p-5 text-right transition-all ${
-                      formData.colorPreference === pref.name
-                        ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                        : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                    }`}
-                  >
-                    <div className="mb-3 flex gap-2">
-                      {pref.colors.map((color) => (
-                        <div
-                          key={color}
-                          className="h-8 w-8 rounded-full border border-[#E8DED2]"
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                    <h3 className="mb-2 text-lg font-normal text-[#4A3728]">{pref.name}</h3>
-                    <p className="text-sm leading-relaxed text-[#6B6B6B]">{pref.benefit}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ColorPicker
+              childName={formData.childName}
+              value={formData.colorPreference}
+              onChange={(colorPreference) => setFormData({ ...formData, colorPreference })}
+            />
           )}
 
           {step === 6 && (
-            <div>
-              <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                איך תרצו לעצב את הקיר המרכזי?
-              </h2>
-              <p className="mb-6 text-[#6B6B6B]">בחר/י את האופציה המתאימה עבורך</p>
-              <div className="space-y-4">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, wallDesignOption: 'paint' })}
-                  className={`w-full rounded-sm border-2 p-6 text-right transition-all ${
-                    formData.wallDesignOption === 'paint'
-                      ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                      : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="mb-3 inline-block rounded-sm bg-[#F9F7F4] px-4 py-2 text-xl font-normal text-[#4A3728]">
-                        קיר כוח בצביעה
-                      </h3>
-                      <p className="mb-2 text-sm text-[#6B6B6B]">
-                        <strong className="text-[#4A3728]">קהל יעד:</strong> בעלי דירה או שוכרים
-                        לטווח ארוך שמחפשים מראה עמוק, יוקרתי ומשתלם.
-                      </p>
-                      <p className="mb-2 text-sm text-[#6B6B6B]">
-                        <strong className="text-[#4A3728]">פרקטיקה:</strong> צביעת קיר אחד היא
-                        עבודה פשוטה של כשעתיים.
-                      </p>
-                      <p className="text-sm text-[#6B6B6B]">
-                        <strong className="text-[#4A3728]">יתרון עתידי:</strong> בסיס על-זמני
-                        שמתאים לכל גיל.
-                      </p>
-                    </div>
-                    <Paintbrush className="h-12 w-12 shrink-0 text-[#C8B6A6]" strokeWidth={1.5} />
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, wallDesignOption: 'covering' })}
-                  className={`w-full rounded-sm border-2 p-6 text-right transition-all ${
-                    formData.wallDesignOption === 'covering'
-                      ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                      : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="mb-3 inline-block rounded-sm bg-[#F9F7F4] px-4 py-2 text-xl font-normal text-[#4A3728]">
-                        חיפוי קיר דקורטיבי
-                      </h3>
-                      <p className="mb-2 text-sm text-[#6B6B6B]">
-                        <strong className="text-[#4A3728]">קהל יעד:</strong> דירות שכורות או למי
-                        שרוצה פתרון מעוצב ללא לכלוך של צבע.
-                      </p>
-                      <p className="text-sm text-[#6B6B6B]">
-                        <strong className="text-[#4A3728]">היתרון הגדול:</strong> ניתן להסרה
-                        בקלות כשרוצים לשדרג או לעבור דירה.
-                      </p>
-                    </div>
-                    <Scroll className="h-12 w-12 shrink-0 text-[#C8B6A6]" strokeWidth={1.5} />
-                  </div>
-                </button>
-              </div>
-
-              <div className="mt-6 rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-5">
-                <p className="text-sm leading-relaxed text-[#4A3728]">
-                  <strong>טיפ מהמעצבת:</strong> אם אתם מחפשים את הפתרון המשלם והמרשים ביותר
-                  לאורך שנים – לכו על צבע. אם אתם בשכירות – החיפוי הדקורטיבי הוא הפתרון המומלץ.
-                </p>
-              </div>
-            </div>
+            <WallDesignPicker
+              childName={formData.childName}
+              value={formData.wallDesignOption}
+              onChange={(wallDesignOption) => setFormData({ ...formData, wallDesignOption })}
+            />
           )}
 
-          {step >= 7 &&
-            (() => {
-              const childStepStart = 7
-              const additionalChildIndex = Math.floor((step - childStepStart) / 2)
-              const isThemeStep = (step - childStepStart) % 2 === 0
+          {activeSibling && siblingStep?.stepType === 'theme' && (
+            <ThemePicker
+              childName={activeSibling.name}
+              gender={activeSibling.gender}
+              value={activeSibling.theme}
+              onChange={(theme) => updateSibling(siblingStep.childIndex, { theme })}
+            />
+          )}
 
-              if (additionalChildIndex >= formData.additionalChildren.length) return null
-
-              const child = formData.additionalChildren[additionalChildIndex]
-
-              if (isThemeStep) {
-                return (
-                  <div>
-                    <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                      איזה נושא {child.name} אוהב/ת?
-                    </h2>
-                    <p className="mb-6 text-[#6B6B6B]">בחר/י נושא או תחום עניין מועדף</p>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      {themes.map((theme) => (
-                        <button
-                          key={theme}
-                          type="button"
-                          onClick={() => {
-                            const updated = [...formData.additionalChildren]
-                            updated[additionalChildIndex] = { ...updated[additionalChildIndex], theme }
-                            setFormData({ ...formData, additionalChildren: updated })
-                          }}
-                          className={`rounded-sm border-2 p-4 text-center transition-all ${
-                            child.theme === theme
-                              ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                              : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                          }`}
-                        >
-                          {theme}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )
+          {activeSibling && siblingStep?.stepType === 'color' && (
+            <ColorPicker
+              childName={activeSibling.name}
+              value={activeSibling.colorPreference}
+              onChange={(colorPreference) =>
+                updateSibling(siblingStep.childIndex, { colorPreference })
               }
+            />
+          )}
 
-              return (
-                <div>
-                  <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                    מה העדפת הצבעים של {child.name}?
-                  </h2>
-                  <p className="mb-6 text-[#6B6B6B]">בחר/י את סכמת הצבעים המועדפת</p>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {colorPreferences.map((pref) => (
-                      <button
-                        key={pref.name}
-                        type="button"
-                        onClick={() => {
-                          const updated = [...formData.additionalChildren]
-                          updated[additionalChildIndex] = {
-                            ...updated[additionalChildIndex],
-                            colorPreference: pref.name,
-                          }
-                          setFormData({ ...formData, additionalChildren: updated })
-                        }}
-                        className={`rounded-sm border-2 p-5 text-right transition-all ${
-                          child.colorPreference === pref.name
-                            ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                            : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                        }`}
-                      >
-                        <div className="mb-3 flex gap-2">
-                          {pref.colors.map((color) => (
-                            <div
-                              key={color}
-                              className="h-8 w-8 rounded-full border border-[#E8DED2]"
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
-                        </div>
-                        <h3 className="mb-2 text-lg font-normal text-[#4A3728]">{pref.name}</h3>
-                        <p className="text-sm leading-relaxed text-[#6B6B6B]">{pref.benefit}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
+          {activeSibling && siblingStep?.stepType === 'wall' && (
+            <WallDesignPicker
+              childName={activeSibling.name}
+              value={activeSibling.wallDesignOption}
+              onChange={(wallDesignOption) =>
+                updateSibling(siblingStep.childIndex, { wallDesignOption })
+              }
+            />
+          )}
 
           <div className="mt-8 flex items-center justify-between border-t border-[#E8DED2] pt-6">
             <button

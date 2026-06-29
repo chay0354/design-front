@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#F9F7F3"/>
+  <rect x="40" y="40" width="720" height="520" rx="8" fill="#4FB3D9" opacity="0.25"/>
+  <text x="400" y="320" text-anchor="middle" font-size="80"><
+ � = </text>
+  <text x="400" y="520" text-anchor="middle" fill="#0077BE" font-family="Arial,sans-serif" font-size="24">��� ����� �� �������</text>
+</svg>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import {
   AlertCircle,
   Archive,
@@ -16,66 +16,103 @@ import {
   Tag,
 } from 'lucide-react'
 import { Header } from '../components/Header'
-import { packages } from '../data/packages'
-import { getChildForPackage, getCurrentUser, getYearsSincePurchase } from '../utils/auth'
+import { PageLoading } from '../components/PageLoading'
+import { useAuth } from '../contexts/AuthContext'
+import { useData } from '../contexts/DataContext'
+import type { ThemePackage } from '../data/themePackages'
+import type { PackageContent } from '../contexts/DataContext'
+import { getChildForPackage, getChildPackageEntries, getPackageStatusForChild, hasPurchased, type ChildInfo } from '../utils/auth'
+
+function themeEmoji(theme: string) {
+  if (theme.includes('חלל')) return '🚀'
+  if (theme.includes('אוקיינוס')) return '🐠'
+  if (theme.includes('ג׳ונגל') || theme.includes('חיות')) return '🦁'
+  if (theme.includes('נסיכ')) return '👑'
+  if (theme.includes('הרפתק')) return '⛺'
+  if (theme.includes('ים')) return '🚢'
+  if (theme.includes('תחבורה')) return '🚗'
+  return '✨'
+}
+
+function packagePreviewImage(content: PackageContent | null): string {
+  if (!content) return ''
+  if (content.heroImage) return content.heroImage
+  return content.galleryImages.find(Boolean) ?? ''
+}
+
+function PackageCardThumbnail({
+  pkg,
+  getPackageContent,
+  faded = false,
+}: {
+  pkg: ThemePackage
+  getPackageContent: (id: string) => PackageContent | null
+  faded?: boolean
+}) {
+  const imageUrl = packagePreviewImage(getPackageContent(pkg.id))
+  const fadedClass = faded ? 'opacity-50 grayscale' : ''
+
+  if (imageUrl) {
+    return (
+      <div
+        className={`mb-4 aspect-square overflow-hidden rounded-sm border border-[#E8DED2] ${fadedClass}`}
+      >
+        <img
+          src={imageUrl}
+          alt={`תצוגת ${pkg.name}`}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={`mb-4 flex aspect-square items-center justify-center rounded-sm bg-gradient-to-br from-[#F5F1ED] to-[#E8DED2] text-6xl ${fadedClass}`}
+    >
+      {themeEmoji(pkg.theme)}
+    </div>
+  )
+}
 
 export function AccountPage() {
   const navigate = useNavigate()
-  const user = getCurrentUser()
+  const { user, loading } = useAuth()
+  const { packages, getPackageById, getPackageContent } = useData()
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-    }
-  }, [user, navigate])
+  if (loading) {
+    return <PageLoading />
+  }
 
   if (!user) {
-    return null
+    return <Navigate to="/login" replace />
   }
 
-  const purchasedPackages = packages.filter((pkg) => user.purchasedPackages.includes(pkg.id))
+  const purchasedPackages = packages.filter((pkg) => hasPurchased(user, pkg.id))
+  const childPackageEntries = getChildPackageEntries(user, packages, getPackageById)
 
-  const getPackageStatus = (pkg: (typeof packages)[0]) => {
-    const childInfo = getChildForPackage(pkg.id)
+  const getPackageStatus = (pkg: ThemePackage, child?: ChildInfo) => {
+    if (child) return getPackageStatusForChild(pkg, child)
+    const childInfo = getChildForPackage(user, pkg.id)
     if (!childInfo) return { status: 'active' as const, message: '' }
-
-    const yearsSincePurchase = getYearsSincePurchase(childInfo.purchaseDate)
-    const currentChildAge = childInfo.age + yearsSincePurchase
-
-    if (currentChildAge > pkg.ageRange[1]) {
-      return {
-        status: 'outdated' as const,
-        message: `${childInfo.name} גדל/ה מחבילה זו (כעת בגיל ${Math.floor(currentChildAge)})`,
-      }
-    }
-
-    if (currentChildAge > pkg.ageRange[1] - 1) {
-      return {
-        status: 'expiring' as const,
-        message: `${childInfo.name} עומד/ת לגדול מהחבילה (בגיל ${Math.floor(currentChildAge)})`,
-      }
-    }
-
-    return {
-      status: 'active' as const,
-      message: `מושלם עבור ${childInfo.name} (בגיל ${Math.floor(currentChildAge)})`,
-    }
+    return getPackageStatusForChild(pkg, childInfo)
   }
 
-  const packagesByChild = new Map<string, typeof packages>()
-  purchasedPackages.forEach((pkg) => {
-    const childInfo = getChildForPackage(pkg.id)
-    if (childInfo) {
-      if (!packagesByChild.has(childInfo.name)) {
-        packagesByChild.set(childInfo.name, [])
-      }
-      packagesByChild.get(childInfo.name)!.push(pkg)
+  const packagesByChild = new Map<string, typeof childPackageEntries>()
+  childPackageEntries.forEach((entry) => {
+    if (!packagesByChild.has(entry.child.name)) {
+      packagesByChild.set(entry.child.name, [])
     }
+    packagesByChild.get(entry.child.name)!.push(entry)
   })
 
-  const uniqueChildren = Array.from(new Set(user.children.map((c) => c.name))).map(
+  const uniqueChildren = [...new Set(user.children.map((c) => c.name))].map(
     (name) => user.children.find((c) => c.name === name)!,
+  )
+
+  const orphanPackages = purchasedPackages.filter(
+    (pkg) => !childPackageEntries.some((entry) => entry.pkg.id === pkg.id),
   )
 
   const scrollToMasterclass = () => {
@@ -99,7 +136,7 @@ export function AccountPage() {
         </div>
 
         <section className="mb-12">
-          {purchasedPackages.length === 0 ? (
+          {childPackageEntries.length === 0 && purchasedPackages.length === 0 ? (
             <div>
               <h2 className="mb-6 text-2xl font-light text-[#4A4A4A]">חבילות העיצוב שלך</h2>
               <div className="rounded-sm border border-[#E8DED2] bg-white p-12 text-center shadow-sm">
@@ -118,13 +155,49 @@ export function AccountPage() {
             </div>
           ) : (
             <>
+              {orphanPackages.length > 0 && (
+                <div className="mb-12">
+                  <h2 className="mb-6 text-2xl font-light text-[#4A4A4A]">חבילות העיצוב שלך</h2>
+                  <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {orphanPackages.map((pkg) => {
+                      const status = getPackageStatus(pkg)
+                      return (
+                        <div
+                          key={pkg.id}
+                          className="overflow-hidden rounded-sm border border-[#E8DED2] bg-white shadow-sm"
+                        >
+                          <div className="flex items-center gap-2 border-b border-[#D4E7D4] bg-[#F0F8F0] px-4 py-2">
+                            <CheckCircle className="h-4 w-4 text-[#7BA05B]" />
+                            <span className="text-sm font-normal text-[#5A7A4A]">
+                              {status.message || 'חבילה פעילה'}
+                            </span>
+                          </div>
+                          <div className="p-6">
+                            <PackageCardThumbnail pkg={pkg} getPackageContent={getPackageContent} />
+                            <h3 className="mb-2 text-xl font-normal text-[#4A4A4A]">{pkg.name}</h3>
+                            <p className="mb-4 text-sm text-[#6B6B6B]">{pkg.theme}</p>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/package/${pkg.id}`)}
+                              className="w-full rounded-sm bg-[#C8B6A6] px-4 py-2 text-white transition-colors hover:bg-[#B5A99A]"
+                            >
+                              הצגת חבילה מלאה
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {uniqueChildren.map((child, childIndex) => {
-                const childPackages = packagesByChild.get(child.name) || []
-                const activePackages = childPackages.filter(
-                  (pkg) => getPackageStatus(pkg).status !== 'outdated',
+                const childEntries = packagesByChild.get(child.name) || []
+                const activeEntries = childEntries.filter(
+                  (entry) => getPackageStatus(entry.pkg, entry.child).status !== 'outdated',
                 )
 
-                if (activePackages.length === 0) return null
+                if (activeEntries.length === 0) return null
 
                 const futureYear = new Date().getFullYear() + (7 - child.age)
 
@@ -135,12 +208,13 @@ export function AccountPage() {
                     </h2>
 
                     <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      {activePackages.map((pkg) => {
-                        const status = getPackageStatus(pkg)
+                      {activeEntries.map((entry) => {
+                        const { pkg, child: entryChild } = entry
+                        const status = getPackageStatus(pkg, entryChild)
 
                         return (
                           <div
-                            key={pkg.id}
+                            key={`${entryChild.name}-${entryChild.packageId}-${entryChild.purchaseDate}`}
                             className="overflow-hidden rounded-sm border border-[#E8DED2] bg-white shadow-sm"
                           >
                             {status.status === 'expiring' && (
@@ -158,17 +232,7 @@ export function AccountPage() {
                               </div>
                             )}
                             <div className="p-6">
-                              <div className="mb-4 flex aspect-square items-center justify-center rounded-sm bg-gradient-to-br from-[#F5F1ED] to-[#E8DED2] text-6xl">
-                                {pkg.theme.includes('חלל')
-                                  ? '🚀'
-                                  : pkg.theme.includes('אוקיינוס')
-                                    ? '🐠'
-                                    : pkg.theme.includes('ג׳ונגל')
-                                      ? '🦁'
-                                      : pkg.theme.includes('נסיכה')
-                                        ? '👑'
-                                        : '✨'}
-                              </div>
+                              <PackageCardThumbnail pkg={pkg} getPackageContent={getPackageContent} />
 
                               <h3 className="mb-2 text-xl font-normal text-[#4A4A4A]">{pkg.name}</h3>
                               <p className="mb-4 text-sm text-[#6B6B6B]">{pkg.theme}</p>
@@ -239,7 +303,9 @@ export function AccountPage() {
                 )
               })}
 
-              {purchasedPackages.some((pkg) => getPackageStatus(pkg).status === 'outdated') && (
+              {childPackageEntries.some(
+                (entry) => getPackageStatus(entry.pkg, entry.child).status === 'outdated',
+              ) && (
                 <div className="mt-16">
                   <h2 className="mb-2 flex items-center gap-2 text-2xl font-light text-[#4A4A4A]">
                     <Archive className="h-6 w-6 text-[#C8B6A6]" />
@@ -251,15 +317,14 @@ export function AccountPage() {
                     לכאן – כדי שתוכלו תמיד לחזור פנימה ולהיזכר בסטייל שליווה אתכם.
                   </p>
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {purchasedPackages.map((pkg) => {
-                      const status = getPackageStatus(pkg)
+                    {childPackageEntries.map((entry) => {
+                      const { pkg, child: entryChild } = entry
+                      const status = getPackageStatus(pkg, entryChild)
                       if (status.status !== 'outdated') return null
-
-                      const childInfo = getChildForPackage(pkg.id)
 
                       return (
                         <div
-                          key={pkg.id}
+                          key={`archive-${entryChild.name}-${entryChild.packageId}-${entryChild.purchaseDate}`}
                           className="overflow-hidden rounded-sm border border-[#E8DED2] bg-white opacity-60 shadow-sm"
                         >
                           <div className="flex items-center gap-2 border-b border-[#E8DED2] bg-[#F9F7F4] px-4 py-2">
@@ -267,20 +332,14 @@ export function AccountPage() {
                             <span className="text-sm font-normal text-[#6B6B6B]">ארכיון</span>
                           </div>
                           <div className="p-6">
-                            <div className="mb-4 flex aspect-square items-center justify-center rounded-sm bg-gradient-to-br from-[#F5F1ED] to-[#E8DED2] text-6xl opacity-50 grayscale">
-                              {pkg.theme.includes('חלל')
-                                ? '🚀'
-                                : pkg.theme.includes('אוקיינוס')
-                                  ? '🐠'
-                                  : pkg.theme.includes('ג׳ונגל')
-                                    ? '🦁'
-                                    : pkg.theme.includes('נסיכה')
-                                      ? '👑'
-                                      : '✨'}
-                            </div>
+                            <PackageCardThumbnail
+                              pkg={pkg}
+                              getPackageContent={getPackageContent}
+                              faded
+                            />
 
                             <h3 className="mb-1 text-xl font-normal text-[#4A4A4A]">
-                              {pkg.name} - {childInfo?.name}
+                              {pkg.name} - {entryChild.name}
                             </h3>
                             <p className="mb-4 text-sm text-[#6B6B6B]">{pkg.theme}</p>
 

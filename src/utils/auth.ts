@@ -1,3 +1,15 @@
+import { isBasePackageId, parseVariantId } from './packageVariants'
+import type { ThemePackage } from '../data/themePackages'
+
+export interface PurchaseOrder {
+  packageId: string
+  childName: string
+  childAge: number
+  gender?: string
+  theme?: string
+  colorPreference?: string
+}
+
 export interface ChildInfo {
   name: string
   age: number
@@ -12,103 +24,93 @@ export interface User {
   id: string
   email: string
   name: string
+  isAdmin: boolean
   purchasedPackages: string[]
   children: ChildInfo[]
 }
 
-const STORAGE_KEY = 'petite_dreams_user'
+function matchesPackageId(storedId: string, packageId: string): boolean {
+  if (storedId === packageId) return true
 
-export function login(email: string, _password: string): User | null {
-  const existingUser = getCurrentUser()
-  if (existingUser && existingUser.email === email) {
-    return existingUser
+  if (isBasePackageId(packageId)) {
+    return storedId.startsWith(`${packageId}-`)
   }
 
-  const user: User = {
-    id: '1',
-    email,
-    name: email.split('@')[0],
-    purchasedPackages: [],
-    children: [],
+  const baseId = parseVariantId(packageId)?.baseId
+  if (baseId && storedId === baseId) return true
+
+  return false
+}
+
+export function hasPurchased(user: User | null, packageId: string): boolean {
+  if (!user) return false
+  if (user.purchasedPackages.some((storedId) => matchesPackageId(storedId, packageId))) {
+    return true
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-  return user
+  return user.children.some((child) => matchesPackageId(child.packageId, packageId))
 }
 
-export function logout(): void {
-  localStorage.removeItem(STORAGE_KEY)
+export function getChildForPackage(user: User | null, packageId: string): ChildInfo | undefined {
+  return user?.children.find((child) => matchesPackageId(child.packageId, packageId))
 }
 
-export function getCurrentUser(): User | null {
-  const data = localStorage.getItem(STORAGE_KEY)
-  return data ? (JSON.parse(data) as User) : null
+export function getChildrenForPackage(user: User | null, packageId: string): ChildInfo[] {
+  return user?.children.filter((child) => matchesPackageId(child.packageId, packageId)) || []
 }
 
-export function purchasePackage(
-  packageId: string,
-  childName?: string,
-  childAge?: number,
-  gender?: string,
-  theme?: string,
-  colorPreference?: string,
-): void {
-  const user = getCurrentUser()
-  if (user && !user.purchasedPackages.includes(packageId)) {
-    user.purchasedPackages.push(packageId)
+export function findPackageForChild(
+  packages: ThemePackage[],
+  getPackageById: (id: string) => ThemePackage | undefined,
+  childPackageId: string,
+): ThemePackage | undefined {
+  const direct = getPackageById(childPackageId)
+  if (direct) return direct
+  return packages.find((pkg) => matchesPackageId(childPackageId, pkg.id))
+}
 
-    if (childName && childAge) {
-      user.children.push({
-        name: childName,
-        age: childAge,
-        packageId,
-        purchaseDate: new Date().toISOString(),
-        gender,
-        theme,
-        colorPreference,
-      })
+export interface ChildPackageEntry {
+  child: ChildInfo
+  pkg: ThemePackage
+}
+
+/** One card per child purchase — siblings with the same package id each get their own entry. */
+export function getChildPackageEntries(
+  user: User,
+  packages: ThemePackage[],
+  getPackageById: (id: string) => ThemePackage | undefined,
+): ChildPackageEntry[] {
+  return user.children.flatMap((child) => {
+    const pkg = findPackageForChild(packages, getPackageById, child.packageId)
+    if (!pkg) return []
+    return [{ child, pkg }]
+  })
+}
+
+export function getPackageStatusForChild(
+  pkg: ThemePackage,
+  child: ChildInfo,
+): { status: 'active' | 'expiring' | 'outdated'; message: string } {
+  const yearsSincePurchase = getYearsSincePurchase(child.purchaseDate)
+  const currentChildAge = child.age + yearsSincePurchase
+
+  if (currentChildAge > pkg.ageRange[1]) {
+    return {
+      status: 'outdated',
+      message: `${child.name} גדל/ה מחבילה זו (כעת בגיל ${Math.floor(currentChildAge)})`,
     }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
   }
-}
 
-export function purchaseAdditionalChild(
-  packageId: string,
-  childName: string,
-  childAge: number,
-  gender?: string,
-  theme?: string,
-  colorPreference?: string,
-): void {
-  const user = getCurrentUser()
-  if (user) {
-    user.children.push({
-      name: childName,
-      age: childAge,
-      packageId,
-      purchaseDate: new Date().toISOString(),
-      gender,
-      theme,
-      colorPreference,
-    })
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  if (currentChildAge > pkg.ageRange[1] - 1) {
+    return {
+      status: 'expiring',
+      message: `${child.name} עומד/ת לגדול מהחבילה (בגיל ${Math.floor(currentChildAge)})`,
+    }
   }
-}
 
-export function hasPurchased(packageId: string): boolean {
-  const user = getCurrentUser()
-  return user?.purchasedPackages.includes(packageId) ?? false
-}
-
-export function getChildForPackage(packageId: string): ChildInfo | undefined {
-  const user = getCurrentUser()
-  return user?.children.find((child) => child.packageId === packageId)
-}
-
-export function getChildrenForPackage(packageId: string): ChildInfo[] {
-  const user = getCurrentUser()
-  return user?.children.filter((child) => child.packageId === packageId) || []
+  return {
+    status: 'active',
+    message: `מושלם עבור ${child.name} (בגיל ${Math.floor(currentChildAge)})`,
+  }
 }
 
 export function getYearsSincePurchase(purchaseDate: string): number {

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:packages": "python scripts/generate-theme-packages.py && python scripts/fetch-product-images.py"
   },
   "dependencies": {
     "@radix-ui/react-slider": "^1.2.3",

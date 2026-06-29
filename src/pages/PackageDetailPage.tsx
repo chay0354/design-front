@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   Check,
@@ -14,111 +14,68 @@ import {
   Upload,
 } from 'lucide-react'
 import { Header } from '../components/Header'
-import { packages } from '../data/packages'
-import { getChildrenForPackage, getCurrentUser, hasPurchased } from '../utils/auth'
-
-const shoppingItems = [
-  {
-    category: 'מדבקות קיר',
-    items: [
-      { name: 'מדבקות קיר בנושא ראשי', price: '₪45', link: 'https://aliexpress.com/item/123456' },
-      { name: 'מדבקות גבול מבטאים', price: '₪28', link: 'https://aliexpress.com/item/123457' },
-    ],
-  },
-  {
-    category: 'תאורה',
-    items: [
-      { name: 'מנורת לילה בנושא', price: '₪65', link: 'https://aliexpress.com/item/123458' },
-      { name: 'שרשרת אורות LED', price: '₪35', link: 'https://aliexpress.com/item/123459' },
-    ],
-  },
-  {
-    category: 'פתרונות אחסון',
-    items: [
-      { name: 'סט קופסאות אחסון (3 יח\')', price: '₪85', link: 'https://aliexpress.com/item/123460' },
-      { name: 'מארגן קיר', price: '₪42', link: 'https://aliexpress.com/item/123461' },
-    ],
-  },
-  {
-    category: 'פריטי קישוט',
-    items: [
-      { name: 'כריות נוי (2 יח\')', price: '₪78', link: 'https://aliexpress.com/item/123462' },
-      { name: 'תמונות קיר מוסגרות', price: '₪95', link: 'https://aliexpress.com/item/123463' },
-    ],
-  },
-  {
-    category: 'טקסטיל',
-    items: [
-      { name: 'שטיח בנושא', price: '₪125', link: 'https://aliexpress.com/item/123464' },
-      { name: 'וילון חלון', price: '₪88', link: 'https://aliexpress.com/item/123465' },
-    ],
-  },
-]
-
-const placementGuide = [
-  {
-    element: 'מדבקת קיר ראשית',
-    wall: 'קיר ראשי (מאחורי המיטה)',
-    height: '120 ס״מ מהרצפה למרכז',
-    notes: 'מרכז ביחס לרוחב המיטה',
-  },
-  {
-    element: 'מנורת לילה',
-    wall: 'ליד המיטה',
-    height: '80 ס״מ מהרצפה',
-    notes: 'נגיש לילד מהמיטה',
-  },
-  {
-    element: 'קופסאות אחסון',
-    wall: 'קיר פנוי',
-    height: '40-60 ס״מ מהרצפה',
-    notes: 'בגובה נוח לילד',
-  },
-]
-
-function packageEmoji(theme: string) {
-  if (theme.includes('חלל')) return '🚀'
-  if (theme.includes('אוקיינוס')) return '🐠'
-  if (theme.includes('ג׳ונגל')) return '🦁'
-  if (theme.includes('נסיכה')) return '👑'
-  return '✨'
-}
+import { PageLoading } from '../components/PageLoading'
+import { ProductImage } from '../components/ProductImage'
+import { useAuth } from '../contexts/AuthContext'
+import { useData } from '../contexts/DataContext'
+import {
+  getChildrenForPackage,
+  hasPurchased,
+} from '../utils/auth'
 
 export function PackageDetailPage() {
   const { packageId } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const user = getCurrentUser()
+  const { user, loading } = useAuth()
+  const {
+    getPackageById,
+    getPackageContent,
+    getColorScaleForPreference,
+    loading: dataLoading,
+  } = useData()
   const [beforeImage, setBeforeImage] = useState<File | null>(null)
   const [afterImage, setAfterImage] = useState<File | null>(null)
   const [allowSocialShare, setAllowSocialShare] = useState(true)
   const [photosUploaded, setPhotosUploaded] = useState(false)
   const [selectedChildIndex, setSelectedChildIndex] = useState(0)
 
-  const pkg = packages.find((p) => p.id === packageId)
-  const isPurchased = pkg ? hasPurchased(pkg.id) : false
+  const pkg = packageId ? getPackageById(packageId) : undefined
+  const isPurchased = pkg ? hasPurchased(user, pkg.id) : false
   const justPurchased = searchParams.get('purchased') === 'true'
   const childName = searchParams.get('childName') || ''
+  const childTheme = searchParams.get('theme') || ''
+  const childColorPreference = searchParams.get('colorPreference') || ''
   const allUserChildren = user?.children || []
-  const allChildren = pkg ? getChildrenForPackage(pkg.id) : []
+  const allChildren = pkg ? getChildrenForPackage(user, pkg.id) : []
   const selectedChild = allChildren[selectedChildIndex]
-
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-    }
-  }, [user, navigate])
+  const displayName = selectedChild?.name || childName
+  const displayTheme = selectedChild?.theme || childTheme
+  const displayColors = selectedChild?.colorPreference || childColorPreference
+  const content = pkg ? getPackageContent(pkg.id) : null
+  const colorScale = getColorScaleForPreference(displayColors)
 
   useEffect(() => {
     setSelectedChildIndex(0)
   }, [packageId])
 
-  if (!pkg || !user) {
-    return null
+  if (loading || dataLoading) {
+    return <PageLoading />
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!pkg) {
+    return <Navigate to="/account" replace />
   }
 
   if (!isPurchased && !justPurchased) {
-    navigate('/account')
+    return <Navigate to="/account" replace />
+  }
+
+  if (!content) {
     return null
   }
 
@@ -213,9 +170,31 @@ export function PackageDetailPage() {
         <div className="mb-8 rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm">
           <div className="grid gap-8 md:grid-cols-2">
             <div>
-              <div className="mb-4 flex aspect-square items-center justify-center rounded-sm bg-gradient-to-br from-[#F5F1ED] to-[#E8DED2] text-8xl">
-                {packageEmoji(pkg.theme)}
-              </div>
+              {content.heroImage ? (
+                <div className="mb-4 overflow-hidden rounded-sm border border-[#E8DED2]">
+                  <img
+                    src={content.heroImage}
+                    alt={`תצוגת חבילה ${pkg.name}`}
+                    className="aspect-square w-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="mb-4 flex aspect-square items-center justify-center rounded-sm border border-dashed border-[#E8DED2] bg-[#F9F7F4] px-6 text-center text-sm text-[#B5A99A]">
+                  תמונות עיצוב החבילה יתווספו בקרוב
+                </div>
+              )}
+              {content.galleryImages.length > 0 && (
+                <div className="mb-4 grid grid-cols-3 gap-2">
+                  {content.galleryImages.map((image) => (
+                    <img
+                      key={image}
+                      src={image}
+                      alt=""
+                      className="aspect-square rounded-sm border border-[#E8DED2] object-cover"
+                    />
+                  ))}
+                </div>
+              )}
               <p className="text-center text-sm text-[#8B8B8B]">
                 הדמיה תלת-ממדית מלאה תהיה זמינה בקרוב
               </p>
@@ -227,16 +206,14 @@ export function PackageDetailPage() {
               </div>
               <h1 className="mb-3 text-4xl font-light text-[#4A4A4A]">{pkg.name}</h1>
               <p className="mb-6 text-lg text-[#6B6B6B]">{pkg.description}</p>
-              {selectedChild && (
+              {displayName && (
                 <div className="mb-4">
-                  <p className="mb-2 text-2xl text-[#C8B6A6]">
-                    מותאם אישית עבור: {selectedChild.name}
-                  </p>
-                  {selectedChild.theme && (
-                    <p className="text-sm text-[#8B8B8B]">נושא: {selectedChild.theme}</p>
+                  <p className="mb-2 text-2xl text-[#C8B6A6]">מותאם אישית עבור: {displayName}</p>
+                  {displayTheme && (
+                    <p className="text-sm text-[#8B8B8B]">נושא: {displayTheme}</p>
                   )}
-                  {selectedChild.colorPreference && (
-                    <p className="text-sm text-[#8B8B8B]">גוונים: {selectedChild.colorPreference}</p>
+                  {displayColors && (
+                    <p className="text-sm text-[#8B8B8B]">גוונים: {displayColors}</p>
                   )}
                 </div>
               )}
@@ -254,19 +231,34 @@ export function PackageDetailPage() {
         </div>
 
         <div className="mb-8 rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm">
-          <h2 className="mb-6 flex items-center gap-3 text-2xl font-light text-[#4A4A4A]">
+          <h2 className="mb-2 flex items-center gap-3 text-2xl font-light text-[#4A4A4A]">
             <Palette className="h-6 w-6 text-[#4A3728]" strokeWidth={1.5} />
             לוח צבעים מדויק
           </h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-            {pkg.colorPalette.map((color, index) => (
-              <div key={color} className="text-center">
+          {displayColors && (
+            <p className="mb-6 text-sm text-[#6B6B6B]">
+              סקלה נבחרת: <span className="text-[#4A4A4A]">{displayColors}</span>
+              {' · '}
+              {colorScale.name}
+            </p>
+          )}
+          <div className="flex items-start justify-between gap-1 sm:gap-3">
+            {colorScale.colors.map((color) => (
+              <div
+                key={`${color.roleLabel}-${color.name}`}
+                className="flex min-w-0 flex-1 flex-col items-center px-0.5 text-center"
+              >
                 <div
-                  className="mb-2 aspect-square w-full rounded-full border border-[#E8DED2]"
-                  style={{ backgroundColor: color }}
+                  className="mb-2 h-9 w-9 shrink-0 rounded-full border border-[#E8DED2] sm:h-10 sm:w-10"
+                  style={{ backgroundColor: color.hex }}
                 />
-                <p className="text-sm font-normal text-[#4A4A4A]">צבע {index + 1}</p>
-                <p className="font-mono text-xs text-[#8B8B8B]">{color}</p>
+                <p className="text-[10px] leading-tight font-normal text-[#4A4A4A] sm:text-xs">
+                  {color.roleLabel}
+                </p>
+                <p className="text-[10px] leading-tight text-[#6B6B6B] sm:text-xs">{color.name}</p>
+                {color.code && (
+                  <p className="font-mono text-[9px] text-[#8B8B8B] sm:text-[10px]">{color.code}</p>
+                )}
               </div>
             ))}
           </div>
@@ -280,7 +272,7 @@ export function PackageDetailPage() {
 
           <div className="mb-6 rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-5">
             <p className="text-sm leading-relaxed text-[#4A3728]">
-              כל הפריטים שנבחרו עבור {selectedChild?.name || childName} נמצאים כאן בקליק אחד.
+              כל הפריטים שנבחרו עבור {displayName || 'הילד/ה שלך'} נמצאים כאן בקליק אחד.
               במידה ופריט אזל מהמלאי או שתרצו לעשות סקר שוק חכם - מחכה לכם המדריך המלא ב-
               <button
                 type="button"
@@ -294,76 +286,90 @@ export function PackageDetailPage() {
           </div>
 
           <div className="space-y-6">
-            {shoppingItems.map((category) => (
-              <div key={category.category}>
-                <h3 className="mb-3 border-b border-[#E8DED2] pb-2 text-lg font-normal text-[#4A4A4A]">
-                  {category.category}
-                </h3>
-                <div className="space-y-3">
-                  {category.items.map((item) => (
-                    <div
-                      key={item.name}
-                      className="flex items-center gap-4 rounded-sm bg-[#F9F7F4] p-4 transition-colors hover:bg-[#F5F1ED]"
-                    >
-                      <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-sm bg-gradient-to-br from-[#F5F1ED] to-[#E8DED2] text-2xl">
-                        📦
-                      </div>
-                      <div className="flex-1">
-                        <p className="mb-1 font-normal text-[#4A4A4A]">{item.name}</p>
-                        <p className="text-sm text-[#8B8B8B]">מחיר משוער: {item.price}</p>
-                      </div>
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex flex-shrink-0 items-center gap-2 rounded-sm bg-[#C8B6A6] px-5 py-2.5 text-white transition-colors hover:bg-[#B5A99A]"
-                      >
-                        קנייה
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </div>
-                  ))}
-                </div>
+            {content.shoppingCategories.length === 0 ? (
+              <div className="rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-8 text-center">
+                <p className="text-[#6B6B6B]">
+                  רשימת הקנייה לנושא זה תתווסף בקרוב. בינתיים תוכלי לצפות במדריך המיקום וההדמיה.
+                </p>
               </div>
-            ))}
+            ) : (
+              content.shoppingCategories.map((category) => (
+                <div key={category.category}>
+                  <h3 className="mb-3 border-b border-[#E8DED2] pb-2 text-lg font-normal text-[#4A4A4A]">
+                    {category.category}
+                  </h3>
+                  <div className="space-y-3">
+                    {category.items.map((item) => (
+                      <div
+                        key={item.name}
+                        className="flex items-center gap-4 rounded-sm bg-[#F9F7F4] p-4 transition-colors hover:bg-[#F5F1ED]"
+                      >
+                        <ProductImage
+                          src={item.image}
+                          alt={item.name}
+                          className="h-20 w-20 flex-shrink-0 rounded-sm border border-[#E8DED2] object-cover bg-white"
+                        />
+                        <div className="flex-1">
+                          <p className="mb-1 font-normal text-[#4A4A4A]">{item.name}</p>
+                          {item.notes && (
+                            <p className="text-sm text-[#8B8B8B]">{item.notes}</p>
+                          )}
+                        </div>
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex flex-shrink-0 items-center gap-2 rounded-sm bg-[#C8B6A6] px-5 py-2.5 text-white transition-colors hover:bg-[#B5A99A]"
+                        >
+                          קנייה
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="mb-8 rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm">
-          <h2 className="mb-6 flex items-center gap-3 text-2xl font-light text-[#4A4A4A]">
-            <Ruler className="h-6 w-6 text-[#4A3728]" strokeWidth={1.5} />
-            מדריך מיקום ותלייה
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#F9F7F4]">
-                <tr>
-                  <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">אלמנט</th>
-                  <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">קיר</th>
-                  <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">גובה</th>
-                  <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">הערות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {placementGuide.map((item) => (
-                  <tr key={item.element} className="border-b border-[#E8DED2]">
-                    <td className="px-4 py-3 text-[#4A4A4A]">{item.element}</td>
-                    <td className="px-4 py-3 text-[#6B6B6B]">{item.wall}</td>
-                    <td className="px-4 py-3 font-normal text-[#4A4A4A]">{item.height}</td>
-                    <td className="px-4 py-3 text-sm text-[#8B8B8B]">{item.notes}</td>
+        {content.placementGuide.length > 0 && (
+          <div className="mb-8 rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm">
+            <h2 className="mb-6 flex items-center gap-3 text-2xl font-light text-[#4A4A4A]">
+              <Ruler className="h-6 w-6 text-[#4A3728]" strokeWidth={1.5} />
+              מדריך מיקום ותלייה
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[#F9F7F4]">
+                  <tr>
+                    <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">אלמנט</th>
+                    <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">קיר</th>
+                    <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">גובה</th>
+                    <th className="px-4 py-3 text-right font-normal text-[#4A4A4A]">הערות</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {content.placementGuide.map((item) => (
+                    <tr key={item.element} className="border-b border-[#E8DED2]">
+                      <td className="px-4 py-3 text-[#4A4A4A]">{item.element}</td>
+                      <td className="px-4 py-3 text-[#6B6B6B]">{item.wall}</td>
+                      <td className="px-4 py-3 font-normal text-[#4A4A4A]">{item.height}</td>
+                      <td className="px-4 py-3 text-sm text-[#8B8B8B]">{item.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          <div className="mt-6 rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-4">
-            <p className="text-sm text-[#6B6B6B]">
-              <strong className="text-[#4A4A4A]">📐 טיפ מקצועי:</strong> השתמשי במד מדבקות למיקום
-              מושלם. התחילי ממרכז הקיר ועבדי החוצה לסימטריה הטובה ביותר.
-            </p>
+            <div className="mt-6 rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-4">
+              <p className="text-sm text-[#6B6B6B]">
+                <strong className="text-[#4A4A4A]">📐 טיפ מקצועי:</strong> השתמשי במד מדבקות למיקום
+                מושלם. התחילי ממרכז הקיר ועבדי החוצה לסימטריה הטובה ביותר.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="mb-8 rounded-2xl border border-[#E8DED2] bg-gradient-to-br from-[#F5F1ED] to-[#EDE5DD] p-8 shadow-sm">
           <div className="flex items-start gap-6">

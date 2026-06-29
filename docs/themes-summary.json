@@ -1,0 +1,27 @@
+{
+  "animals": {
+    "items": 26,
+    "categories": [
+      "אלמנטים עיצוביים",
+      "ריהוט משלים",
+      "טקסטיל",
+      "לסקלת חמים טבעיים 1"
+    ]
+  },
+  "adventures": {
+    "items": 18,
+    "categories": [
+      "אלמנטים עיצוביים",
+      "ריהוט משלים",
+      "טקסטיל"
+    ]
+  },
+  "sea-ships": {
+    "items": 0,
+    "categories": []
+  },
+  "transport": {
+    "items": 0,
+    "categories": []
+  }
+}

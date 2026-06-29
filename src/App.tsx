@@ -1,33 +1,126 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import { DataProvider } from './contexts/DataContext'
 import { AboutPage } from './pages/AboutPage'
 import { AccountPage } from './pages/AccountPage'
+import { AdminPage } from './pages/AdminPage'
 import { LandingPage } from './pages/LandingPage'
 import { PackageDetailPage } from './pages/PackageDetailPage'
 import { PackagePreviewPage } from './pages/PackagePreviewPage'
 import { LoginPage } from './pages/LoginPage'
-import { PlaceholderPage } from './pages/PlaceholderPage'
+import { CheckoutPage } from './pages/CheckoutPage'
 import { QuestionnairePage } from './pages/QuestionnairePage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
 import { TipsPage } from './pages/TipsPage'
+import { BlockAdmin, RequireAdmin, RequireUser } from './components/RouteGuards'
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/questionnaire" element={<QuestionnairePage />} />
-        <Route path="/preview/recommended" element={<PackagePreviewPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/package/:packageId" element={<PackageDetailPage />} />
-        <Route path="/tips" element={<TipsPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/checkout/:packageId" element={<PlaceholderPage title="תשלום" />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <DataProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <BlockAdmin>
+                  <LandingPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/questionnaire"
+              element={
+                <BlockAdmin>
+                  <QuestionnairePage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/preview/recommended"
+              element={
+                <BlockAdmin>
+                  <PackagePreviewPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <BlockAdmin>
+                  <AboutPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <BlockAdmin>
+                  <LoginPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <RequireUser>
+                  <AccountPage />
+                </RequireUser>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <RequireAdmin>
+                  <AdminPage />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/package/:packageId"
+              element={
+                <RequireUser>
+                  <PackageDetailPage />
+                </RequireUser>
+              }
+            />
+            <Route
+              path="/tips"
+              element={
+                <BlockAdmin>
+                  <TipsPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/terms"
+              element={
+                <BlockAdmin>
+                  <TermsPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/privacy"
+              element={
+                <BlockAdmin>
+                  <PrivacyPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/checkout/:packageId"
+              element={
+                <RequireUser>
+                  <CheckoutPage />
+                </RequireUser>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </DataProvider>
+    </AuthProvider>
   )
 }
