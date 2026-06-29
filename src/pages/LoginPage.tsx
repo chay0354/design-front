@@ -9,7 +9,9 @@ type AuthMode = 'signin' | 'signup'
 export function LoginPage() {
   const navigate = useNavigate()
   const { signIn, signUp } = useAuth()
-  const [mode, setMode] = useState<AuthMode>('signin')
+  const [mode, setMode] = useState<AuthMode>(() =>
+    sessionStorage.getItem('intended_package') ? 'signup' : 'signin',
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -91,7 +93,9 @@ export function LoginPage() {
             <p className="text-[#6B6B6B]">
               {isSignIn
                 ? 'התחברי כדי לגשת לחבילות העיצוב שלך'
-                : 'הירשמי כדי לשמור את החבילות והרכישות שלך'}
+                : sessionStorage.getItem('intended_package')
+                  ? 'הירשמי כדי לשמור את החבילה ולהמשיך לרכישה'
+                  : 'הירשמי כדי לשמור את החבילות והרכישות שלך'}
             </p>
           </div>
 
