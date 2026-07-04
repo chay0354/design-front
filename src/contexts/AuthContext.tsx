@@ -225,11 +225,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Defer async Supabase calls — awaiting inside this callback deadlocks signInWithPassword.
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Initial session is loaded by loadSessionUser — handling it again causes user flashes.
+      if (event === 'INITIAL_SESSION') return
+
       setTimeout(() => {
         void (async () => {
-          if (!session?.user.email || !session.access_token) {
+          if (event === 'SIGNED_OUT' || !session?.user.email || !session.access_token) {
             setUser(null)
             setLoading(false)
             return
@@ -243,7 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             )
             setUser(profile)
           } catch {
-            setUser(null)
+            // Keep the current user on transient profile refresh failures.
           } finally {
             setLoading(false)
           }

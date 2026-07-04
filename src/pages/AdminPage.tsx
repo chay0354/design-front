@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronLeft, Loader2, Plus, Save, Trash2, Upload, X } from 'lucide-react'
 import { Header } from '../components/Header'
 import { useAuth } from '../contexts/AuthContext'
@@ -8,22 +7,27 @@ import { themePackages as staticBasePackages } from '../data/themePackages'
 import type { ThemePackage } from '../data/themePackages'
 import type { ColorScale } from '../data/colorScales'
 import {
-  BASE_ID_TO_THEME,
   BASE_PACKAGE_IDS,
-  PACKAGE_GENDERS,
-  buildVariantId,
+  buildCatalogVariantId,
   expectedVariantCount,
   hasVariantPackages,
+  parseCatalogVariantId,
   parseVariantId,
-  resolvePackageVariant,
+  resolveCatalogVariant,
+  resolveLegacyVariantId,
 } from '../utils/packageVariants'
+import { filterColorScalesForTheme } from '../data/themeColorScales'
+import {
+  CATALOG_GENDERS,
+  PACKAGE_AGE_GROUPS,
+  THEME_CATALOG,
+  allCatalogThemeNames,
+  type CatalogGender,
+  type CatalogTheme,
+  type PackageAgeGroupId,
+} from '../data/packageCatalog'
 
-const QUESTIONNAIRE_THEMES = ['חיות', 'הרפתקאות', 'ים וספינות', 'כלי תחבורה']
-
-const GENDER_LABELS: Record<(typeof PACKAGE_GENDERS)[number], string> = {
-  boy: 'בנים',
-  girl: 'בנות',
-}
+const QUESTIONNAIRE_THEMES = allCatalogThemeNames()
 
 function PackageTreeNav({
   packages,
@@ -36,20 +40,16 @@ function PackageTreeNav({
   selectedId: string | null
   onSelect: (pkg: ThemePackage) => void
 }) {
+  const [expandedGenders, setExpandedGenders] = useState<Set<CatalogGender>>(() => new Set())
+  const [expandedAges, setExpandedAges] = useState<Set<string>>(() => new Set())
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(() => new Set())
-  const [expandedGenders, setExpandedGenders] = useState<Set<string>>(() => new Set())
 
-  const toggleTheme = (themeName: string) => {
-    setExpandedThemes((prev) => {
-      const next = new Set(prev)
-      if (next.has(themeName)) next.delete(themeName)
-      else next.add(themeName)
-      return next
-    })
-  }
+  const basePackages = staticBasePackages.filter((pkg) =>
+    BASE_PACKAGE_IDS.includes(pkg.id as (typeof BASE_PACKAGE_IDS)[number]),
+  )
 
-  const toggleGender = (key: string) => {
-    setExpandedGenders((prev) => {
+  const toggle = <T extends string>(key: T, set: React.Dispatch<React.SetStateAction<Set<T>>>) => {
+    set((prev) => {
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
       else next.add(key)
@@ -57,13 +57,48 @@ function PackageTreeNav({
     })
   }
 
-  const selectVariant = (baseId: string, gender: (typeof PACKAGE_GENDERS)[number], scale: ColorScale) => {
-    const pkg = resolvePackageVariant(
+  const ageKey = (gender: CatalogGender, ageId: PackageAgeGroupId) => `${gender}:${ageId}`
+  const themeKey = (gender: CatalogGender, ageId: PackageAgeGroupId, themeId: string) =>
+    `${gender}:${ageId}:${themeId}`
+
+  const isVariantSaved = (
+    theme: CatalogTheme,
+    gender: CatalogGender,
+    ageId: PackageAgeGroupId,
+    scaleId: string,
+  ) => {
+    const catalogId = buildCatalogVariantId(theme.id, gender, ageId, scaleId)
+    if (packages.some((pkg) => pkg.id === catalogId)) return true
+    const legacyId = resolveLegacyVariantId(theme, gender, ageId, scaleId)
+    return legacyId ? packages.some((pkg) => pkg.id === legacyId) : false
+  }
+
+  const isVariantSelected = (
+    theme: CatalogTheme,
+    gender: CatalogGender,
+    ageId: PackageAgeGroupId,
+    scaleId: string,
+  ) => {
+    if (!selectedId) return false
+    const catalogId = buildCatalogVariantId(theme.id, gender, ageId, scaleId)
+    if (selectedId === catalogId) return true
+    const legacyId = resolveLegacyVariantId(theme, gender, ageId, scaleId)
+    return legacyId ? selectedId === legacyId : false
+  }
+
+  const selectVariant = (
+    theme: CatalogTheme,
+    gender: CatalogGender,
+    ageId: PackageAgeGroupId,
+    scale: ColorScale,
+  ) => {
+    const pkg = resolveCatalogVariant(
       packages,
-      staticBasePackages.filter((p) => BASE_PACKAGE_IDS.includes(p.id as (typeof BASE_PACKAGE_IDS)[number])),
+      basePackages,
       colorScales,
-      baseId,
+      theme,
       gender,
+      ageId,
       scale.id,
     )
     onSelect(pkg)
@@ -71,76 +106,115 @@ function PackageTreeNav({
 
   return (
     <div className="space-y-1">
-      {BASE_PACKAGE_IDS.map((baseId) => {
-        const themeName = BASE_ID_TO_THEME[baseId]
-        const themeOpen = expandedThemes.has(themeName)
+      {CATALOG_GENDERS.map(({ id: gender, label: genderLabel }) => {
+        const genderOpen = expandedGenders.has(gender)
 
         return (
-          <div key={baseId} className="rounded-sm border border-[#E8DED2] bg-white">
+          <div key={gender} className="rounded-sm border border-[#E8DED2] bg-white">
             <button
               type="button"
-              onClick={() => toggleTheme(themeName)}
+              onClick={() => toggle(gender, setExpandedGenders)}
               className="flex w-full items-center justify-between px-3 py-2.5 text-right text-sm font-normal text-[#4A4A4A] hover:bg-[#F9F7F4]"
             >
-              <span>{themeName}</span>
-              {themeOpen ? (
+              <span>{genderLabel}</span>
+              {genderOpen ? (
                 <ChevronDown className="h-4 w-4 flex-shrink-0 text-[#B5A99A]" />
               ) : (
                 <ChevronLeft className="h-4 w-4 flex-shrink-0 text-[#B5A99A]" />
               )}
             </button>
 
-            {themeOpen &&
-              PACKAGE_GENDERS.map((gender) => {
-                const genderKey = `${baseId}-${gender}`
-                const genderOpen = expandedGenders.has(genderKey)
+            {genderOpen &&
+              PACKAGE_AGE_GROUPS.map((ageGroup) => {
+                const ageId = ageGroup.id
+                const aKey = ageKey(gender, ageId)
+                const ageOpen = expandedAges.has(aKey)
+                const themes = THEME_CATALOG[gender][ageId]
 
                 return (
-                  <div key={genderKey} className="border-t border-[#F0EBE4]">
+                  <div key={aKey} className="border-t border-[#F0EBE4]">
                     <button
                       type="button"
-                      onClick={() => toggleGender(genderKey)}
+                      onClick={() => toggle(aKey, setExpandedAges)}
                       className="flex w-full items-center justify-between px-4 py-2 text-right text-sm text-[#6B6B6B] hover:bg-[#F9F7F4]"
                     >
-                      <span>{GENDER_LABELS[gender]}</span>
-                      {genderOpen ? (
+                      <span>{ageGroup.label}</span>
+                      {ageOpen ? (
                         <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-[#B5A99A]" />
                       ) : (
                         <ChevronLeft className="h-3.5 w-3.5 flex-shrink-0 text-[#B5A99A]" />
                       )}
                     </button>
 
-                    {genderOpen && (
-                      <div className="space-y-0.5 border-t border-[#F0EBE4] bg-[#FDFCFB] px-2 py-1">
-                        {colorScales.map((scale) => {
-                          const variantId = buildVariantId(baseId, gender, scale.id)
-                          const isSelected = selectedId === variantId
-                          const isSaved = packages.some((pkg) => pkg.id === variantId)
+                    {ageOpen && themes.length === 0 && (
+                      <p className="border-t border-[#F0EBE4] bg-[#FDFCFB] px-4 py-3 text-xs text-[#B5A99A]">
+                        נושאים יתווספו בהמשך
+                      </p>
+                    )}
 
-                          return (
+                    {ageOpen &&
+                      themes.map((theme) => {
+                        const tKey = themeKey(gender, ageId, theme.id)
+                        const themeOpen = expandedThemes.has(tKey)
+
+                        return (
+                          <div key={tKey} className="border-t border-[#F0EBE4]">
                             <button
-                              key={variantId}
                               type="button"
-                              onClick={() => selectVariant(baseId, gender, scale)}
-                              className={`w-full rounded-sm px-3 py-2 text-right text-xs transition-colors ${
-                                isSelected
-                                  ? 'bg-[#C8B6A6] text-white'
-                                  : 'text-[#6B6B6B] hover:bg-[#F9F7F4]'
-                              }`}
+                              onClick={() => toggle(tKey, setExpandedThemes)}
+                              className="flex w-full items-center justify-between px-5 py-2 text-right text-sm text-[#4A4A4A] hover:bg-[#F9F7F4]"
                             >
-                              <span className="block">{scale.name}</span>
-                              {!isSaved && (
-                                <span
-                                  className={`mt-0.5 block text-[10px] ${isSelected ? 'text-white/80' : 'text-[#B5A99A]'}`}
-                                >
-                                  טרם נשמר — ברירת מחדל
-                                </span>
+                              <span>{theme.name}</span>
+                              {themeOpen ? (
+                                <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-[#B5A99A]" />
+                              ) : (
+                                <ChevronLeft className="h-3.5 w-3.5 flex-shrink-0 text-[#B5A99A]" />
                               )}
                             </button>
-                          )
-                        })}
-                      </div>
-                    )}
+
+                            {themeOpen && (
+                              <div className="space-y-0.5 border-t border-[#F0EBE4] bg-[#FDFCFB] px-2 py-1">
+                                {filterColorScalesForTheme(
+                                  colorScales,
+                                  gender,
+                                  ageId,
+                                  theme.id,
+                                ).map((scale) => {
+                                  const isSelected = isVariantSelected(
+                                    theme,
+                                    gender,
+                                    ageId,
+                                    scale.id,
+                                  )
+                                  const isSaved = isVariantSaved(theme, gender, ageId, scale.id)
+
+                                  return (
+                                    <button
+                                      key={buildCatalogVariantId(theme.id, gender, ageId, scale.id)}
+                                      type="button"
+                                      onClick={() => selectVariant(theme, gender, ageId, scale)}
+                                      className={`w-full rounded-sm px-3 py-2 text-right text-xs transition-colors ${
+                                        isSelected
+                                          ? 'bg-[#C8B6A6] text-white'
+                                          : 'text-[#6B6B6B] hover:bg-[#F9F7F4]'
+                                      }`}
+                                    >
+                                      <span className="block">{scale.name}</span>
+                                      {!isSaved && (
+                                        <span
+                                          className={`mt-0.5 block text-[10px] ${isSelected ? 'text-white/80' : 'text-[#B5A99A]'}`}
+                                        >
+                                          טרם נשמר — ברירת מחדל
+                                        </span>
+                                      )}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                   </div>
                 )
               })}
@@ -842,8 +916,7 @@ function ColorScaleEditor({
 }
 
 export function AdminPage() {
-  const navigate = useNavigate()
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   const {
     packages,
     colorScales,
@@ -870,12 +943,6 @@ export function AdminPage() {
   colorScalesRef.current = colorScales
 
   useEffect(() => {
-    if (!authLoading && (!user || !user.isAdmin)) {
-      navigate('/login')
-    }
-  }, [user, authLoading, navigate])
-
-  useEffect(() => {
     const currentPackages = packagesRef.current
     const currentScales = colorScalesRef.current
     const needsVariants =
@@ -898,10 +965,6 @@ export function AdminPage() {
         .finally(() => setSeeding(false))
     }
   }, [user, loading, persisted, seeding, seedFromStatic])
-
-  if (authLoading || !user || !user.isAdmin) {
-    return null
-  }
 
   const handleSavePackage = async () => {
     if (!packageDraft) return
@@ -997,7 +1060,10 @@ export function AdminPage() {
                 : 'text-[#8B8B8B] hover:text-[#4A4A4A]'
             }`}
           >
-            חבילות ({packages.filter((p) => parseVariantId(p.id)).length || packages.length})
+            חבילות (
+            {packages.filter((p) => parseCatalogVariantId(p.id) || parseVariantId(p.id)).length ||
+              packages.length}
+            )
           </button>
           <button
             type="button"
@@ -1019,7 +1085,8 @@ export function AdminPage() {
           <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
             <div className="space-y-3">
               <p className="text-xs leading-relaxed text-[#8B8B8B]">
-                נושא ← מין ← סקלת צבעים. כרגע כל הוריאנטים זהים — תוכלי לערוך כל אחד בנפרד.
+                מין ← גיל ← נושא ← סקלת צבעים. בחרי וריאנט לעריכה — וריאנטים שלא נשמרו מוצגים כברירת
+                מחדל.
               </p>
               <PackageTreeNav
                 packages={packages}

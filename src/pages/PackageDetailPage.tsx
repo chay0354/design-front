@@ -76,7 +76,7 @@ export function PackageDetailPage() {
   }
 
   if (!content) {
-    return null
+    return <PageLoading />
   }
 
   return (

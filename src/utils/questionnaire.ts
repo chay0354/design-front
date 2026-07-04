@@ -1,3 +1,5 @@
+import { getColorScaleForPreference } from '../data/colorScales'
+
 export interface QuestionnaireChild {
   name: string
   age: number
@@ -7,36 +9,13 @@ export interface QuestionnaireChild {
   wallDesignOption: string
 }
 
-export const QUESTIONNAIRE_THEMES = ['חיות', 'הרפתקאות', 'ים וספינות', 'כלי תחבורה'] as const
+export {
+  getQuestionnaireThemesForChild,
+  getAgeGroupIdForAge,
+  type CatalogGender,
+} from '../data/packageCatalog'
 
-export const COLOR_PREFERENCES = [
-  {
-    name: 'חמים טבעיים 🪵',
-    benefit:
-      'תחושת בית: פלטת מקרקעת שיוצרת חמימות מיידית וגדלה עם הילד באהבה.',
-    colors: ['#D4A574', '#8B7355', '#A0826D'],
-  },
-  {
-    name: 'כחולים מרגיעים 🌊',
-    benefit: 'לילות שקטים: גוונים קרירים המעודדים ויסות רגשי וסביבת שינה מרגיעה.',
-    colors: ['#4A7C9E', '#7BA4C7', '#B0D4E8'],
-  },
-  {
-    name: 'ירוקים מרעננים 🍃',
-    benefit: 'אנרגיה של צמיחה: גוונים שמכניסים חיות וסקרנות לחדר מואר ומלא השראה.',
-    colors: ['#7CB342', '#9CCC65', '#C5E1A5'],
-  },
-  {
-    name: 'אפורים אלמותיים 🌫️',
-    benefit: 'הבחירה החכמה: מראה נקי שיוצר שקט בעין ונותן במה לאישיות של הילד.',
-    colors: ['#8E8E8E', '#A8A8A8', '#C5C5C5'],
-  },
-  {
-    name: 'צבעוניים שמחים 🌈',
-    benefit: 'חגיגה יצירתית: שילוב הרמוני שמעודד חיוניות בלי ליצור עומס ויזואלי.',
-    colors: ['#E57373', '#FFB74D', '#81C784'],
-  },
-] as const
+export { filterColorScalesForChild } from '../data/themeColorScales'
 
 export const MAIN_CHILD_STEPS = 6
 export const STEPS_PER_SIBLING = 3
@@ -71,10 +50,6 @@ export function genderLabel(gender: string): string {
 }
 
 export function getColorPaletteFromName(colorName: string): string[] {
-  if (colorName.includes('חמים')) return ['#D4A574', '#8B7355', '#A0826D']
-  if (colorName.includes('כחול')) return ['#4A7C9E', '#7BA4C7', '#B0D4E8']
-  if (colorName.includes('ירוק')) return ['#7CB342', '#9CCC65', '#C5E1A5']
-  if (colorName.includes('אפור')) return ['#8E8E8E', '#A8A8A8', '#C5C5C5']
-  if (colorName.includes('צבעוני')) return ['#E57373', '#FFB74D', '#81C784']
-  return ['#D4A574', '#8B7355', '#A0826D']
+  const scale = getColorScaleForPreference(colorName)
+  return scale.colors.map((swatch) => swatch.hex)
 }

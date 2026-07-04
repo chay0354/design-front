@@ -4,6 +4,8 @@
 
 html {
   direction: rtl;
+  color-scheme: light;
+  background-color: #fdfcfb;
 }
 
 body {
@@ -11,4 +13,11 @@ body {
   text-align: right;
   margin: 0;
   min-height: 100vh;
+  background-color: #fdfcfb;
+  color: #4a4a4a;
+}
+
+#root {
+  min-height: 100vh;
+  background-color: #fdfcfb;
 }

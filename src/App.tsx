@@ -20,7 +20,8 @@ export default function App() {
     <AuthProvider>
       <DataProvider>
         <BrowserRouter>
-          <Routes>
+          <div className="min-h-screen bg-[#FDFCFB] text-[#4A4A4A]">
+            <Routes>
             <Route
               path="/"
               element={
@@ -118,7 +119,8 @@ export default function App() {
               }
             />
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+            </Routes>
+          </div>
         </BrowserRouter>
       </DataProvider>
     </AuthProvider>

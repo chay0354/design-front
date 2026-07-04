@@ -10,14 +10,19 @@ import {
 } from 'lucide-react'
 import { Header } from '../components/Header'
 import { Slider } from '../components/ui/slider'
+import { useData } from '../contexts/DataContext'
+import { getQuestionnaireOptionsForScales } from '../data/colorScales'
+import { filterColorScalesForChild } from '../data/themeColorScales'
 import {
-  COLOR_PREFERENCES,
   genderLabel,
+  getQuestionnaireThemesForChild,
   getSiblingStepInfo,
-  QUESTIONNAIRE_THEMES,
+  getAgeGroupIdForAge,
   totalQuestionnaireSteps,
+  type CatalogGender,
   type QuestionnaireChild,
 } from '../utils/questionnaire'
+import { getAgeGroup } from '../data/packageCatalog'
 
 interface FormData {
   childName: string
@@ -66,35 +71,79 @@ function GenderIcon({ type, size = 'lg' }: { type: string; size?: 'lg' | 'sm' })
 function ThemePicker({
   childName,
   gender,
+  age,
   value,
   onChange,
 }: {
   childName: string
-  gender: string
+  gender: CatalogGender
+  age: number
   value: string
   onChange: (theme: string) => void
 }) {
+  const themes = getQuestionnaireThemesForChild(gender, age)
+  const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
+
   return (
     <div>
       <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
         איזה נושא {childName}{' '}
         {gender === 'boy' ? 'אוהב' : gender === 'girl' ? 'אוהבת' : 'אוהב/ת'}?
       </h2>
-      <p className="mb-6 text-[#6B6B6B]">בחר/י נושא או תחום עניין מועדף</p>
+      <p className="mb-6 text-[#6B6B6B]">
+        נושאים מותאמים ל{ageGroup.label.toLowerCase()}
+      </p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {QUESTIONNAIRE_THEMES.map((theme) => (
+        {themes.map((theme) => (
           <button
-            key={theme}
+            key={theme.id}
             type="button"
-            onClick={() => onChange(theme)}
+            onClick={() => onChange(theme.name)}
             className={`rounded-sm border-2 p-4 text-center transition-all ${
-              value === theme
+              value === theme.name
                 ? 'border-[#C8B6A6] bg-[#F9F7F4]'
                 : 'border-[#E8DED2] hover:border-[#D4C4B0]'
             }`}
           >
-            {theme}
+            {theme.name}
           </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ColorPalettePreview({
+  swatches,
+  selected,
+}: {
+  swatches: { hex: string; name: string }[]
+  selected: boolean
+}) {
+  return (
+    <div
+      className={`overflow-hidden rounded-sm border ${
+        selected ? 'border-[#C8B6A6] ring-2 ring-[#C8B6A6]/30' : 'border-[#E8DED2]'
+      }`}
+    >
+      <div className="flex h-12">
+        {swatches.map((swatch, index) => (
+          <div
+            key={`${swatch.hex}-${index}`}
+            className="min-w-0 flex-1"
+            style={{ backgroundColor: swatch.hex }}
+            title={swatch.name}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1 bg-[#FDFCFB] p-2">
+        {swatches.map((swatch, index) => (
+          <div
+            key={`dot-${swatch.hex}-${index}`}
+            className="h-6 w-6 rounded-full border border-[#E8DED2]"
+            style={{ backgroundColor: swatch.hex }}
+            title={swatch.name}
+          />
         ))}
       </div>
     </div>
@@ -103,44 +152,56 @@ function ThemePicker({
 
 function ColorPicker({
   childName,
+  gender,
+  age,
+  theme,
   value,
   onChange,
 }: {
   childName: string
+  gender: CatalogGender
+  age: number
+  theme: string
   value: string
   onChange: (colorPreference: string) => void
 }) {
+  const { colorScales } = useData()
+  const options = getQuestionnaireOptionsForScales(
+    filterColorScalesForChild(colorScales, gender, age, theme),
+  )
+
   return (
     <div>
       <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
         מה העדפת הצבעים של {childName}?
       </h2>
-      <p className="mb-6 text-[#6B6B6B]">בחר/י את סכמת הצבעים המועדפת</p>
+      <p className="mb-6 text-[#6B6B6B]">
+        {theme
+          ? `סקלות צבע זמינות לנושא "${theme}"`
+          : 'בחר/י את סכמת הצבעים המועדפת'}
+      </p>
       <div className="grid gap-4 md:grid-cols-2">
-        {COLOR_PREFERENCES.map((pref) => (
-          <button
-            key={pref.name}
-            type="button"
-            onClick={() => onChange(pref.name)}
-            className={`rounded-sm border-2 p-5 text-right transition-all ${
-              value === pref.name
-                ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-            }`}
-          >
-            <div className="mb-3 flex gap-2">
-              {pref.colors.map((color) => (
-                <div
-                  key={color}
-                  className="h-8 w-8 rounded-full border border-[#E8DED2]"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-            <h3 className="mb-2 text-lg font-normal text-[#4A3728]">{pref.name}</h3>
-            <p className="text-sm leading-relaxed text-[#6B6B6B]">{pref.benefit}</p>
-          </button>
-        ))}
+        {options.map((pref) => {
+          const isSelected = value === pref.name
+          return (
+            <button
+              key={pref.scaleId}
+              type="button"
+              onClick={() => onChange(pref.name)}
+              className={`rounded-sm border-2 p-5 text-right transition-all ${
+                isSelected
+                  ? 'border-[#C8B6A6] bg-[#F9F7F4]'
+                  : 'border-[#E8DED2] hover:border-[#D4C4B0]'
+              }`}
+            >
+              <ColorPalettePreview swatches={pref.swatches} selected={isSelected} />
+              <h3 className="mb-2 mt-4 text-lg font-normal text-[#4A3728]">{pref.name}</h3>
+              {pref.benefit && (
+                <p className="text-sm leading-relaxed text-[#6B6B6B]">{pref.benefit}</p>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -212,6 +273,7 @@ function WallDesignPicker({
 
 export function QuestionnairePage() {
   const navigate = useNavigate()
+  const { colorScales } = useData()
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<FormData>({
     childName: '',
@@ -311,6 +373,49 @@ export function QuestionnairePage() {
       ? formData.additionalChildren[siblingStep.childIndex]
       : null
 
+  const colorPreferenceStillValid = (
+    gender: CatalogGender,
+    age: number,
+    theme: string,
+    colorPreference: string,
+  ) => {
+    if (!theme || !colorPreference) return false
+    const options = getQuestionnaireOptionsForScales(
+      filterColorScalesForChild(colorScales, gender, age, theme),
+    )
+    return options.some((option) => option.name === colorPreference)
+  }
+
+  const applyThemeChange = (theme: string) => {
+    const gender = formData.gender as CatalogGender
+    const age = parseInt(formData.age, 10)
+    const colorStillValid = colorPreferenceStillValid(
+      gender,
+      age,
+      theme,
+      formData.colorPreference,
+    )
+    setFormData({
+      ...formData,
+      theme,
+      colorPreference: colorStillValid ? formData.colorPreference : '',
+    })
+  }
+
+  const applySiblingThemeChange = (index: number, theme: string) => {
+    const child = formData.additionalChildren[index]
+    const colorStillValid = colorPreferenceStillValid(
+      child.gender,
+      child.age,
+      theme,
+      child.colorPreference,
+    )
+    updateSibling(index, {
+      theme,
+      colorPreference: colorStillValid ? child.colorPreference : '',
+    })
+  }
+
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
       <Header />
@@ -366,7 +471,19 @@ export function QuestionnairePage() {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setFormData({ ...formData, gender: option.value })}
+                    onClick={() => {
+                      const nextGender = option.value
+                      const themes = getQuestionnaireThemesForChild(
+                        nextGender,
+                        parseInt(formData.age, 10) || 5,
+                      )
+                      const themeStillValid = themes.some((t) => t.name === formData.theme)
+                      setFormData({
+                        ...formData,
+                        gender: nextGender,
+                        theme: themeStillValid ? formData.theme : '',
+                      })
+                    }}
                     className={`rounded-sm border-2 p-6 transition-all ${
                       formData.gender === option.value
                         ? 'border-[#C8B6A6] bg-[#F9F7F4]'
@@ -402,9 +519,21 @@ export function QuestionnairePage() {
                 </div>
                 <Slider
                   value={[parseInt(formData.age, 10)]}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, age: value[0].toString() })
-                  }
+                  onValueChange={(value) => {
+                    const themes =
+                      formData.gender !== ''
+                        ? getQuestionnaireThemesForChild(
+                            formData.gender as CatalogGender,
+                            value[0],
+                          )
+                        : []
+                    const themeStillValid = themes.some((t) => t.name === formData.theme)
+                    setFormData({
+                      ...formData,
+                      age: value[0].toString(),
+                      theme: themeStillValid ? formData.theme : '',
+                    })
+                  }}
                   min={1}
                   max={12}
                   step={1}
@@ -532,18 +661,22 @@ export function QuestionnairePage() {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 4 && formData.gender !== '' && (
             <ThemePicker
               childName={formData.childName}
-              gender={formData.gender}
+              gender={formData.gender as CatalogGender}
+              age={parseInt(formData.age, 10)}
               value={formData.theme}
-              onChange={(theme) => setFormData({ ...formData, theme })}
+              onChange={applyThemeChange}
             />
           )}
 
-          {step === 5 && (
+          {step === 5 && formData.gender !== '' && formData.theme !== '' && (
             <ColorPicker
               childName={formData.childName}
+              gender={formData.gender as CatalogGender}
+              age={parseInt(formData.age, 10)}
+              theme={formData.theme}
               value={formData.colorPreference}
               onChange={(colorPreference) => setFormData({ ...formData, colorPreference })}
             />
@@ -561,14 +694,18 @@ export function QuestionnairePage() {
             <ThemePicker
               childName={activeSibling.name}
               gender={activeSibling.gender}
+              age={activeSibling.age}
               value={activeSibling.theme}
-              onChange={(theme) => updateSibling(siblingStep.childIndex, { theme })}
+              onChange={(theme) => applySiblingThemeChange(siblingStep.childIndex, theme)}
             />
           )}
 
-          {activeSibling && siblingStep?.stepType === 'color' && (
+          {activeSibling && siblingStep?.stepType === 'color' && activeSibling.theme !== '' && (
             <ColorPicker
               childName={activeSibling.name}
+              gender={activeSibling.gender}
+              age={activeSibling.age}
+              theme={activeSibling.theme}
               value={activeSibling.colorPreference}
               onChange={(colorPreference) =>
                 updateSibling(siblingStep.childIndex, { colorPreference })

@@ -1,10 +1,17 @@
 import type { ColorScale } from '../data/colorScales'
 import type { ThemePackage } from '../data/themePackages'
+import type { CatalogGender, CatalogTheme, PackageAgeGroupId } from '../data/packageCatalog'
+import { BOY_THEME_CATALOG, getAgeGroup, getAgeGroupIdForAge, findCatalogThemeByName, THEME_CATALOG } from '../data/packageCatalog'
+import { THEME_COLOR_SCALE_MAP, themeCatalogKey } from '../data/themeColorScales'
 
 export const BASE_PACKAGE_IDS = ['animals', 'adventures', 'sea-ships', 'transport'] as const
 
 export const PACKAGE_GENDERS = ['boy', 'girl'] as const
 export type PackageGender = (typeof PACKAGE_GENDERS)[number]
+
+export const CATALOG_GENDER_IDS = ['boy', 'girl', 'unisex'] as const
+
+const CATALOG_AGE_IDS = ['0-2', '3-5', '6-10'] as const
 
 export const THEME_TO_BASE_ID: Record<string, string> = {
   חיות: 'animals',
@@ -118,12 +125,271 @@ export function resolvePackageVariant(
   return buildVariantPackage(base, gender, scale)
 }
 
+export function buildCatalogVariantId(
+  themeId: string,
+  gender: CatalogGender,
+  ageId: PackageAgeGroupId,
+  colorScaleId: string,
+): string {
+  return `${themeId}-${gender}-${ageId}-${colorScaleId}`
+}
+
+export function parseCatalogVariantId(id: string): {
+  themeId: string
+  gender: CatalogGender
+  ageId: PackageAgeGroupId
+  colorScaleId: string
+} | null {
+  for (const gender of CATALOG_GENDER_IDS) {
+    for (const ageId of CATALOG_AGE_IDS) {
+      const marker = `-${gender}-${ageId}-`
+      const idx = id.indexOf(marker)
+      if (idx <= 0) continue
+      const themeId = id.slice(0, idx)
+      const colorScaleId = id.slice(idx + marker.length)
+      if (themeId && colorScaleId) {
+        return { themeId, gender, ageId, colorScaleId }
+      }
+    }
+  }
+  return null
+}
+
+export function resolveLegacyVariantId(
+  theme: CatalogTheme,
+  gender: CatalogGender,
+  ageId: PackageAgeGroupId,
+  colorScaleId: string,
+): string | null {
+  if (!theme.legacyBaseId || ageId !== '0-2' || gender !== 'boy') return null
+  return buildVariantId(theme.legacyBaseId, gender, colorScaleId)
+}
+
+export function catalogPathForPackageId(id: string): {
+  gender: CatalogGender
+  ageId: PackageAgeGroupId
+  themeId: string
+} | null {
+  const catalog = parseCatalogVariantId(id)
+  if (catalog) {
+    return {
+      gender: catalog.gender,
+      ageId: catalog.ageId,
+      themeId: catalog.themeId,
+    }
+  }
+
+  const legacy = parseVariantId(id)
+  if (legacy?.gender === 'boy') {
+    const theme = BOY_THEME_CATALOG['0-2'].find((entry) => entry.legacyBaseId === legacy.baseId)
+    if (theme) {
+      return { gender: 'boy', ageId: '0-2', themeId: theme.id }
+    }
+  }
+
+  return null
+}
+
+export function resolveCatalogVariant(
+  packages: ThemePackage[],
+  basePackages: ThemePackage[],
+  scales: ColorScale[],
+  theme: CatalogTheme,
+  gender: CatalogGender,
+  ageId: PackageAgeGroupId,
+  colorScaleId: string,
+): ThemePackage {
+  const catalogId = buildCatalogVariantId(theme.id, gender, ageId, colorScaleId)
+  const catalogExisting = packages.find((pkg) => pkg.id === catalogId)
+  if (catalogExisting) return catalogExisting
+
+  const legacyId = resolveLegacyVariantId(theme, gender, ageId, colorScaleId)
+  if (legacyId) {
+    const legacyExisting = packages.find((pkg) => pkg.id === legacyId)
+    if (legacyExisting) return legacyExisting
+  }
+
+  const scale = scales.find((entry) => entry.id === colorScaleId)
+  if (!scale) throw new Error(`Missing color scale ${colorScaleId}`)
+
+  const base =
+    (theme.legacyBaseId
+      ? basePackages.find((pkg) => pkg.id === theme.legacyBaseId) ??
+        packages.find((pkg) => pkg.id === theme.legacyBaseId)
+      : undefined) ?? basePackages.find((pkg) => isBasePackageId(pkg.id))
+
+  if (!base) throw new Error(`Missing base template for ${theme.name}`)
+
+  const ageGroup = getAgeGroup(ageId)
+  const genderLabel =
+    gender === 'boy' ? 'בנים' : gender === 'girl' ? 'בנות' : 'ניטרלי'
+
+  return {
+    ...structuredClone(base),
+    id: catalogId,
+    gender,
+    ageRange: ageGroup.range,
+    theme: theme.name,
+    questionnaireTheme: theme.name,
+    name: `חבילת ${theme.name} — ${genderLabel} — ${ageGroup.label} — ${scale.name}`,
+    colorPalette: scale.colors.map((color) => color.hex),
+    heroImage: '',
+    galleryImages: [],
+    shoppingCategories: theme.legacyBaseId ? structuredClone(base.shoppingCategories) : [],
+  }
+}
+
+export function packageMatchesCatalogSelection(
+  pkg: ThemePackage,
+  gender: CatalogGender,
+  ageId: PackageAgeGroupId,
+  theme: CatalogTheme,
+  colorScaleId?: string,
+): boolean {
+  const catalog = parseCatalogVariantId(pkg.id)
+  if (catalog) {
+    return (
+      catalog.themeId === theme.id &&
+      catalog.gender === gender &&
+      catalog.ageId === ageId &&
+      (!colorScaleId || catalog.colorScaleId === colorScaleId)
+    )
+  }
+
+  const legacy = parseVariantId(pkg.id)
+  if (legacy && theme.legacyBaseId && ageId === '0-2' && gender === 'boy') {
+    return (
+      legacy.baseId === theme.legacyBaseId &&
+      legacy.gender === gender &&
+      (!colorScaleId || legacy.colorScaleId === colorScaleId)
+    )
+  }
+
+  const themeMatches = Boolean(
+    pkg.questionnaireTheme === theme.name ||
+      pkg.theme === theme.name ||
+      (theme.legacyBaseId &&
+        (pkg.questionnaireTheme === BASE_ID_TO_THEME[theme.legacyBaseId] ||
+          getBasePackageId(pkg) === theme.legacyBaseId)),
+  )
+
+  return themeMatches && pkg.gender === gender
+}
+
+export function resolveMatchingPackage(
+  packages: ThemePackage[],
+  basePackages: ThemePackage[],
+  scales: ColorScale[],
+  gender: CatalogGender,
+  age: number,
+  themeName?: string,
+  colorPreference?: string,
+): ThemePackage | undefined {
+  const ageId = getAgeGroupIdForAge(age)
+  const scale = colorPreference
+    ? scales.find((entry) =>
+        entry.questionnaireKeywords.some((keyword) => colorPreference.includes(keyword)),
+      ) ?? scales[0]
+    : scales[0]
+
+  const variantPackages = packages.filter(
+    (pkg) => parseCatalogVariantId(pkg.id) !== null || parseVariantId(pkg.id) !== null,
+  )
+
+  let candidates = variantPackages
+
+  if (themeName) {
+    const catalogTheme = findCatalogThemeByName(gender, age, themeName)
+    if (catalogTheme) {
+      const themed = candidates.filter((pkg) =>
+        packageMatchesCatalogSelection(pkg, gender, ageId, catalogTheme, scale?.id),
+      )
+      if (themed.length > 0) {
+        candidates = themed
+      } else {
+        return resolveCatalogVariant(
+          packages,
+          basePackages,
+          scales,
+          catalogTheme,
+          gender,
+          ageId,
+          scale.id,
+        )
+      }
+    } else {
+      const themeMatch = candidates.filter(
+        (pkg) => pkg.questionnaireTheme === themeName || pkg.theme === themeName,
+      )
+      if (themeMatch.length > 0) candidates = themeMatch
+    }
+  }
+
+  if (gender !== 'unisex') {
+    const genderMatch = candidates.filter((pkg) => pkg.gender === gender)
+    if (genderMatch.length > 0) candidates = genderMatch
+  }
+
+  if (scale) {
+    const colorMatch = candidates.filter((pkg) => {
+      const catalog = parseCatalogVariantId(pkg.id)
+      if (catalog?.colorScaleId === scale.id) return true
+      const legacy = parseVariantId(pkg.id)
+      if (legacy?.colorScaleId === scale.id) return true
+      return pkg.id.endsWith(`-${scale.id}`)
+    })
+    if (colorMatch.length > 0) candidates = colorMatch
+  }
+
+  const ageMatch = candidates.filter(
+    (pkg) => age >= pkg.ageRange[0] && age <= pkg.ageRange[1],
+  )
+  if (ageMatch.length > 0) return ageMatch[0]
+  if (candidates.length > 0) return candidates[0]
+
+  if (themeName) {
+    const catalogTheme = findCatalogThemeByName(gender, age, themeName)
+    if (catalogTheme && scale) {
+      return resolveCatalogVariant(
+        packages,
+        basePackages,
+        scales,
+        catalogTheme,
+        gender,
+        ageId,
+        scale.id,
+      )
+    }
+  }
+
+  return undefined
+}
+
 export function expectedVariantCount(colorScaleCount: number): number {
-  return BASE_PACKAGE_IDS.length * PACKAGE_GENDERS.length * colorScaleCount
+  const mappedKeys = new Set(Object.keys(THEME_COLOR_SCALE_MAP))
+  let count = 0
+
+  for (const scaleIds of Object.values(THEME_COLOR_SCALE_MAP)) {
+    if (scaleIds) count += scaleIds.length
+  }
+
+  for (const gender of CATALOG_GENDER_IDS) {
+    for (const ageId of CATALOG_AGE_IDS) {
+      for (const theme of THEME_CATALOG[gender][ageId]) {
+        if (!mappedKeys.has(themeCatalogKey(gender, ageId, theme.id))) {
+          count += colorScaleCount
+        }
+      }
+    }
+  }
+
+  return count
 }
 
 export function hasVariantPackages(packages: ThemePackage[]): boolean {
-  return packages.some((pkg) => parseVariantId(pkg.id) !== null)
+  return packages.some(
+    (pkg) => parseCatalogVariantId(pkg.id) !== null || parseVariantId(pkg.id) !== null,
+  )
 }
 
 const DEFAULT_PACKAGE_IMAGE = /^\/assets\/packages\/[^/]+-(hero|wall|detail)\.svg$/

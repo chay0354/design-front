@@ -18,7 +18,7 @@ import {
   hasVariantPackages,
   isBasePackageId,
   mergeVariantsWithExisting,
-  parseVariantId,
+  resolveMatchingPackage,
   resolvePackageGalleryImages,
 } from '../utils/packageVariants'
 
@@ -163,37 +163,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const findMatchingPackages = useCallback(
     (gender: 'boy' | 'girl' | 'unisex', age: number, theme?: string, colorPreference?: string) => {
-      let candidates = packages.filter((pkg) => parseVariantId(pkg.id) !== null || isBasePackageId(pkg.id))
-
-      if (theme) {
-        const themeMatch = candidates.filter((p) => p.questionnaireTheme === theme)
-        if (themeMatch.length > 0) candidates = themeMatch
-      }
-
-      if (gender !== 'unisex') {
-        const genderMatch = candidates.filter((p) => p.gender === gender)
-        if (genderMatch.length > 0) candidates = genderMatch
-      }
-
-      if (colorPreference) {
-        const scale = matchScale(colorScales, colorPreference)
-        const colorMatch = candidates.filter(
-          (p) => p.id.endsWith(`-${scale.id}`) || parseVariantId(p.id)?.colorScaleId === scale.id,
-        )
-        if (colorMatch.length > 0) candidates = colorMatch
-      }
-
-      const ageMatch = candidates.filter(
-        (pkg) => age >= pkg.ageRange[0] && age <= pkg.ageRange[1],
+      const basePackages = staticPackages.filter((pkg) =>
+        BASE_PACKAGE_IDS.includes(pkg.id as (typeof BASE_PACKAGE_IDS)[number]),
       )
-      if (ageMatch.length > 0) return ageMatch
-      if (candidates.length > 0) return candidates
+
+      const matched = resolveMatchingPackage(
+        packages,
+        basePackages,
+        colorScales,
+        gender,
+        age,
+        theme,
+        colorPreference,
+      )
+      if (matched) return [matched]
 
       const fallback = packages.filter((pkg) => {
         const genderMatch =
           pkg.gender === gender || pkg.gender === 'unisex' || gender === 'unisex'
-        const ageMatchFallback = age >= pkg.ageRange[0] && age <= pkg.ageRange[1]
-        return genderMatch && ageMatchFallback
+        const ageMatch = age >= pkg.ageRange[0] && age <= pkg.ageRange[1]
+        return genderMatch && ageMatch
       })
 
       return fallback.length > 0 ? fallback : packages
