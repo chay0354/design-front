@@ -18,7 +18,7 @@ export function LoginPage() {
   const [info, setInfo] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const redirectAfterAuth = (isAdmin: boolean) => {
+  const redirectAfterAuth = (isAdmin: boolean, isNewSignup: boolean) => {
     if (isAdmin) {
       navigate('/admin')
       return
@@ -31,6 +31,8 @@ export function LoginPage() {
       sessionStorage.removeItem('intended_checkout_query')
       const query = intendedCheckoutQuery ? `?${intendedCheckoutQuery}` : ''
       navigate(`/checkout/${intendedPackage}${query}`)
+    } else if (isNewSignup) {
+      navigate('/questionnaire')
     } else {
       navigate('/account')
     }
@@ -65,7 +67,7 @@ export function LoginPage() {
         return
       }
 
-      redirectAfterAuth(result.user?.isAdmin ?? false)
+      redirectAfterAuth(result.user?.isAdmin ?? false, mode === 'signup')
     } finally {
       setSubmitting(false)
     }
@@ -95,7 +97,7 @@ export function LoginPage() {
                 ? 'התחברי כדי לגשת לחבילות העיצוב שלך'
                 : sessionStorage.getItem('intended_package')
                   ? 'הירשמי כדי לשמור את החבילה ולהמשיך לרכישה'
-                  : 'הירשמי כדי לשמור את החבילות והרכישות שלך'}
+                  : 'הירשמי כדי להתחיל ליצור את חבילת העיצוב שלך'}
             </p>
           </div>
 
