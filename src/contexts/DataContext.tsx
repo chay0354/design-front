@@ -19,8 +19,13 @@ import {
   isBasePackageId,
   mergeVariantsWithExisting,
   resolveMatchingPackage,
+  resolvePackageById,
   resolvePackageGalleryImages,
 } from '../utils/packageVariants'
+
+const staticBasePackages = staticPackages.filter((pkg) =>
+  BASE_PACKAGE_IDS.includes(pkg.id as (typeof BASE_PACKAGE_IDS)[number]),
+)
 
 const supabaseRestUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL as string
 const supabaseRestKey = import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as string
@@ -150,15 +155,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [reload])
 
   const getPackageById = useCallback(
-    (id: string) => {
-      const direct = packages.find((p) => p.id === id)
-      if (direct) return direct
-      if (isBasePackageId(id)) {
-        return packages.find((p) => p.id.startsWith(`${id}-`))
-      }
-      return undefined
-    },
-    [packages],
+    (id: string) => resolvePackageById(id, packages, staticBasePackages, colorScales),
+    [packages, colorScales],
   )
 
   const findMatchingPackages = useCallback(
@@ -192,7 +190,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const getPackageContent = useCallback(
     (id: string): PackageContent | null => {
-      const pkg = packages.find((p) => p.id === id)
+      const pkg = resolvePackageById(id, packages, staticBasePackages, colorScales)
       if (!pkg) return null
       const gallery = resolvePackageGalleryImages(pkg, packages)
       return {
@@ -202,7 +200,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         placementGuide: [],
       }
     },
-    [packages],
+    [packages, colorScales],
   )
 
   const getColorScaleForPreference = useCallback(

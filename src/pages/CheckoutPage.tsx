@@ -70,11 +70,7 @@ export function CheckoutPage() {
 
   const { user, loading, completePurchase } = useAuth()
 
-  const { getPackageById, findMatchingPackages } = useData()
-
-  const mainPkg = packageId ? getPackageById(packageId) : undefined
-
-
+  const { getPackageById, findMatchingPackages, loading: dataLoading } = useData()
 
   const childName = searchParams.get('childName') || ''
 
@@ -93,6 +89,34 @@ export function CheckoutPage() {
     ? (JSON.parse(additionalChildrenParam) as QuestionnaireChild[])
 
     : []
+
+
+
+  const mainPkg = useMemo(() => {
+    if (packageId) {
+      const fromId = getPackageById(packageId)
+      if (fromId) return fromId
+    }
+
+    if (childGender && childAge && childTheme) {
+      return findMatchingPackages(
+        childGender as 'boy' | 'girl' | 'unisex',
+        childAge,
+        childTheme,
+        childColorPreference,
+      )[0]
+    }
+
+    return undefined
+  }, [
+    packageId,
+    getPackageById,
+    findMatchingPackages,
+    childGender,
+    childAge,
+    childTheme,
+    childColorPreference,
+  ])
 
 
 
@@ -168,7 +192,7 @@ export function CheckoutPage() {
 
 
 
-  if (loading) {
+  if (loading || dataLoading) {
 
     return <PageLoading />
 
@@ -186,7 +210,21 @@ export function CheckoutPage() {
 
   if (!mainPkg) {
 
-    return <Navigate to="/account" replace />
+    const previewParams = new URLSearchParams()
+
+    if (childName) previewParams.set('childName', childName)
+
+    if (childGender) previewParams.set('gender', childGender)
+
+    if (childAge) previewParams.set('age', childAge.toString())
+
+    if (childTheme) previewParams.set('theme', childTheme)
+
+    if (childColorPreference) previewParams.set('colorPreference', childColorPreference)
+
+    if (additionalChildrenParam) previewParams.set('additionalChildren', additionalChildrenParam)
+
+    return <Navigate to={`/preview/recommended?${previewParams.toString()}`} replace />
 
   }
 

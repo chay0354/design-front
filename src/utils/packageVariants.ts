@@ -1,7 +1,7 @@
 import type { ColorScale } from '../data/colorScales'
 import type { ThemePackage } from '../data/themePackages'
 import type { CatalogGender, CatalogTheme, PackageAgeGroupId } from '../data/packageCatalog'
-import { BOY_THEME_CATALOG, getAgeGroup, getAgeGroupIdForAge, findCatalogThemeByName, THEME_CATALOG } from '../data/packageCatalog'
+import { BOY_THEME_CATALOG, getAgeGroup, getAgeGroupIdForAge, findCatalogThemeByName, findCatalogTheme, THEME_CATALOG } from '../data/packageCatalog'
 import { THEME_COLOR_SCALE_MAP, themeCatalogKey } from '../data/themeColorScales'
 
 export const BASE_PACKAGE_IDS = ['animals', 'adventures', 'sea-ships', 'transport'] as const
@@ -237,6 +237,50 @@ export function resolveCatalogVariant(
     galleryImages: [],
     shoppingCategories: theme.legacyBaseId ? structuredClone(base.shoppingCategories) : [],
   }
+}
+
+export function resolvePackageById(
+  id: string,
+  packages: ThemePackage[],
+  basePackages: ThemePackage[],
+  scales: ColorScale[],
+): ThemePackage | undefined {
+  const direct = packages.find((pkg) => pkg.id === id)
+  if (direct) return direct
+
+  const catalog = parseCatalogVariantId(id)
+  if (catalog) {
+    const theme = findCatalogTheme(catalog.gender, catalog.ageId, catalog.themeId)
+    if (theme) {
+      return resolveCatalogVariant(
+        packages,
+        basePackages,
+        scales,
+        theme,
+        catalog.gender,
+        catalog.ageId,
+        catalog.colorScaleId,
+      )
+    }
+  }
+
+  const legacy = parseVariantId(id)
+  if (legacy) {
+    const legacyExisting = packages.find((pkg) => pkg.id === id)
+    if (legacyExisting) return legacyExisting
+
+    const base = basePackages.find((pkg) => pkg.id === legacy.baseId)
+    const scale = scales.find((entry) => entry.id === legacy.colorScaleId)
+    if (base && scale) {
+      return buildVariantPackage(base, legacy.gender, scale)
+    }
+  }
+
+  if (isBasePackageId(id)) {
+    return packages.find((pkg) => pkg.id.startsWith(`${id}-`))
+  }
+
+  return undefined
 }
 
 export function packageMatchesCatalogSelection(
