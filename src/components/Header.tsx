@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { Home, LogOut, Settings, User } from 'lucide-react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Grid3X3, Home, LogOut, Settings, User } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export function Header() {
@@ -20,11 +20,34 @@ export function Header() {
             PETITE DREAMS
           </Link>
 
-          <nav className="flex items-center gap-4">
-            <span className="flex items-center gap-2 rounded-sm px-3 py-2 text-sm text-[#6B6B6B]">
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <NavLink
+              to="/admin"
+              end
+              className={({ isActive }) =>
+                `flex items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors ${
+                  isActive
+                    ? 'bg-[#F9F7F4] text-[#4A4A4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F9F7F4]'
+                }`
+              }
+            >
               <Settings className="h-4 w-4" />
-              לוח ניהול
-            </span>
+              <span className="hidden sm:inline">לוח ניהול</span>
+            </NavLink>
+            <NavLink
+              to="/admin/collage"
+              className={({ isActive }) =>
+                `flex items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors ${
+                  isActive
+                    ? 'bg-[#F9F7F4] text-[#4A4A4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F9F7F4]'
+                }`
+              }
+            >
+              <Grid3X3 className="h-4 w-4" />
+              <span className="hidden sm:inline">צור קולאז</span>
+            </NavLink>
             <button
               type="button"
               onClick={handleLogout}

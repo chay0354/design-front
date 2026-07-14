@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { AboutPage } from './pages/AboutPage'
 import { AccountPage } from './pages/AccountPage'
+import { AdminCollagePage } from './pages/AdminCollagePage'
 import { AdminPage } from './pages/AdminPage'
 import { LandingPage } from './pages/LandingPage'
 import { PackageDetailPage } from './pages/PackageDetailPage'
@@ -75,6 +76,14 @@ export default function App() {
               element={
                 <RequireAdmin>
                   <AdminPage />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/admin/collage"
+              element={
+                <RequireAdmin>
+                  <AdminCollagePage />
                 </RequireAdmin>
               }
             />
