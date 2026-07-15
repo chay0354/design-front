@@ -32,15 +32,34 @@ export async function fetchProductImageUrl(sourceUrl: string): Promise<ProductIm
   }
 }
 
+const URL_IN_TEXT_RE = /https?:\/\/[^\s<>"']+/gi
+
+function normalizeExtractedUrl(raw: string): string {
+  return raw.replace(/[.,;:!?)>\]]+$/, '').trim()
+}
+
 export function parseProductLinks(text: string): string[] {
   const seen = new Set<string>()
   const links: string[] = []
 
+  for (const match of text.matchAll(URL_IN_TEXT_RE)) {
+    const normalized = normalizeExtractedUrl(match[0])
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    links.push(normalized)
+  }
+
+  if (links.length > 0) {
+    return links
+  }
+
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim()
     if (!trimmed || seen.has(trimmed)) continue
-    seen.add(trimmed)
-    links.push(trimmed)
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      seen.add(trimmed)
+      links.push(trimmed)
+    }
   }
 
   return links

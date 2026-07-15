@@ -118,8 +118,9 @@ export function AdminCollagePage() {
         <div className="mb-8">
           <h1 className="mb-1 text-3xl font-light text-[#4A4A4A]">צור קולאז</h1>
           <p className="text-[#6B6B6B]">
-            הדביקו קישורי מוצרים (שורה לכל קישור). המערכת תמשוך את תמונות המוצר מאותה שיטה
-            שבה נאספות תמונות לרשימת הקניות — meta og:image — ותיצור מהן קולאז אחד.
+            הדביקו קישורי מוצרים — אפשר גם להדביק ישירות את טקסט השיתוף מ-AliExpress
+            (&quot;I just found this on AliExpress...&quot;). המערכת תזהה את הקישורים
+            ותמשוך את תמונות המוצר (og:image).
           </p>
         </div>
 
@@ -131,7 +132,7 @@ export function AdminCollagePage() {
               onChange={(e) => setLinksText(e.target.value)}
               rows={10}
               dir="ltr"
-              placeholder="https://he.aliexpress.com/item/...&#10;https://he.aliexpress.com/item/..."
+              placeholder="הדביקו כאן קישורים או טקסט שיתוף מ-AliExpress&#10;https://a.aliexpress.com/_c4cWHbe9"
               className={`${inputClass} font-mono text-left`}
             />
             <p className="mt-2 text-sm text-[#8B8B8B]">{links.length} קישורים</p>
