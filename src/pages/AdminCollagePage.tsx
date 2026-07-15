@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Download, ExternalLink, ImageIcon, Loader2, Upload } from 'lucide-react'
+import { Download, ExternalLink, ImageIcon, Link2, Loader2, Upload } from 'lucide-react'
 import { Header } from '../components/Header'
 import { useData } from '../contexts/DataContext'
 import { buildCollageCanvas, canvasToBlob } from '../utils/collage'
@@ -9,23 +9,30 @@ import {
   proxyImageUrl,
   type ProductImageResult,
 } from '../utils/productImage'
+import { openMultipleProductUrls } from '../utils/openMultipleUrls'
 
 const inputClass =
   'w-full rounded-sm border border-[#E8DED2] bg-white px-3 py-2 text-sm text-[#4A4A4A] outline-none focus:border-[#C8B6A6]'
 
 export function AdminCollagePage() {
-  const { uploadImage } = useData()
+  const { uploadCollage } = useData()
   const [linksText, setLinksText] = useState('')
   const [columns, setColumns] = useState(4)
   const [cellSize, setCellSize] = useState(240)
   const [results, setResults] = useState<ProductImageResult[]>([])
   const [collageUrl, setCollageUrl] = useState<string | null>(null)
+  const [savedShareUrl, setSavedShareUrl] = useState<string | null>(null)
   const [fetching, setFetching] = useState(false)
   const [building, setBuilding] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showProductLinks, setShowProductLinks] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const entries = useMemo(() => parseProductEntries(linksText), [linksText])
+  const productUrls = useMemo(
+    () => entries.filter((entry) => entry.kind === 'product').map((entry) => entry.url),
+    [entries],
+  )
   const successfulImages = results.filter((item) => item.imageUrl)
 
   const handleFetchImages = async () => {
@@ -54,11 +61,22 @@ export function AdminCollagePage() {
   }
 
   const handleOpenProducts = () => {
-    for (const entry of entries) {
-      if (entry.kind === 'product') {
-        window.open(entry.url, '_blank', 'noopener,noreferrer')
-      }
+    if (productUrls.length === 0) return
+
+    setError(null)
+    const opened = openMultipleProductUrls(productUrls)
+    if (!opened) {
+      setShowProductLinks(true)
+      setError('הדפדפן חסם חלונות קופצים. אשרו popups לעמוד הזה, או פתחו מהקישורים למטה.')
+      return
     }
+
+    setShowProductLinks(false)
+  }
+
+  const handleCopyProductUrls = async () => {
+    if (productUrls.length === 0) return
+    await navigator.clipboard.writeText(productUrls.join('\n'))
   }
 
   const handleBuildCollage = async () => {
@@ -109,14 +127,19 @@ export function AdminCollagePage() {
       const response = await fetch(collageUrl)
       const blob = await response.blob()
       const file = new File([blob], `collage-${Date.now()}.png`, { type: 'image/png' })
-      const url = await uploadImage(file, 'package-gallery')
-      await navigator.clipboard.writeText(url)
-      alert('הקולאז הועלה בהצלחה. הקישור הועתק ללוח.')
+      const uploaded = await uploadCollage(file)
+      setSavedShareUrl(uploaded.shareUrl)
+      await navigator.clipboard.writeText(uploaded.shareUrl)
     } catch {
       setError('העלאת הקולאז נכשלה')
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleCopyShareUrl = async () => {
+    if (!savedShareUrl) return
+    await navigator.clipboard.writeText(savedShareUrl)
   }
 
   return (
@@ -185,11 +208,11 @@ export function AdminCollagePage() {
             <button
               type="button"
               onClick={handleOpenProducts}
-              disabled={entries.every((entry) => entry.kind !== 'product')}
+              disabled={productUrls.length === 0}
               className="flex items-center gap-2 rounded-sm border border-[#E8DED2] px-5 py-2.5 text-[#4A4A4A] transition-colors hover:bg-[#F9F7F4] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ExternalLink className="h-4 w-4" />
-              פתח מוצרים
+              פתח מוצרים ({productUrls.length})
             </button>
 
             <button
@@ -226,6 +249,73 @@ export function AdminCollagePage() {
           </div>
 
           {error && <p className="text-sm text-[#A05A5A]">{error}</p>}
+
+          {showProductLinks && productUrls.length > 0 && (
+            <div className="rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-light text-[#4A4A4A]">קישורי מוצרים</h2>
+                <button
+                  type="button"
+                  onClick={handleCopyProductUrls}
+                  className="text-sm text-[#8B7340] hover:underline"
+                >
+                  העתק את כל הקישורים
+                </button>
+              </div>
+              <div className="space-y-2">
+                {productUrls.map((url, index) => (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-sm border border-[#E8DED2] bg-white px-3 py-2 text-sm text-[#6B6B6B] hover:bg-[#FDFCFB]"
+                    dir="ltr"
+                  >
+                    <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{index + 1}. {url}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {savedShareUrl && (
+            <div className="rounded-sm border border-[#C8B6A6] bg-[#F9F7F4] p-4">
+              <h2 className="mb-2 text-lg font-light text-[#4A4A4A]">קישור קבוע לקולאז</h2>
+              <p className="mb-3 text-sm text-[#6B6B6B]">
+                הקולאז נשמר בענן. שמרו את הקישור — אפשר תמיד לפתוח אותו ולראות את התמונה.
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="url"
+                  readOnly
+                  value={savedShareUrl}
+                  dir="ltr"
+                  className={`${inputClass} text-left`}
+                />
+                <div className="flex flex-shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyShareUrl}
+                    className="flex items-center gap-2 rounded-sm border border-[#E8DED2] bg-white px-4 py-2 text-sm text-[#4A4A4A] hover:bg-[#FDFCFB]"
+                  >
+                    <Link2 className="h-4 w-4" />
+                    העתק
+                  </button>
+                  <a
+                    href={savedShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-sm border border-[#C8B6A6] bg-[#C8B6A6] px-4 py-2 text-sm text-white hover:bg-[#B5A99A]"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    פתח
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {results.length > 0 && (
             <div className="rounded-sm border border-[#E8DED2] p-4">

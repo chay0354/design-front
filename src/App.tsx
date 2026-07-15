@@ -4,6 +4,7 @@ import { DataProvider } from './contexts/DataContext'
 import { AboutPage } from './pages/AboutPage'
 import { AccountPage } from './pages/AccountPage'
 import { AdminCollagePage } from './pages/AdminCollagePage'
+import { CollageViewPage } from './pages/CollageViewPage'
 import { AdminPage } from './pages/AdminPage'
 import { LandingPage } from './pages/LandingPage'
 import { PackageDetailPage } from './pages/PackageDetailPage'
@@ -78,6 +79,10 @@ export default function App() {
                   <AdminPage />
                 </RequireAdmin>
               }
+            />
+            <Route
+              path="/collage/:collageId"
+              element={<CollageViewPage />}
             />
             <Route
               path="/admin/collage"

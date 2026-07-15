@@ -10,6 +10,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { themePackages as staticPackages, type ThemePackage } from '../data/themePackages'
 import { colorScales as staticColorScales, type ColorScale } from '../data/colorScales'
+import { buildCollageShareUrl, collageStoragePath } from '../utils/collageShare'
 import {
   BASE_PACKAGE_IDS,
   expandBasePackagesToVariants,
@@ -64,6 +65,12 @@ export interface PackageContent {
   placementGuide: { element: string; wall: string; height: string; notes: string }[]
 }
 
+export interface CollageUploadResult {
+  id: string
+  imageUrl: string
+  shareUrl: string
+}
+
 interface DataContextValue {
   packages: ThemePackage[]
   colorScales: ColorScale[]
@@ -85,6 +92,7 @@ interface DataContextValue {
   deleteColorScale: (id: string) => Promise<void>
   seedFromStatic: () => Promise<void>
   uploadImage: (file: File, folder?: 'package-gallery' | 'product') => Promise<string>
+  uploadCollage: (file: File) => Promise<CollageUploadResult>
 }
 
 const DataContext = createContext<DataContextValue | null>(null)
@@ -321,6 +329,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return data.publicUrl
   }, [])
 
+  const uploadCollage = useCallback(async (file: File): Promise<CollageUploadResult> => {
+    const id = crypto.randomUUID()
+    const path = collageStoragePath(id)
+    const { error } = await supabase.storage
+      .from('package-images')
+      .upload(path, file, { cacheControl: '31536000', upsert: false, contentType: 'image/png' })
+    if (error) throw error
+    const { data } = supabase.storage.from('package-images').getPublicUrl(path)
+    return {
+      id,
+      imageUrl: data.publicUrl,
+      shareUrl: buildCollageShareUrl(id),
+    }
+  }, [])
+
   const value = useMemo(
     () => ({
       packages,
@@ -338,6 +361,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteColorScale,
       seedFromStatic,
       uploadImage,
+      uploadCollage,
     }),
     [
       packages,
@@ -355,6 +379,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteColorScale,
       seedFromStatic,
       uploadImage,
+      uploadCollage,
     ],
   )
 
