@@ -1,3 +1,5 @@
+import { apiUrl } from './api'
+
 export interface ProductImageResult {
   sourceUrl: string
   imageUrl: string | null
@@ -7,9 +9,20 @@ export interface ProductImageResult {
 export async function fetchProductImageUrl(sourceUrl: string): Promise<ProductImageResult> {
   try {
     const response = await fetch(
-      `/api/product-image?url=${encodeURIComponent(sourceUrl.trim())}`,
+      apiUrl(`/api/product-image?url=${encodeURIComponent(sourceUrl.trim())}`),
     )
-    const payload = (await response.json()) as { imageUrl?: string; error?: string }
+
+    const raw = await response.text()
+    let payload: { imageUrl?: string; error?: string } = {}
+    try {
+      payload = JSON.parse(raw) as { imageUrl?: string; error?: string }
+    } catch {
+      return {
+        sourceUrl,
+        imageUrl: null,
+        error: response.ok ? 'Invalid API response' : 'API unavailable — check backend deployment',
+      }
+    }
 
     if (!response.ok) {
       return {
@@ -27,7 +40,7 @@ export async function fetchProductImageUrl(sourceUrl: string): Promise<ProductIm
     return {
       sourceUrl,
       imageUrl: null,
-      error: 'Network error',
+      error: 'Network error — could not reach API',
     }
   }
 }
@@ -66,5 +79,5 @@ export function parseProductLinks(text: string): string[] {
 }
 
 export function proxyImageUrl(imageUrl: string): string {
-  return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`
+  return apiUrl(`/api/image-proxy?url=${encodeURIComponent(imageUrl)}`)
 }

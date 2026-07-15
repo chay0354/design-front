@@ -6,6 +6,7 @@ import { buildCollageCanvas, canvasToBlob } from '../utils/collage'
 import {
   fetchProductImageUrl,
   parseProductLinks,
+  proxyImageUrl,
   type ProductImageResult,
 } from '../utils/productImage'
 
@@ -223,7 +224,7 @@ export function AdminCollagePage() {
                     </p>
                     {item.imageUrl ? (
                       <img
-                        src={`/api/image-proxy?url=${encodeURIComponent(item.imageUrl)}`}
+                        src={proxyImageUrl(item.imageUrl)}
                         alt=""
                         className="aspect-square w-full rounded-sm object-cover"
                       />
