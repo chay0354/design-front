@@ -1,9 +1,7 @@
-const DEFAULT_PRODUCTION_API = 'https://design-back.vercel.app'
-
 function resolveApiBase(): string {
   const configured = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
   if (configured) return configured
-  if (import.meta.env.PROD) return DEFAULT_PRODUCTION_API
+  // Same-origin /api — proxied by Vite in dev and by vercel.json in production.
   return ''
 }
 
