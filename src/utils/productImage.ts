@@ -115,4 +115,15 @@ export function proxyImageUrl(imageUrl: string): string {
   return apiUrl(`/api/image-proxy?url=${encodeURIComponent(imageUrl)}`)
 }
 
-export const COLLAGE_BOOKMARKLET = `javascript:(function(){var img=document.querySelector('meta[property=\"og:image\"]')?.content||document.querySelector('img[class*=\"product-image\"], img[data-pl=\"product-image\"]')?.src;if(!img){alert('No product image found on this page');return;}if(window.opener){window.opener.postMessage({type:'petite-collage-image',source:location.href,imageUrl:img},'*');alert('Image sent back to Petite Dreams collage tab');}else{prompt('Copy image URL:',img);}})();`
+export function productImagePreviewSrc(url: string): string {
+  if (!url) return url
+  if (url.startsWith('http') && url.includes('alicdn.com')) {
+    return proxyImageUrl(url)
+  }
+  return url
+}
+
+export async function fetchProductImageForLink(link: string): Promise<string | null> {
+  const result = await fetchProductImageUrl(link)
+  return result.imageUrl
+}

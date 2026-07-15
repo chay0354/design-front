@@ -1,51 +1,35 @@
-"""Fetch product thumbnail URLs (og:image) for shopping list items."""
+"""Fetch product thumbnail URLs via the design-back API (ScrapingBee on server)."""
 
 from __future__ import annotations
 
 import json
-import re
+import os
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_PATH = ROOT / "src" / "data" / "themePackages.json"
 PLACEHOLDER = "/assets/packages/item-decor.svg"
-USER_AGENT = "Mozilla/5.0 (compatible; PetiteDreams/1.0)"
-OG_IMAGE_RE = re.compile(
-    r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
-    re.IGNORECASE,
-)
-OG_IMAGE_RE_ALT = re.compile(
-    r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
-    re.IGNORECASE,
-)
+API_BASE = os.environ.get("PRODUCT_IMAGE_API_URL", "https://design-back.vercel.app").rstrip("/")
 
 
-def fetch_og_image(url: str) -> str | None:
+def fetch_product_image(link: str) -> str | None:
+    query = urllib.parse.urlencode({"url": link})
     req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
-        },
+        f"{API_BASE}/api/product-image?{query}",
+        headers={"Accept": "application/json"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=20) as response:
-            html = response.read().decode("utf-8", "ignore")
-    except (urllib.error.URLError, TimeoutError, ValueError):
+        with urllib.request.urlopen(req, timeout=90) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return None
 
-    for pattern in (OG_IMAGE_RE, OG_IMAGE_RE_ALT):
-        match = pattern.search(html)
-        if match:
-            image = match.group(1).strip()
-            if image.startswith("//"):
-                image = f"https:{image}"
-            return image
-    return None
+    image = payload.get("imageUrl")
+    return image if isinstance(image, str) and image.startswith("http") else None
 
 
 def main() -> None:
@@ -71,7 +55,7 @@ def main() -> None:
                     continue
 
                 print(f"Fetching: {link[:70]}...")
-                image = fetch_og_image(link)
+                image = fetch_product_image(link)
                 if image:
                     item["image"] = image
                     cache[link] = image

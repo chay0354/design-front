@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { productImagePreviewSrc } from '../utils/productImage'
 
 const PLACEHOLDER = '/assets/packages/item-decor.svg'
 
@@ -10,7 +11,7 @@ interface ProductImageProps {
 
 export function ProductImage({ src, alt, className }: ProductImageProps) {
   const [imageSrc, setImageSrc] = useState(
-    src && src !== PLACEHOLDER ? src : PLACEHOLDER,
+    src && src !== PLACEHOLDER ? productImagePreviewSrc(src) : PLACEHOLDER,
   )
 
   return (

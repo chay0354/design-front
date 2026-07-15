@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, Loader2, Plus, Save, Trash2, Upload, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ImageIcon, Loader2, Plus, Save, Trash2, Upload, X } from 'lucide-react'
 import { Header } from '../components/Header'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { themePackages as staticBasePackages } from '../data/themePackages'
 import type { ThemePackage } from '../data/themePackages'
 import type { ColorScale } from '../data/colorScales'
+import {
+  fetchProductImageUrl,
+  productImagePreviewSrc,
+} from '../utils/productImage'
 import {
   BASE_PACKAGE_IDS,
   buildCatalogVariantId,
@@ -246,6 +250,7 @@ const inputClass =
   'w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-3 py-2 text-sm focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none'
 const labelClass = 'mb-1 block text-xs font-normal text-[#6B6B6B]'
 const cardClass = 'rounded-sm border border-[#E8DED2] bg-white p-5 shadow-sm'
+const PRODUCT_IMAGE_PLACEHOLDER = '/assets/packages/item-decor.svg'
 
 function ImageField({
   value,
@@ -255,6 +260,7 @@ function ImageField({
   hint,
   size = 'sm',
   urlPlaceholder = 'כתובת תמונה או העלי קובץ',
+  productLink,
 }: {
   value: string
   onChange: (url: string) => void
@@ -263,10 +269,12 @@ function ImageField({
   hint?: string
   size?: 'sm' | 'lg'
   urlPlaceholder?: string
+  productLink?: string
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const previewSize = size === 'lg' ? 'h-32 w-full' : 'h-14 w-14 flex-shrink-0'
+  const previewSrc = value ? productImagePreviewSrc(value) : value
 
   const handleFile = async (file: File) => {
     setBusy(true)
@@ -280,13 +288,33 @@ function ImageField({
     }
   }
 
+  const handleFetchFromLink = async () => {
+    const link = productLink?.trim()
+    if (!link) {
+      alert('הוסיפו קישור קנייה לפני משיכת התמונה')
+      return
+    }
+
+    setBusy(true)
+    try {
+      const result = await fetchProductImageUrl(link)
+      if (result.imageUrl) {
+        onChange(result.imageUrl)
+      } else {
+        alert(result.error ?? 'לא נמצאה תמונה לקישור הזה')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="space-y-2">
       {label && <label className={labelClass}>{label}</label>}
       {hint && <p className="text-xs leading-relaxed text-[#8B8B8B]">{hint}</p>}
       {size === 'lg' && value ? (
         <div className={`relative overflow-hidden rounded-sm border border-[#E8DED2] ${previewSize}`}>
-          <img src={value} alt="" className="h-full w-full object-cover" />
+          <img src={previewSrc} alt="" className="h-full w-full object-cover" />
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -310,7 +338,7 @@ function ImageField({
         <div className="flex items-center gap-3">
           {value ? (
             <img
-              src={value}
+              src={previewSrc}
               alt=""
               className={`${previewSize} rounded-sm border border-[#E8DED2] object-cover`}
             />
@@ -335,6 +363,17 @@ function ImageField({
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           </button>
+          {productLink !== undefined && (
+            <button
+              type="button"
+              onClick={handleFetchFromLink}
+              disabled={busy || !productLink.trim()}
+              title="משוך תמונה מקישור המוצר"
+              className="flex flex-shrink-0 items-center gap-1 rounded-sm border border-[#E8DED2] px-3 py-2 text-sm text-[#6B6B6B] transition-colors hover:bg-[#F9F7F4] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+            </button>
+          )}
         </div>
       )}
       {size === 'lg' && (
@@ -460,6 +499,39 @@ function PackageEditor({
   saving: boolean
 }) {
   const update = (partial: Partial<ThemePackage>) => setDraft({ ...draft, ...partial })
+  const [fetchingProductImages, setFetchingProductImages] = useState(false)
+
+  const handleFetchAllProductImages = async () => {
+    setFetchingProductImages(true)
+    try {
+      const next = draft.shoppingCategories.map((category) => ({
+        ...category,
+        items: [...category.items],
+      }))
+
+      for (let catIndex = 0; catIndex < next.length; catIndex += 1) {
+        for (let itemIndex = 0; itemIndex < next[catIndex].items.length; itemIndex += 1) {
+          const item = next[catIndex].items[itemIndex]
+          const link = item.link.trim()
+          if (!link) continue
+
+          const hasImage =
+            item.image &&
+            item.image !== PRODUCT_IMAGE_PLACEHOLDER &&
+            item.image.startsWith('http')
+          if (hasImage) continue
+
+          const result = await fetchProductImageUrl(link)
+          if (result.imageUrl) {
+            next[catIndex].items[itemIndex] = { ...item, image: result.imageUrl }
+            update({ shoppingCategories: next.map((c) => ({ ...c, items: [...c.items] })) })
+          }
+        }
+      }
+    } finally {
+      setFetchingProductImages(false)
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -611,20 +683,35 @@ function PackageEditor({
               מוצרים לרכישה — כל פריט כולל קישור ותמונת מוצר קטנה (נפרד מתמונות העיצוב למעלה)
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              update({
-                shoppingCategories: [
-                  ...draft.shoppingCategories,
-                  { category: 'קטגוריה חדשה', items: [] },
-                ],
-              })
-            }
-            className="flex flex-shrink-0 items-center gap-1 text-sm text-[#C8B6A6] hover:underline"
-          >
-            <Plus className="h-4 w-4" /> קטגוריה
-          </button>
+          <div className="flex flex-shrink-0 flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleFetchAllProductImages}
+              disabled={fetchingProductImages}
+              className="flex items-center gap-1 text-sm text-[#8B7340] hover:underline disabled:opacity-50"
+            >
+              {fetchingProductImages ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ImageIcon className="h-4 w-4" />
+              )}
+              משוך תמונות
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                update({
+                  shoppingCategories: [
+                    ...draft.shoppingCategories,
+                    { category: 'קטגוריה חדשה', items: [] },
+                  ],
+                })
+              }
+              className="flex items-center gap-1 text-sm text-[#C8B6A6] hover:underline"
+            >
+              <Plus className="h-4 w-4" /> קטגוריה
+            </button>
+          </div>
         </div>
 
         <div className="space-y-5">
@@ -691,10 +778,11 @@ function PackageEditor({
                           />
                           <ImageField
                             label="תמונת מוצר"
-                            hint="תמונה קטנה לרשימת הקניות — לא תמונת עיצוב החבילה"
+                            hint="תמונה קטנה לרשימת הקניות — לחצי על כפתור התמונה כדי למשוך אוטומטית מקישור AliExpress"
                             value={item.image}
                             onChange={(url) => updateItem({ image: url })}
                             onUpload={onUploadProductImage}
+                            productLink={item.link}
                             urlPlaceholder="קישור לתמונת המוצר"
                           />
                         </div>
@@ -724,7 +812,7 @@ function PackageEditor({
                       ...category,
                       items: [
                         ...category.items,
-                        { name: '', link: '', notes: '', image: '/assets/packages/item-decor.svg' },
+                        { name: '', link: '', notes: '', image: PRODUCT_IMAGE_PLACEHOLDER },
                       ],
                     }
                     update({ shoppingCategories: next })
