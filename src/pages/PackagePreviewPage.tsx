@@ -153,7 +153,7 @@ function ChildPackageCard({
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
   const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name
   const styleDescription =
-    'כאן תמצאו סקירה מלאה המותאמת לגיל, להעדפות ולסגנון שלכם. הקונספט העיצובי, כיוון הצבעים והנחיות הסטיילינג נבנו במיוחד כדי ליצור חדר חמים, רגוע ומלא קסם עבור ילדכם.'
+    'כאן תמצאו סקירה מלאה המותאמת לגיל, להעדפות ולסגנון שבחרתם. הקונספט, כיוון הצבעים והנחיות הסטיילינג נבנו כדי ליצור חדר חמים ורגוע.'
 
   const preview = design.teaser ? (
     <TeaserGrid src={design.teaser} />
@@ -167,33 +167,33 @@ function ChildPackageCard({
 
   return (
     <div className="grid items-start gap-10 lg:grid-cols-2 lg:grid-rows-[1fr_auto] lg:items-stretch lg:gap-x-16 lg:gap-y-4">
-      <div className="order-2 flex h-full flex-col font-[family-name:var(--font-family)] lg:order-1 lg:row-start-1">
-        <div className="mb-6 text-center">
-          <BrushHeading padding="px-7">
-            <h2 className="text-[30px] font-light leading-[1.25] tracking-tight text-[#4A4A4A] sm:text-[34px]">
+      <div className="order-2 flex flex-col justify-between font-[family-name:var(--font-family)] lg:order-1 lg:row-start-1 lg:min-h-0">
+        <div className="text-center">
+          <BrushHeading padding="px-8">
+            <h2 className="whitespace-nowrap text-[28px] font-light leading-none tracking-tight text-[#4A4A4A] sm:text-[32px]">
               חבילת העיצוב של {childName || 'הילד/ה'}
             </h2>
           </BrushHeading>
           {discountLabel && <p className="mt-2 text-sm text-[#7BA05B]">{discountLabel}</p>}
-          <p className="mt-3 flex items-center justify-center gap-2 text-[13px] font-light text-[#7C736B]">
+          <p className="mt-2.5 flex items-center justify-center gap-2 text-[12px] font-light text-[#8A8178]">
             <Plus className="h-3 w-3 text-[#C4B8A8]" strokeWidth={1.5} />
             {packageTitle} לגילאי {ageGroup.range[0]}–{ageGroup.range[1]}
             <Plus className="h-3 w-3 text-[#C4B8A8]" strokeWidth={1.5} />
           </p>
         </div>
 
-        <div className="mb-4 rounded-[16px] bg-[#ECE1D9] px-4 py-5">
-          <div className="grid gap-6 sm:grid-cols-2 sm:gap-0">
-            <div className="text-center sm:px-4">
+        <div className="rounded-[18px] bg-[#EDE4DC] px-4 py-4">
+          <div className="grid items-start gap-4 sm:grid-cols-[1.05fr_0.95fr] sm:gap-5">
+            <div className="text-center">
               <p className="text-[11px] font-light text-[#9A8A7C]">סקלת הגוונים שנבחרה</p>
-              <BrushHeading padding="px-5" className="mt-1" fill="#E1D2C4">
-                <span className="text-[17px] font-normal text-[#4A4A4A]">{colorScale.name}</span>
+              <BrushHeading padding="px-4" fill="#E0D2C4">
+                <span className="text-[16px] font-light text-[#4A4A4A]">{colorScale.name}</span>
               </BrushHeading>
-              <div className="mt-4 flex items-stretch justify-center gap-1.5">
-                {colorScale.colors.map((color) => (
+              <div className="mt-3 flex items-end justify-center gap-1.5">
+                {colorScale.colors.slice(0, 6).map((color) => (
                   <div
                     key={`${color.roleLabel}-${color.hex}`}
-                    className="h-[70px] w-8 rounded-[9px]"
+                    className="h-16 w-[22px] rounded-[10px]"
                     style={{ backgroundColor: color.hex }}
                     title={color.name}
                   />
@@ -201,59 +201,47 @@ function ChildPackageCard({
               </div>
             </div>
 
-            <div className="sm:border-s sm:border-[#DCCFC4] sm:px-4">
-              <BrushHeading padding="px-4" fill="#E1D2C4">
-                <span className="text-[15px] font-normal text-[#4A4A4A]">הצעה לסגנון שנבחר עבורכם</span>
-              </BrushHeading>
-              <div className="mt-3 flex items-center gap-3">
-                <p className="text-[11px] font-light leading-[1.9] text-[#8B7F74]">{styleDescription}</p>
-                <img src={balloonIcon} alt="" className="h-14 w-14 shrink-0 object-contain" />
+            <div className="sm:border-s sm:border-[#D8CBBF] sm:ps-5">
+              <div className="mb-2 flex items-start gap-2.5">
+                <div className="min-w-0 flex-1">
+                  <BrushHeading padding="px-3" fill="#E0D2C4">
+                    <span className="text-[14px] font-light leading-6 text-[#4A4A4A]">
+                      הצעה לסגנון שנבחר עבורכם
+                    </span>
+                  </BrushHeading>
+                </div>
+                <img src={balloonIcon} alt="" className="mt-0.5 h-10 w-10 shrink-0 object-contain" />
               </div>
+              <p className="text-[11px] font-light leading-5 text-[#8B7F74]">{styleDescription}</p>
             </div>
           </div>
         </div>
 
-        <div className="mb-5 rounded-[14px] border border-[#EDE7E1] bg-[#FBF7F4] px-2 py-5">
-          <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-4 sm:gap-y-0">
+        <div className="rounded-[16px] border border-[#EFE8E1] bg-white px-1 py-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4">
             {[
-              {
-                icon: Baby,
-                title: 'סטיילינג בלבד',
-                text: 'חבילת העיצוב כוללת קונספט והנחיות סטיילינג בלבד, אינה כוללת פריטים עצמם או תכנון העמדה.',
-              },
-              {
-                icon: Armchair,
-                title: 'מתלבש על ריהוט קיים',
-                text: 'מיועד לריהוט בסיס קיים בבית, עם המלצות לריהוט כבד באזור האישי.',
-              },
-              {
-                icon: CheckCircle2,
-                title: 'קל ליישום',
-                text: 'הנחיות סטיילינג פשוטות שמסתגלות לריהוט קיים ומשדרגות כל חדר.',
-              },
-              {
-                icon: Lock,
-                title: 'מותאם גיל והעדפות',
-                text: 'הקונספט נבנה בהתאמה לגיל הילד, להעדפותיו ולסגנון המשפחה.',
-              },
+              { icon: Baby, title: 'סטיילינג בלבד', text: 'קונספט והנחיות סטיילינג, בלי להחליף ריהוט.' },
+              { icon: Armchair, title: 'מתלבש על ריהוט קיים', text: 'מיועד לחדר שכבר יש בו ריהוט בסיס.' },
+              { icon: CheckCircle2, title: 'קל ליישום', text: 'שלבים פשוטים שאפשר ליישם מיד.' },
+              { icon: Lock, title: 'מותאם גיל והעדפות', text: 'נבנה לפי הגיל, הנושא והצבעים שבחרתם.' },
             ].map(({ icon: Icon, title, text }, index) => (
               <div
                 key={title}
-                className={`px-3 text-center ${index > 0 ? 'sm:border-s sm:border-[#EDE7E1]' : ''}`}
+                className={`px-2.5 text-center ${index > 0 ? 'sm:border-s sm:border-[#EFE8E1]' : ''}`}
               >
-                <Icon className="mx-auto mb-3 h-7 w-7 text-[#99856D]" strokeWidth={1.1} />
-                <p className="mb-1.5 text-[12px] text-[#4A4A4A]">{title}</p>
-                <p className="text-[10px] font-light leading-[1.7] text-[#9A9088]">{text}</p>
+                <Icon className="mx-auto mb-2 h-6 w-6 text-[#A89888]" strokeWidth={1.15} />
+                <p className="mb-1 text-[12px] font-light text-[#4A4A4A]">{title}</p>
+                <p className="text-[10px] font-light leading-4 text-[#9A9088]">{text}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mt-auto flex items-center gap-3 pt-2">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => navigate('/questionnaire')}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E7E0D8] bg-white px-3.5 py-2 text-[11px] font-light text-[#9A9088] transition-colors hover:text-[#4A4A4A]"
+            className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md border border-[#E7E0D8] bg-white px-3 py-2 text-[11px] font-light text-[#9A9088] hover:text-[#4A4A4A]"
           >
             חזרה
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -261,16 +249,16 @@ function ChildPackageCard({
           <button
             type="button"
             onClick={onPurchase}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-[#6E6858] px-4 py-3 text-[15px] font-light text-white transition-colors hover:bg-[#5C5748]"
+            className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#6B6556] px-4 py-2.5 text-[14px] font-light text-white hover:bg-[#5A5548]"
           >
             {purchaseLabel}
             <Lock className="h-4 w-4" strokeWidth={1.5} />
           </button>
-          <div className="flex shrink-0 items-baseline gap-2">
+          <div className="flex shrink-0 items-baseline gap-1.5">
             {originalPrice && originalPrice > price && (
               <span className="text-sm font-light text-[#B5B0A8] line-through">₪{originalPrice}</span>
             )}
-            <span className="text-[30px] font-light tracking-tight text-[#4A4A4A]">₪{price}</span>
+            <span className="text-[28px] font-light tracking-tight text-[#4A4A4A]">₪{price}</span>
           </div>
         </div>
       </div>
