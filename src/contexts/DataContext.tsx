@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { supabase } from '../lib/supabase'
+import { resolveDesignPackageImagesForPackage } from '../data/designPackageImages'
 import { themePackages as staticPackages, type ThemePackage } from '../data/themePackages'
 import { colorScales as staticColorScales, type ColorScale } from '../data/colorScales'
 import { buildCollageShareUrl, collageStoragePath } from '../utils/collageShare'
@@ -201,9 +202,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const pkg = resolvePackageById(id, packages, staticBasePackages, colorScales)
       if (!pkg) return null
       const gallery = resolvePackageGalleryImages(pkg, packages)
+      const design = resolveDesignPackageImagesForPackage(id, {
+        gender: pkg.gender,
+        age: pkg.ageRange[0],
+        themeName: pkg.questionnaireTheme || pkg.theme,
+      })
+      const heroImage = gallery.heroImage || design.hero
+      const galleryImages =
+        gallery.galleryImages.length > 0
+          ? gallery.galleryImages
+          : design.gallery.filter((url) => url && url !== heroImage)
       return {
-        heroImage: gallery.heroImage,
-        galleryImages: gallery.galleryImages,
+        heroImage,
+        galleryImages,
         shoppingCategories: pkg.shoppingCategories,
         placementGuide: [],
       }

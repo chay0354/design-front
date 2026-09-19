@@ -1,0 +1,130 @@
+{
+  "boy:0-2:adventures:warm-natural": {
+    "teaser": "/assets/design-packages/boy/0-2/adventures/warm-natural/teaser-1a0533d466.png",
+    "hero": "/assets/design-packages/boy/0-2/adventures/warm-natural/teaser-1a0533d466.png",
+    "gallery": [
+      "/assets/design-packages/boy/0-2/adventures/warm-natural/other-a5222d0608.png",
+      "/assets/design-packages/boy/0-2/adventures/warm-natural/other-873b4689ae.png"
+    ]
+  },
+  "boy:0-2:safari:shared": {
+    "teaser": "/assets/design-packages/boy/0-2/safari/shared/teaser-c500e570fb.png",
+    "hero": "/assets/design-packages/boy/0-2/safari/shared/teaser-c500e570fb.png",
+    "gallery": []
+  },
+  "boy:3-5:junior-superheroes:shared": {
+    "teaser": "/assets/design-packages/boy/3-5/junior-superheroes/shared/teaser-05fbd063c8.jpg",
+    "hero": "/assets/design-packages/boy/3-5/junior-superheroes/shared/teaser-05fbd063c8.jpg",
+    "gallery": [
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-42aa971395.png",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-65804c8d8d.jpeg",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-80979b1281.jpeg",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-623131bb7f.jpeg",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-f7e60259c1.jpeg",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-336583b273.jpeg",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/room-ee2d775d1a.jpeg",
+      "/assets/design-packages/boy/3-5/junior-superheroes/shared/other-010cedd6a5.jpg"
+    ]
+  },
+  "boy:0-2:sea-ships:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/0-2/sea-ships/shared/other-01c8f3eba2.png",
+    "gallery": [
+      "/assets/design-packages/boy/0-2/sea-ships/shared/other-01c8f3eba2.png",
+      "/assets/design-packages/boy/0-2/sea-ships/shared/other-69363fbb44.png"
+    ]
+  },
+  "boy:0-2:transport:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/0-2/transport/shared/room-2af432961b.png",
+    "gallery": [
+      "/assets/design-packages/boy/0-2/transport/shared/room-2af432961b.png"
+    ]
+  },
+  "boy:0-2:safari:fresh-greens": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/0-2/safari/fresh-greens/hero-8a992ccca3.png",
+    "gallery": [
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/closeup-39f955db32.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/closeup-20de1e961d.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/closeup-4b8dd219ea.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/closeup-e6d87a7ad1.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/room-abfdf707fb.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/room-98e3c01dfd.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/room-f0f1f91c34.png",
+      "/assets/design-packages/boy/0-2/safari/fresh-greens/room-d9a171819a.png"
+    ]
+  },
+  "boy:0-2:safari:warm-natural": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/0-2/safari/warm-natural/room-ea1d1ef10e.png",
+    "gallery": [
+      "/assets/design-packages/boy/0-2/safari/warm-natural/room-ea1d1ef10e.png",
+      "/assets/design-packages/boy/0-2/safari/warm-natural/room-b286258654.png",
+      "/assets/design-packages/boy/0-2/safari/warm-natural/room-e9c9520640.png",
+      "/assets/design-packages/boy/0-2/safari/warm-natural/room-c41aaebc8a.png",
+      "/assets/design-packages/boy/0-2/safari/warm-natural/room-042ec4c555.png"
+    ]
+  },
+  "boy:6-10:gamers:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/6-10/gamers/shared/room-f59932b440.jpg",
+    "gallery": [
+      "/assets/design-packages/boy/6-10/gamers/shared/room-f59932b440.jpg"
+    ]
+  },
+  "boy:3-5:dinosaurs:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/3-5/dinosaurs/shared/room-3f4b7842f9.png",
+    "gallery": [
+      "/assets/design-packages/boy/3-5/dinosaurs/shared/room-3f4b7842f9.png"
+    ]
+  },
+  "boy:3-5:space:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/3-5/space/shared/room-bc23883d46.jpg",
+    "gallery": [
+      "/assets/design-packages/boy/3-5/space/shared/room-bc23883d46.jpg",
+      "/assets/design-packages/boy/3-5/space/shared/room-1248ef8ab0.jpg",
+      "/assets/design-packages/boy/3-5/space/shared/room-4a513a2a2b.jpg"
+    ]
+  },
+  "boy:3-5:nature-explore:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/boy/3-5/nature-explore/shared/room-c4377b1e3e.png",
+    "gallery": [
+      "/assets/design-packages/boy/3-5/nature-explore/shared/room-c4377b1e3e.png"
+    ]
+  },
+  "unisex:0-2:beaches-shells:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/unisex/0-2/beaches-shells/shared/room-ab1d36c888.png",
+    "gallery": [
+      "/assets/design-packages/unisex/0-2/beaches-shells/shared/room-ab1d36c888.png",
+      "/assets/design-packages/unisex/0-2/beaches-shells/shared/room-dfa73a6192.png"
+    ]
+  },
+  "unisex:0-2:nordic-forest:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/unisex/0-2/nordic-forest/shared/room-11dfd6957e.png",
+    "gallery": [
+      "/assets/design-packages/unisex/0-2/nordic-forest/shared/room-11dfd6957e.png",
+      "/assets/design-packages/unisex/0-2/nordic-forest/shared/room-13381cc998.png"
+    ]
+  },
+  "unisex:0-2:pastel-safari:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/unisex/0-2/pastel-safari/shared/room-9dc1f825d8.png",
+    "gallery": [
+      "/assets/design-packages/unisex/0-2/pastel-safari/shared/room-9dc1f825d8.png"
+    ]
+  },
+  "unisex:0-2:clouds-dreams:shared": {
+    "teaser": "",
+    "hero": "/assets/design-packages/unisex/0-2/clouds-dreams/shared/room-e99acf20af.png",
+    "gallery": [
+      "/assets/design-packages/unisex/0-2/clouds-dreams/shared/room-e99acf20af.png",
+      "/assets/design-packages/unisex/0-2/clouds-dreams/shared/room-f909ef65f6.png"
+    ]
+  }
+}
