@@ -1,177 +1,127 @@
 import { Link } from 'react-router-dom'
-import { Clock, Home as HomeIcon, Palette, ShoppingBag, Sparkles, TrendingUp } from 'lucide-react'
+import { Box, Calendar, Gift, Palette, Plus, Ruler, Sprout, Tag } from 'lucide-react'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 
 const heroBackground = '/assets/hero-background.png'
 const logo = '/assets/logo-brand.png'
-const starIcon = '/assets/star-icon.png'
-const roomVisualization = '/assets/room-visualization.png'
 
-function SectionStar() {
-  return <img src={starIcon} alt="" className="h-6 w-6 opacity-60" aria-hidden />
+function SectionTitle({ children }: { children: string }) {
+  return (
+    <h2 className="mb-12 flex items-center justify-center gap-3 text-center text-2xl font-light text-[#4A4A4A] sm:text-3xl">
+      <Plus className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
+      {children}
+      <Plus className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
+    </h2>
+  )
 }
 
 export function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#FDFCFB]">
+    <div className="flex min-h-screen flex-col bg-white">
       <Header />
 
-      <section className="relative isolate py-20">
-        {/* Full-width hero background (matches Figma edge-to-edge feel) */}
+      <section className="relative isolate overflow-hidden">
         <div
-          className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-[calc(100vw-2rem)] max-w-[1440px] -translate-x-1/2 overflow-hidden rounded-lg sm:w-[calc(100vw-3rem)]"
-          style={{
-            backgroundImage: `url('${heroBackground}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/70 to-white/75" />
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${heroBackground}')` }}
+        />
+        <div className="absolute inset-0 bg-white/78" />
+        <div className="pointer-events-none absolute inset-0">
+          <Plus className="absolute top-16 left-[18%] h-5 w-5 text-[#D8CFC4]" strokeWidth={1.5} />
+          <Plus className="absolute top-24 right-[22%] h-4 w-4 text-[#D8CFC4]" strokeWidth={1.5} />
+          <Plus className="absolute bottom-28 left-[28%] h-4 w-4 text-[#D8CFC4]" strokeWidth={1.5} />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="-mb-8 mb-2 flex justify-center">
-            <img
-              src={logo}
-              alt="Petite Dreams - Great design for little ones"
-              className="-mb-8 h-48 w-auto object-contain md:h-72"
-            />
-          </div>
+        <div className="relative z-10 mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          <img
+            src={logo}
+            alt="Petite dreams — Great design for little ones"
+            className="mx-auto mb-8 h-28 w-auto object-contain sm:h-36"
+          />
 
-          <h1 className="-mt-12 mb-6 text-[48px] font-light italic text-[#4A4A4A]">
-            עיצוב חדר ילדים בקלות ובמהירות
+          <h1 className="mb-5 text-4xl font-light leading-tight text-[#4A4A4A] sm:text-5xl">
+            עיצוב חדר ילדים בקלות
           </h1>
-          <p className="mx-auto mb-4 max-w-3xl text-2xl font-normal text-[#6B6B6B] md:text-3xl">
+          <p className="mx-auto mb-3 max-w-xl text-lg font-light text-[#8B8B8B] sm:text-xl">
             חבילות עיצוב מוכנות עם כל מה שצריך
           </p>
-          <p className="mx-auto mb-12 max-w-2xl text-lg text-[#8B8B8B]">
-            ₪480-₪560 במקום ₪2000+ למעצב
+          <p className="mx-auto mb-10 text-sm text-[#B5B0A8]">
+            עיצוב פנים מקצועי ברבע מהעלות
           </p>
 
           <Link
             to="/questionnaire"
-            className="inline-block rounded-md bg-[#C8B6A6] px-10 py-4 text-lg font-normal text-white shadow-sm transition-colors hover:bg-[#B5A99A]"
+            className="inline-block rounded-full bg-[#C4B8A8] px-8 py-3 text-sm text-white transition-colors hover:bg-[#B5A99A]"
           >
             אני רוצה חדר מעוצב עכשיו
           </Link>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-16 flex items-center justify-center gap-4 text-center text-3xl font-light text-[#4A4A4A]">
-          <SectionStar />
-          למה לבחור ב-PETITE DREAMS?
-          <SectionStar />
-        </h2>
-
-        <div className="grid gap-12 md:grid-cols-3">
+      <section className="mx-auto w-full max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionTitle>למה לבחור ב-PETITE DREAMS?</SectionTitle>
+        <div className="grid gap-6 md:grid-cols-3">
           {[
             {
-              icon: Sparkles,
-              title: 'יוקרה במחיר נגיש',
+              icon: Tag,
+              title: 'עיצוב במחיר נגיש',
               text: 'קבלו עיצוב פנים מקצועי בשבריר מהמחיר המסורתי. מושלם למשפחות עם תקציב מוגבל.',
             },
             {
-              icon: Clock,
-              title: 'מהיר וקל',
-              text: 'מלאו שאלון פשוט וקבלו חבילת עיצוב מלאה באופן מיידי. בלי לחכות שבועות למעצב.',
+              icon: Calendar,
+              title: 'מהיר וקל ליישום',
+              text: 'מלאו שאלון פשוט וקבלו חבילת עיצוב מלאה באופן מיידי, בלי לחכות שבועות למעצב.',
             },
             {
-              icon: TrendingUp,
+              icon: Sprout,
               title: 'החבילה גדלה עם הילד',
-              text: 'כשהילד שלכם גדל, עדכנו את עיצוב החדר במחיר מופחת. אנחנו נזכיר לכם מתי הגיע הזמן לרענן.',
+              text: 'כשהילד גדל, אפשר לרענן את החדר במחיר מופחת. נזכיר לכם מתי הגיע הזמן.',
             },
           ].map(({ icon: Icon, title, text }) => (
-            <div
-              key={title}
-              className="rounded-sm border border-[#E8DED2] bg-white p-10 shadow-sm"
-            >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-sm bg-[#F5F1ED]">
-                <Icon className="h-6 w-6 text-[#C8B6A6]" />
-              </div>
-              <h3 className="mb-4 text-xl font-normal text-[#4A4A4A]">{title}</h3>
-              <p className="font-light leading-relaxed text-[#6B6B6B]">{text}</p>
+            <div key={title} className="px-4 py-8 text-center">
+              <Icon className="mx-auto mb-5 h-7 w-7 text-[#C4B8A8]" strokeWidth={1.25} />
+              <h3 className="mb-3 text-lg font-light text-[#4A4A4A]">{title}</h3>
+              <p className="text-sm leading-7 text-[#8B8B8B]">{text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-16 flex items-center justify-center gap-4 text-center text-3xl font-light text-[#4A4A4A]">
-          <SectionStar />
-          מה כלול בחבילה שלכם
-          <SectionStar />
-        </h2>
-
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+      <section className="mx-auto w-full max-w-5xl px-4 pb-24 sm:px-6 lg:px-8">
+        <SectionTitle>מה כלול בחבילה שלכם</SectionTitle>
+        <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
           {[
-            { icon: Palette, title: 'לוח צבעים מדויק', text: 'קודי צבע מדויקים לכל רכיב בחדר' },
             {
-              icon: HomeIcon,
-              title: 'מדריך מיקום מפורט',
-              text: 'גבהי תלייה מדויקים לכל קיר ואלמנט עיצובי',
+              icon: Palette,
+              title: 'לוח צבעים מדויק',
+              text: 'קודי צבע מדויקים לכל רכיב בחדר, כדי לשחזר את המראה בקלות.',
             },
             {
-              icon: ShoppingBag,
+              icon: Gift,
               title: 'קישורי קנייה ישירים',
-              text: 'קישורים לרכישת כל פריט ב-AliExpress (ספקים נוספים בקרוב)',
+              text: 'קישורים לרכישת כל פריט ב-AliExpress, עם הערות כמות ומידה.',
             },
             {
-              icon: Sparkles,
-              title: 'הדמיה תלת-ממדית',
-              text: 'ראו את עיצוב החדר במודל תלת-ממדי גנרי עם סיור אינטראקטיבי',
+              icon: Ruler,
+              title: 'מדריך מיקום מפורט',
+              text: 'גבהי תלייה והנחיות לכל קיר ואלמנט עיצובי בחדר.',
+            },
+            {
+              icon: Box,
+              title: 'הדמיה של החדר',
+              text: 'ראו את עיצוב החדר בהדמיה מוכנה, כדי לדעת בדיוק איך הכל יושב יחד.',
             },
           ].map(({ icon: Icon, title, text }) => (
-            <div
-              key={title}
-              className="flex items-start gap-4 rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[#F5F1ED]">
-                <Icon className="h-5 w-5 text-[#C8B6A6]" />
-              </div>
+            <div key={title} className="flex items-start gap-4">
+              <Icon className="mt-0.5 h-6 w-6 flex-shrink-0 text-[#C4B8A8]" strokeWidth={1.25} />
               <div>
-                <h4 className="mb-2 font-normal text-[#4A4A4A]">{title}</h4>
-                <p className="font-light text-[#6B6B6B]">{text}</p>
+                <h4 className="mb-2 text-lg font-light text-[#4A4A4A]">{title}</h4>
+                <p className="text-sm leading-7 text-[#8B8B8B]">{text}</p>
               </div>
             </div>
           ))}
         </div>
-
-        <div className="mx-auto mt-12 max-w-4xl rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-8">
-          <p className="leading-relaxed text-[#6B6B6B]">
-            <strong className="text-[#4A4A4A]">שימו לב:</strong> זו הדמיה לדוגמא של פריסת
-            חדר גנרית (4 קירות, חלון, דלת), לא את החדר האמיתי של הילד שלכם. רוב חדרי הילדים
-            עוקבים אחר פריסות סטנדרטיות, מה שהופך את זה לכלי תכנון יעיל.
-          </p>
-          <div className="mt-8">
-            <img
-              src={roomVisualization}
-              alt="דוגמה להדמיית חדר ילדים"
-              className="w-full rounded-sm shadow-md"
-            />
-            <p className="mt-3 text-center text-sm font-light text-[#8B8B8B]">
-              ההדמיה המלאה תפתח לאחר הרכישה
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:px-8">
-        <h2 className="mb-6 flex items-center justify-center gap-4 text-4xl font-light text-[#4A4A4A]">
-          <img src={starIcon} alt="" className="h-7 w-7 opacity-60" aria-hidden />
-          אני רוצה חדר מעוצב עכשיו
-          <img src={starIcon} alt="" className="h-7 w-7 opacity-60" aria-hidden />
-        </h2>
-        <p className="mx-auto mb-8 max-w-2xl text-xl font-light text-[#6B6B6B]">
-          ענו על כמה שאלות פשוטות וקבלו את חבילת העיצוב המותאמת שלכם תוך דקות
-        </p>
-        <Link
-          to="/questionnaire"
-          className="inline-block rounded-md bg-[#C8B6A6] px-10 py-4 text-lg font-normal text-white shadow-sm transition-colors hover:bg-[#B5A99A]"
-        >
-          התחילי עכשיו
-        </Link>
       </section>
 
       <Footer />

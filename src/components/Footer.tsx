@@ -21,6 +21,7 @@ export function Footer() {
               {[
                 ['/', 'בית'],
                 ['/about', 'אודות'],
+                ['/faq', 'שאלות נפוצות'],
                 ['/questionnaire', 'התחל'],
                 ['/account', 'החשבון שלי'],
                 ['/tips', 'טיפים ועצות'],

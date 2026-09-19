@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { AboutPage } from './pages/AboutPage'
+import { FaqPage } from './pages/FaqPage'
 import { AccountPage } from './pages/AccountPage'
 import { AdminCollagePage } from './pages/AdminCollagePage'
 import { CollageViewPage } from './pages/CollageViewPage'
@@ -53,6 +54,14 @@ export default function App() {
               element={
                 <BlockAdmin>
                   <AboutPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/faq"
+              element={
+                <BlockAdmin>
+                  <FaqPage />
                 </BlockAdmin>
               }
             />
