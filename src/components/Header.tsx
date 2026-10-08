@@ -64,36 +64,39 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="text-sm font-light tracking-[0.18em] text-[#4A4A4A]">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-0 lg:px-8">
+        <Link
+          to="/"
+          className="shrink-0 whitespace-nowrap text-sm font-light tracking-[0.18em] text-[#4A4A4A]"
+        >
           PETITE DREAMS
         </Link>
 
-        <nav className="flex items-center gap-5 text-sm text-[#8B8B8B]">
-          <Link to="/" className="transition-colors hover:text-[#4A4A4A]">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#8B8B8B] sm:flex-nowrap sm:gap-5">
+          <Link to="/" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
             בית
           </Link>
-          <Link to="/about" className="transition-colors hover:text-[#4A4A4A]">
+          <Link to="/about" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
             אודות
           </Link>
-          <Link to="/faq" className="transition-colors hover:text-[#4A4A4A]">
+          <Link to="/faq" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
             שאלות נפוצות
           </Link>
           {user ? (
             <>
-              <Link to="/account" className="transition-colors hover:text-[#4A4A4A]">
+              <Link to="/account" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
                 החשבון שלי
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="transition-colors hover:text-[#4A4A4A]"
+                className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]"
               >
                 התנתק
               </button>
             </>
           ) : (
-            <Link to="/login" className="transition-colors hover:text-[#4A4A4A]">
+            <Link to="/login" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
               התחבר
             </Link>
           )}

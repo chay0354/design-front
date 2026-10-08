@@ -142,7 +142,7 @@ export const COLOR_SCALE_QUESTIONNAIRE: Record<
     previewColors: ['#7CB342', '#9CCC65', '#C5E1A5'],
   },
   'elegant-grays': {
-    label: 'אפורים אלמותיים 🌫️',
+    label: 'אפורים אלגנטיים 🌫️',
     benefit: 'הבחירה החכמה: מראה נקי שיוצר שקט בעין ונותן במה לאישיות של הילד.',
     previewColors: ['#8E8E8E', '#A8A8A8', '#C5C5C5'],
   },

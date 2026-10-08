@@ -113,21 +113,92 @@ function ThemePicker({
   )
 }
 
+function scaleTitle(label: string) {
+  return label.replace(/[\s\uFE0F]*\p{Extended_Pictographic}\uFE0F?/gu, '').trim()
+}
+
+function swatchLuminance(hex: string) {
+  const value = Number.parseInt(hex.replace('#', ''), 16)
+  const red = (value >> 16) & 255
+  const green = (value >> 8) & 255
+  const blue = value & 255
+  return red * 0.299 + green * 0.587 + blue * 0.114
+}
+
+function PaletteIcon({ scaleId }: { scaleId: string }) {
+  const stroke = '#A89888'
+  if (scaleId === 'soft-pinks') {
+    return (
+      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
+        <circle cx="16" cy="17" r="4" fill="#E7B7C0" />
+        <circle cx="10.5" cy="13" r="3.2" fill="#F0C9CF" />
+        <circle cx="21.5" cy="13" r="3.2" fill="#F0C9CF" />
+        <circle cx="11" cy="21" r="3.2" fill="#E3A8B4" />
+        <circle cx="21" cy="21" r="3.2" fill="#E3A8B4" />
+        <circle cx="16" cy="17" r="1.6" fill="#C98492" />
+      </svg>
+    )
+  }
+  if (scaleId === 'elegant-grays') {
+    return (
+      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
+        <path d="M16 6l1.2 4.2L21.5 11.4l-4.3 1.2L16 17l-1.2-4.4-4.3-1.2 4.3-1.2L16 6z" fill="#C8C2BA" />
+        <path d="M23 16l.7 2.4 2.3.7-2.3.7-.7 2.4-.7-2.4-2.3-.7 2.3-.7L23 16z" fill="#B7B1A8" />
+        <path d="M9.5 18l.6 2 2 .6-2 .6-.6 2-.6-2-2-.6 2-.6.6-2z" fill="#D5D0C8" />
+      </svg>
+    )
+  }
+  if (scaleId === 'happy-colorful') {
+    return (
+      <svg viewBox="0 0 36 28" className="h-7 w-9" aria-hidden="true">
+        <path d="M4 20c4-8 8-12 14-12s10 4 14 12" fill="none" stroke="#C9A27A" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M7.5 20c3.2-6 6.4-9 10.5-9s7.3 3 10.5 9" fill="none" stroke="#B7C4A4" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M11 20c2.2-4 4.4-6 7-6s4.8 2 7 6" fill="none" stroke="#E4C2A8" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (scaleId === 'calming-blues') {
+    return (
+      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
+        <path d="M4 18c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3" fill="none" stroke="#7FA4B8" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M4 23c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 6 3" fill="none" stroke="#A9C6D4" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (scaleId === 'sunny-yellows') {
+    return (
+      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
+        <circle cx="16" cy="16" r="5" fill="#E8C878" />
+        <g stroke="#D4B56A" strokeWidth="1.4" strokeLinecap="round">
+          <path d="M16 5v3M16 24v3M5 16h3M24 16h3M8.2 8.2l2.1 2.1M21.7 21.7l2.1 2.1M23.8 8.2l-2.1 2.1M10.3 21.7l-2.1 2.1" />
+        </g>
+      </svg>
+    )
+  }
+  if (scaleId === 'fresh-greens' || scaleId === 'warm-natural') {
+    return (
+      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
+        <path d="M16 26V14" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M16 18c-5-1-8-5-8-9 5 0 8 4 8 9z" fill="#C5D4B4" stroke="#8A9A78" strokeWidth="1.1" />
+        <path d="M16 16c5-1 8-5 8-9-5 0-8 4-8 9z" fill="#D5E0C8" stroke="#8A9A78" strokeWidth="1.1" />
+      </svg>
+    )
+  }
+  return null
+}
+
 function ColorPalettePreview({
   swatches,
-  selected,
 }: {
   swatches: { hex: string; name: string }[]
-  selected: boolean
 }) {
+  const ordered = [...swatches].sort((a, b) => swatchLuminance(a.hex) - swatchLuminance(b.hex))
+  const dots = ordered.slice(0, 6)
+
   return (
-    <div
-      className={`overflow-hidden rounded-sm border ${
-        selected ? 'border-[#C8B6A6] ring-2 ring-[#C8B6A6]/30' : 'border-[#E8DED2]'
-      }`}
-    >
-      <div className="flex h-12">
-        {swatches.map((swatch, index) => (
+    <div className="rounded-xl bg-[#F6F1EB] px-3 py-3 sm:bg-transparent sm:px-0 sm:py-0">
+      <div className="flex h-9 overflow-hidden rounded-md sm:h-10" dir="ltr">
+        {ordered.map((swatch, index) => (
           <div
             key={`${swatch.hex}-${index}`}
             className="min-w-0 flex-1"
@@ -136,11 +207,11 @@ function ColorPalettePreview({
           />
         ))}
       </div>
-      <div className="flex flex-wrap gap-1 bg-[#FDFCFB] p-2">
-        {swatches.map((swatch, index) => (
+      <div className="mt-2.5 flex justify-center gap-2 sm:hidden" dir="ltr">
+        {dots.map((swatch, index) => (
           <div
             key={`dot-${swatch.hex}-${index}`}
-            className="h-6 w-6 rounded-full border border-[#E8DED2]"
+            className="h-4 w-4 rounded-full border border-white"
             style={{ backgroundColor: swatch.hex }}
             title={swatch.name}
           />
@@ -172,15 +243,15 @@ function ColorPicker({
 
   return (
     <div>
-      <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-        מה העדפת הצבעים של {childName}?
+      <h2 className="mb-3 text-center text-3xl font-light leading-snug text-[#4A4A4A] sm:text-4xl">
+        איזה גוון וצבעים של {childName || 'הילד/ה'}?
       </h2>
-      <p className="mb-6 text-[#6B6B6B]">
+      <p className="mb-8 text-center text-sm text-[#8A8178] sm:text-base">
         {theme
           ? `סקלות צבע זמינות לנושא "${theme}"`
-          : 'בחר/י את סכמת הצבעים המועדפת'}
+          : 'בחרו את סקלת הצבעים שמרגישה נכון לחדר'}
       </p>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-5">
         {options.map((pref) => {
           const isSelected = value === pref.name
           return (
@@ -188,16 +259,21 @@ function ColorPicker({
               key={pref.scaleId}
               type="button"
               onClick={() => onChange(pref.name)}
-              className={`rounded-sm border-2 p-5 text-right transition-all ${
+              className={`rounded-2xl border bg-white px-5 py-6 text-center transition-all sm:px-7 sm:py-7 ${
                 isSelected
-                  ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                  : 'border-[#E8DED2] hover:border-[#D4C4B0]'
+                  ? 'border-[#C4B8A8] shadow-[0_8px_24px_rgba(176,160,140,0.16)]'
+                  : 'border-[#E7E0D8] hover:border-[#D4C4B0]'
               }`}
             >
-              <ColorPalettePreview swatches={pref.swatches} selected={isSelected} />
-              <h3 className="mb-2 mt-4 text-lg font-normal text-[#4A3728]">{pref.name}</h3>
+              <ColorPalettePreview swatches={pref.swatches} />
+              <div className="mt-4 flex items-center justify-center gap-2 sm:mt-5 sm:flex-col sm:gap-2">
+                <PaletteIcon scaleId={pref.scaleId} />
+                <h3 className="text-lg font-normal text-[#4A4A4A] sm:text-xl">{scaleTitle(pref.name)}</h3>
+              </div>
               {pref.benefit && (
-                <p className="text-sm leading-relaxed text-[#6B6B6B]">{pref.benefit}</p>
+                <p className="mx-auto mt-2 max-w-xs text-sm font-light leading-7 text-[#8A8178]">
+                  {pref.benefit}
+                </p>
               )}
             </button>
           )

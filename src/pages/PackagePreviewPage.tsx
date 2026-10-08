@@ -51,7 +51,7 @@ function BrushHeading({
 
 function CollageTile({ src }: { src: string }) {
   return (
-    <div className="aspect-square overflow-hidden rounded-xl bg-[#F7F4F0]">
+    <div className="aspect-square overflow-hidden bg-[#F7F4F0]">
       {src.startsWith('http') ? (
         <ProductImage src={src} alt="" className="h-full w-full object-cover" />
       ) : (
@@ -63,24 +63,7 @@ function CollageTile({ src }: { src: string }) {
 
 function TeaserGrid({ src }: { src: string }) {
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-2.5" dir="ltr">
-      {Array.from({ length: 9 }, (_, index) => {
-        const col = index % 3
-        const row = Math.floor(index / 3)
-        return (
-          <div key={index} className="aspect-square overflow-hidden rounded-xl bg-[#F7F4F0]">
-            <div
-              className="h-full w-full"
-              style={{
-                backgroundImage: `url(${src})`,
-                backgroundSize: '300% 300%',
-                backgroundPosition: `${col * 50}% ${row * 50}%`,
-              }}
-            />
-          </div>
-        )
-      })}
-    </div>
+    <img src={src} alt="" className="aspect-square w-full object-contain" />
   )
 }
 
@@ -158,7 +141,7 @@ function ChildPackageCard({
   const preview = design.teaser ? (
     <TeaserGrid src={design.teaser} />
   ) : (
-    <div className="grid grid-cols-3 gap-2 sm:gap-2.5" dir="ltr">
+    <div className="grid grid-cols-3 gap-1" dir="ltr">
       {collage.map((src, index) => (
         <CollageTile key={`${src}-${index}`} src={src} />
       ))}
@@ -345,6 +328,8 @@ export function PackagePreviewPage() {
     (sum, item) => sum + Math.round(item.package.price * 0.2),
     0,
   )
+  const installmentCount = 6
+  const monthlyPayment = Math.round(grandTotal / installmentCount)
 
   const purchaseLabel = 'לרכישה מיידית'
 
@@ -394,7 +379,10 @@ export function PackagePreviewPage() {
             {totalSavings > 0 && (
               <p className="mb-4 text-sm text-[#7BA05B]">חסכתם ₪{totalSavings} בהנחת אחים</p>
             )}
-            <p className="text-2xl font-light text-[#4A4A4A]">סה״כ ₪{grandTotal}</p>
+            <p className="text-2xl font-light text-[#4A4A4A]">
+              סה״כ {monthlyPayment} ש״ח - לחודש ל-{installmentCount} תשלומים
+            </p>
+            <p className="mt-2 text-base text-[#8B8B8B]">או {grandTotal} בתשלום 1</p>
           </div>
         )}
       </div>

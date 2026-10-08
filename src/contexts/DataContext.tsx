@@ -49,7 +49,10 @@ async function fetchPackagesFromDb(): Promise<ThemePackage[]> {
   const rows = await restGet<{ data: ThemePackage }[]>(
     'app_packages?select=data&order=sort_order',
   )
-  return rows.map((row) => row.data)
+  return rows.map((row) => ({
+    ...row.data,
+    name: row.data.name.replaceAll(' — ', ', ').replaceAll('—', ','),
+  }))
 }
 
 async function fetchColorScalesFromDb(): Promise<ColorScale[]> {

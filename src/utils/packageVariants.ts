@@ -69,7 +69,7 @@ export function buildVariantPackage(
     ...structuredClone(base),
     id: buildVariantId(base.id, gender, scale.id),
     gender,
-    name: `חבילת ${base.theme} — ${GENDER_LABELS[gender]} — ${scale.name}`,
+    name: `חבילת ${base.theme}, ${GENDER_LABELS[gender]}, ${scale.name}`,
     colorPalette: scale.colors.map((color) => color.hex),
     questionnaireTheme: base.questionnaireTheme,
   }
@@ -231,7 +231,7 @@ export function resolveCatalogVariant(
     ageRange: ageGroup.range,
     theme: theme.name,
     questionnaireTheme: theme.name,
-    name: `חבילת ${theme.name} — ${genderLabel} — ${ageGroup.label} — ${scale.name}`,
+    name: `חבילת ${theme.name}, ${genderLabel}, ${ageGroup.label}, ${scale.name}`,
     colorPalette: scale.colors.map((color) => color.hex),
     heroImage: '',
     galleryImages: [],
