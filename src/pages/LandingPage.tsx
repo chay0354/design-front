@@ -6,12 +6,33 @@ import { Header } from '../components/Header'
 const heroBackground = '/assets/hero-background.png'
 const logo = '/assets/logo-brand.png'
 
+function TitlePlus() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0 text-[#9A8874]" aria-hidden="true">
+      <path d="M8 2.2v11.6M2.2 8h11.6" fill="none" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function SectionTitle({ children }: { children: string }) {
   return (
-    <h2 className="mb-12 flex items-center justify-center gap-3 text-center text-2xl font-light text-[#4A4A4A] sm:text-3xl">
-      <Plus className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
-      {children}
-      <Plus className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
+    <h2 className="mb-12 flex items-center justify-center gap-4 text-center">
+      <TitlePlus />
+      <span className="relative inline-block px-3 py-1.5 text-2xl font-light leading-none text-[#3C3834] sm:text-[1.65rem]">
+        <svg
+          viewBox="0 0 300 48"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-1/2 h-[140%] w-[112%] -translate-x-1/2 -translate-y-[48%] -rotate-[0.6deg]"
+        >
+          <path
+            fill="#E4D9CC"
+            d="M14 18C34 8 52 20 86 13C124 5 156 19 198 11C236 4 268 16 286 12C294 22 292 33 284 36C246 46 198 34 150 41C100 48 52 36 18 39C6 37 4 24 14 18Z"
+          />
+        </svg>
+        <span className="relative">{children}</span>
+      </span>
+      <TitlePlus />
     </h2>
   )
 }
@@ -65,18 +86,18 @@ export function LandingPage() {
           {[
             {
               icon: '/assets/icons/affordable.png',
-              title: 'עיצוב במחיר נגיש',
-              text: 'קבלו עיצוב פנים מקצועי בשבריר מהמחיר המסורתי. מושלם למשפחות עם תקציב מוגבל.',
+              title: 'עיצוב מקצועי במחיר נגיש',
+              text: 'עיצוב איכותי בשבריר מהעלות של ליווי אישי, בלי להתפשר על רמת העיצוב או בחירת הפריטים. הנחה נוספת ניתנת לחבילות עבור אחים.',
             },
             {
               icon: '/assets/icons/easy-apply.png',
               title: 'מהיר וקל ליישום',
-              text: 'מלאו שאלון פשוט וקבלו חבילת עיצוב מלאה באופן מיידי, בלי לחכות שבועות למעצב.',
+              text: 'מלאו שאלון פשוט וקבלו חבילת עיצוב מלאה באופן מיידי. בלי לחכות שבועות למעצב.',
             },
             {
               icon: '/assets/icons/grows-with-child.png?v=3',
               title: 'החבילה גדלה עם הילד',
-              text: 'כשהילד גדל, אפשר לרענן את החדר במחיר מופחת. נזכיר לכם מתי הגיע הזמן.',
+              text: 'כשהילד גדל ומגלה אהבות חדשות, נזכיר לכם שאפשר להתאים את החדר מחדש לשלב הבא, במחיר מופחת.',
             },
           ].map(({ icon, title, text }) => (
             <div key={title} className="flex h-full flex-col items-center px-4 py-8 text-center">
@@ -96,24 +117,24 @@ export function LandingPage() {
           <div className="grid gap-6 md:grid-cols-2 md:gap-8">
             {[
               {
-                icon: '/assets/icons/color-palette.png',
-                title: 'פלטת גוונים מדויקת',
-                text: 'קודי צבע מדויקים לכל רכיב בחדר, כדי לשחזר את המראה בקלות.',
-              },
-              {
                 icon: '/assets/icons/age-themes.png',
                 title: 'נושאים אהובים, מותאמים לגיל',
-                text: 'בחרו ממספר נושאים פופולריים ומותאמים לגיל הילד, שמתחברים לחדר ומרגישים בשלווה.',
+                text: 'בחרו מתוך מספר נושאים פופולריים ומותאמי גיל, ליצירת חדר שמתחבר לעולם של הילד ומרגיש באמת שלו.',
               },
               {
-                icon: '/assets/icons/room-design.png?v=3',
-                title: 'כך מתחבר בחדר',
-                text: 'הדמיה מוכנה של החדר, הצבעים והטפטים, עד הפרטים שיוצרים תמונה שלמה.',
+                icon: '/assets/icons/color-palette.png',
+                title: 'פלטת גוונים מותאמת לקונספט',
+                text: 'בחרו את כיוון הגוונים המועדף עליכם מתוך פלטות שנבנו מראש. בחבילות הכוללות צביעה תקבלו גם מספר גוון מומלץ לקיר עם קישור ישיר לרכישה.',
               },
               {
                 icon: '/assets/icons/chosen-items.png?v=3',
                 title: 'פריטים שנבחרו עבורכם',
-                text: 'קישורים לרכישת כל פריט, עם הערות כמות ומידה שמתאימים בדיוק.',
+                text: 'קישורים לרכישה עצמית של פריטים יפים ומדויקים לקונספט, שנבחרו בקפידה מאתרי קניות אונליין-במחירים נגישים וללא פערי תיווך ומיסוי.',
+              },
+              {
+                icon: '/assets/icons/room-design.png?v=3',
+                title: 'כך העיצוב מתחבר בחדר',
+                text: 'הדמיה מעוצבת שממחישה את הקונספט, הצבעים והשילובים בחדר, לצד טיפים למיקומים, גבהים ויצירת פינות מעוצבות.',
               },
             ].map(({ icon, title, text }) => (
               <div

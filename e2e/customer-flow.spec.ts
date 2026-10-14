@@ -19,13 +19,21 @@ test.describe.serial('customer flow', () => {
 
     await page.getByRole('link', { name: 'אודות' }).first().click()
     await expect(page).toHaveURL(/\/about$/)
-    await expect(page.getByRole('img', { name: 'אודות PETITE DREAMS' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'אודות PETITE DREAMS' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'הדרך שלנו' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'לכל החבילות' })).toBeVisible()
+    await expect(page.getByRole('img', { name: 'חדר ילדים מעוצב בגוונים חמים' })).toBeVisible()
 
     await page.goto('/faq')
     await expect(page.getByRole('heading', { name: 'שאלות ותשובות' })).toBeVisible()
 
     await page.goto('/terms')
     await expect(page.getByRole('heading', { name: /תקנון שימוש/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'צבעים' })).toBeVisible()
+    await expect(page.getByText('פלטת גוונים מותאמת להשראה עבור העיצוב הנבחר')).toBeVisible()
+    await expect(page.getByText('קישורים ישירים למוצרים מומלצים')).toBeVisible()
+    await expect(page.getByText('חריגים שייבחנו')).toHaveCount(0)
+    await expect(page.getByText('₪480')).toHaveCount(0)
 
     await page.goto('/privacy')
     await expect(page.getByRole('heading', { name: 'מדיניות פרטיות' })).toBeVisible()
@@ -78,6 +86,15 @@ test.describe.serial('customer flow', () => {
     await expect(page.getByText(/חסכתם ₪\d+ בהנחת אחים/)).toBeVisible()
     await expect(page.getByText(/סה״כ \d+ ש״ח - לחודש ל-6 תשלומים/)).toBeVisible()
     await expect(page.getByText(/או \d+ בתשלום 1/)).toBeVisible()
+    const teasers = page.locator('img[src*="/assets/design-packages/"]')
+    await expect(teasers.first()).toBeVisible()
+    expect(await teasers.count()).toBeGreaterThan(0)
+    for (const teaser of await teasers.all()) {
+      expect(await teaser.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true)
+    }
+    for (const heading of await page.locator('h2, h3').allTextContents()) {
+      expect(heading).not.toContain('—')
+    }
 
     await page.getByRole('button', { name: 'לרכישה מיידית' }).first().click()
     await expect(page).toHaveURL(/\/login$/)
@@ -106,6 +123,38 @@ test.describe.serial('customer flow', () => {
     await expect(page.getByRole('button', { name: 'התנתק' })).toBeVisible()
     await expect(page.getByText(/מותאם עבור נועה/)).toBeVisible()
     await expect(page.getByText(/מותאם עבור אייר/)).toBeVisible()
+    for (const heading of await page.locator('h2, h3').allTextContents()) {
+      expect(heading).not.toContain('—')
+    }
+
+    await expect(page.getByRole('heading', { name: 'הנחה לאחים' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'הוספת חבילה נוספת' })).toBeVisible()
+
+    await expect(page.getByRole('heading', { name: 'ארגז הכלים לביצוע מושלם' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'צ׳ק ליסט לביצוע מדויק' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'יוצרים פינות מעוצבות' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'הקיר המרכזי' })).toBeVisible()
+    for (const src of ['checklist.png', 'designed-corners.png', 'center-wall.png']) {
+      const icon = page.locator(`img[src="/assets/icons/${src}"]`)
+      await expect(icon).toBeVisible()
+      expect(await icon.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true)
+    }
+    await page.getByRole('button', { name: 'לקריאת המדריך' }).first().click()
+    await expect(page).toHaveURL(/\/tips$/)
+    await page.goBack()
+
+    await expect(page.getByRole('heading', { name: 'Furniture Masterclass | יסודות החדר' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'הפינה המושלמת' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'אחסון חכם' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'משחקים או למידה?' })).toBeVisible()
+    await page.getByRole('button', { name: 'צפייה בשיעור' }).first().click()
+    await expect(page.getByText(/וידאו: הפינה המושלמת/)).toBeVisible()
+
+    await expect(page.getByRole('heading', { name: 'הפתקים שלי לחדר' })).toBeVisible()
+    await page.getByPlaceholder('רוחב הקיר...').fill('240')
+    await expect(page.getByPlaceholder('רוחב הקיר...')).toHaveValue('240')
+    await page.getByRole('button', { name: 'הוסף משימה' }).click()
+    await expect(page.getByPlaceholder('משימה חדשה...')).toBeVisible()
   })
 
   test('account stays behind login', async ({ page }) => {

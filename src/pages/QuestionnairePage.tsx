@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -350,6 +350,14 @@ function WallDesignPicker({
 export function QuestionnairePage() {
   const navigate = useNavigate()
   const { colorScales } = useData()
+
+  useEffect(() => {
+    const previousTitle = document.title
+    document.title = 'השאלון | PETITE DREAMS'
+    return () => {
+      document.title = previousTitle
+    }
+  }, [])
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<FormData>({
     childName: '',
@@ -503,7 +511,7 @@ export function QuestionnairePage() {
               שלב {step} מתוך {totalSteps}
             </span>
             <span className="text-sm text-[#8B8B8B]">
-              {Math.round((step / totalSteps) * 100)}%
+              התקדמות {Math.round((step / totalSteps) * 100)}%
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-[#F5F1ED]">
