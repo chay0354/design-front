@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Grid3X3, LogOut, Settings } from 'lucide-react'
+import { Grid3X3, Home, LogOut, Settings, ShoppingBag, User } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export function Header() {
@@ -62,44 +62,66 @@ export function Header() {
     )
   }
 
+  const intendedPackage = sessionStorage.getItem('intended_package')
+  const intendedQuery = sessionStorage.getItem('intended_checkout_query')
+  const cartTarget = intendedPackage
+    ? `/checkout/${intendedPackage}${intendedQuery ? `?${intendedQuery}` : ''}`
+    : '/questionnaire'
+
+  const navLink = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-1.5 whitespace-nowrap transition-colors hover:text-[#3C3834] ${
+      isActive ? 'text-[#A88A72]' : 'text-[#4A4540]'
+    }`
+
   return (
-    <header className="sticky top-0 z-50 bg-white">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-0 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-[#EFEAE4] bg-white">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:h-[60px] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-0 lg:px-8">
         <Link
           to="/"
-          className="shrink-0 whitespace-nowrap text-sm font-light tracking-[0.18em] text-[#4A4A4A]"
+          className="shrink-0 whitespace-nowrap text-xl font-light tracking-[0.06em] text-[#3C3834]"
         >
           PETITE DREAMS
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#8B8B8B] sm:flex-nowrap sm:gap-5">
-          <Link to="/" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm sm:flex-nowrap sm:gap-7">
+          <NavLink to="/" end className={navLink}>
+            <Home className="h-4 w-4" strokeWidth={1.5} />
             בית
-          </Link>
-          <Link to="/about" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
+          </NavLink>
+          {user && (
+            <NavLink to="/account" className={navLink}>
+              <User className="h-4 w-4" strokeWidth={1.5} />
+              החשבון שלי
+            </NavLink>
+          )}
+          <NavLink to="/about" className={navLink}>
             אודות
-          </Link>
-          <Link to="/faq" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
-            שאלות נפוצות
-          </Link>
+          </NavLink>
+          <NavLink to="/faq" className={navLink}>
+            לפני שרוכשים
+          </NavLink>
           {user ? (
-            <>
-              <Link to="/account" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
-                החשבון שלי
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]"
-              >
-                התנתק
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="whitespace-nowrap rounded-md bg-[#B39A86] px-4 py-1.5 text-sm text-white transition-colors hover:bg-[#A28A76]"
+            >
+              התנתק
+            </button>
           ) : (
-            <Link to="/login" className="whitespace-nowrap transition-colors hover:text-[#4A4A4A]">
+            <Link
+              to="/login"
+              className="whitespace-nowrap rounded-md bg-[#B39A86] px-4 py-1.5 text-sm text-white transition-colors hover:bg-[#A28A76]"
+            >
               התחבר
             </Link>
           )}
+          <Link to={cartTarget} aria-label="סל הקניות" className="relative text-[#4A4540] hover:text-[#3C3834]">
+            <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
+            <span className="absolute -bottom-1 -left-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#B39A86] px-1 text-[10px] leading-none text-white">
+              {intendedPackage ? 1 : 0}
+            </span>
+          </Link>
         </nav>
       </div>
     </header>

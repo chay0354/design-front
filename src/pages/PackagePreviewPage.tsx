@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
-import { Armchair, ArrowLeft, Baby, CheckCircle2, Lock, Plus } from 'lucide-react'
+import { Armchair, ArrowLeft, Baby, CheckCircle2, Lock } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { BrushMark, Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { ProductImage } from '../components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,36 +18,6 @@ import {
 
 const PLACEHOLDER = '/assets/lock-preview.png'
 const balloonIcon = '/assets/balloon-icon.svg'
-
-/** Soft painted stroke sitting behind a heading, as in the design. */
-function BrushHeading({
-  children,
-  className = '',
-  padding = 'px-6',
-  fill = '#F3E5DA',
-}: {
-  children: ReactNode
-  className?: string
-  padding?: string
-  fill?: string
-}) {
-  return (
-    <span className={`relative inline-block max-w-full ${padding} py-1`}>
-      <svg
-        viewBox="0 0 400 64"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-[8%] h-[76%] w-full"
-      >
-        <path
-          d="M7 33C9 19 26 12 58 9c34-3 78-4 126-4 46 0 96 2 140 6 30 3 55 8 66 15 9 6 8 14-3 20-13 7-38 12-71 15-44 4-95 5-142 4-45-1-88-3-120-7C22 55 5 47 7 33Z"
-          fill={fill}
-        />
-      </svg>
-      <span className={`relative z-10 block ${className}`}>{children}</span>
-    </span>
-  )
-}
 
 function CollageTile({ src }: { src: string }) {
   return (
@@ -136,7 +106,7 @@ function ChildPackageCard({
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
   const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name
   const styleDescription =
-    'כאן תמצאו סקירה מלאה המותאמת לגיל, להעדפות ולסגנון שבחרתם. הקונספט, כיוון הצבעים והנחיות הסטיילינג נבנו כדי ליצור חדר חמים ורגוע.'
+    'כאן תמצאו סקיצה מלאה המותאמת לגיל, להעדפות ולסגנון שלכם. הקונספט העיצובי, כיוון העיצוב והנחיות הסטיילינג נבנו במיוחד כדי ליצור חדר חמים, רגוע ומלא קסם עבור ילדכם.'
 
   const preview = design.teaser ? (
     <TeaserGrid src={design.teaser} />
@@ -150,33 +120,29 @@ function ChildPackageCard({
 
   return (
     <div className="grid items-start gap-10 lg:grid-cols-2 lg:grid-rows-[1fr_auto] lg:items-stretch lg:gap-x-16 lg:gap-y-4">
-      <div className="order-2 flex flex-col justify-between font-[family-name:var(--font-family)] lg:order-1 lg:row-start-1 lg:min-h-0">
+      <div className="order-2 flex flex-col justify-between gap-5 font-[family-name:var(--font-family)] lg:order-1 lg:row-start-1 lg:min-h-0">
         <div className="text-center">
-          <BrushHeading padding="px-8">
-            <h2 className="whitespace-nowrap text-[28px] font-light leading-none tracking-tight text-[#4A4A4A] sm:text-[32px]">
-              חבילת העיצוב של {childName || 'הילד/ה'}
-            </h2>
-          </BrushHeading>
+          <h2 className="whitespace-nowrap text-[28px] font-normal leading-tight tracking-tight text-[#2F2B28] sm:text-[34px]">
+            <BrushMark className="px-8">חבילת העיצוב של {childName || 'הילד/ה'}</BrushMark>
+          </h2>
           {discountLabel && <p className="mt-2 text-sm text-[#7BA05B]">{discountLabel}</p>}
-          <p className="mt-2.5 flex items-center justify-center gap-2 text-[12px] font-light text-[#8A8178]">
-            <Plus className="h-3 w-3 text-[#C4B8A8]" strokeWidth={1.5} />
+          <p className="mt-3 flex items-center justify-center gap-2.5 text-[16px] text-[#3C3834]">
+            <Sparkle className="h-3 w-3 text-[#C9A991]" />
             {packageTitle} לגילאי {ageGroup.range[0]}–{ageGroup.range[1]}
-            <Plus className="h-3 w-3 text-[#C4B8A8]" strokeWidth={1.5} />
+            <Sparkle className="h-3 w-3 text-[#C9A991]" />
           </p>
         </div>
 
-        <div className="rounded-[18px] bg-[#EDE4DC] px-4 py-4">
-          <div className="grid items-start gap-4 sm:grid-cols-[1.05fr_0.95fr] sm:gap-5">
-            <div className="text-center">
-              <p className="text-[11px] font-light text-[#9A8A7C]">סקלת הגוונים שנבחרה</p>
-              <BrushHeading padding="px-4" fill="#E0D2C4">
-                <span className="text-[16px] font-light text-[#4A4A4A]">{colorScale.name}</span>
-              </BrushHeading>
-              <div className="mt-3 flex items-end justify-center gap-1.5">
+        <div className="rounded-[14px] bg-[#EFE6DE] px-4 py-4">
+          <div className="grid items-start gap-4 sm:grid-cols-2 sm:gap-4">
+            <div className="rounded-xl bg-[#F3ECE5] px-2 py-3 text-center">
+              <p className="text-[13px] text-[#5A544E]">סקלת הגוונים שנבחרה</p>
+              <p className="text-[22px] leading-tight text-[#2F2B28]">{colorScale.name}</p>
+              <div className="mt-3 flex items-end justify-center gap-2">
                 {colorScale.colors.slice(0, 6).map((color) => (
                   <div
                     key={`${color.roleLabel}-${color.hex}`}
-                    className="h-16 w-[22px] rounded-[10px]"
+                    className="h-[64px] w-[26px] rounded-[10px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
                     style={{ backgroundColor: color.hex }}
                     title={color.name}
                   />
@@ -184,37 +150,51 @@ function ChildPackageCard({
               </div>
             </div>
 
-            <div className="sm:border-s sm:border-[#D8CBBF] sm:ps-5">
-              <div className="mb-2 flex items-start gap-2.5">
-                <div className="min-w-0 flex-1">
-                  <BrushHeading padding="px-3" fill="#E0D2C4">
-                    <span className="text-[14px] font-light leading-6 text-[#4A4A4A]">
-                      הצעה לסגנון שנבחר עבורכם
-                    </span>
-                  </BrushHeading>
-                </div>
-                <img src={balloonIcon} alt="" className="mt-0.5 h-10 w-10 shrink-0 object-contain" />
+            <div className="pt-1">
+              <p className="mb-3 whitespace-nowrap text-center text-[15px] text-[#2F2B28]">
+                <BrushMark className="px-4">הצצה לסגנון שנבחר עבורכם</BrushMark>
+              </p>
+              <div className="flex items-start gap-3">
+                <p className="min-w-0 flex-1 text-[12.5px] leading-6 text-[#4A4540]">{styleDescription}</p>
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#F6F0EA]">
+                  <img src={balloonIcon} alt="" className="h-11 w-11 object-contain" />
+                </span>
               </div>
-              <p className="text-[11px] font-light leading-5 text-[#8B7F74]">{styleDescription}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[16px] border border-[#EFE8E1] bg-white px-1 py-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4">
+        <div className="rounded-[12px] border border-[#D9D2CB] bg-white px-1 py-5">
+          <div className="grid grid-cols-2 gap-y-5 sm:grid-cols-4">
             {[
-              { icon: Baby, title: 'סטיילינג בלבד', text: 'קונספט והנחיות סטיילינג, בלי להחליף ריהוט.' },
-              { icon: Armchair, title: 'מתלבש על ריהוט קיים', text: 'מיועד לחדר שכבר יש בו ריהוט בסיס.' },
-              { icon: CheckCircle2, title: 'קל ליישום', text: 'שלבים פשוטים שאפשר ליישם מיד.' },
-              { icon: Lock, title: 'מותאם גיל והעדפות', text: 'נבנה לפי הגיל, הנושא והצבעים שבחרתם.' },
+              {
+                icon: Baby,
+                title: 'סטיילינג בלבד',
+                text: 'חבילת העיצוב כוללת קונספט והנחיות סטיילינג בלבד. אינה כוללת פריטים עצמם או תכנון העמדה.',
+              },
+              {
+                icon: Armchair,
+                title: 'מתלבש על ריהוט קיים',
+                text: 'מיועד לריהוט בסיסי קיים בבית, עם המלצות לריהוט כבד באזור האישי.',
+              },
+              {
+                icon: CheckCircle2,
+                title: 'קל ליישום',
+                text: 'הנחיות סטיילינג פשוטות שמסתגלות לריהוט קיים ומשדרגות כל חדר.',
+              },
+              {
+                icon: Lock,
+                title: 'מותאם גיל והעדפות',
+                text: 'הקונספט נבנה בהתאמה לגיל הילד, להעדפותיו ולסגנון המשפחה.',
+              },
             ].map(({ icon: Icon, title, text }, index) => (
               <div
                 key={title}
-                className={`px-2.5 text-center ${index > 0 ? 'sm:border-s sm:border-[#EFE8E1]' : ''}`}
+                className={`px-3 text-center ${index > 0 ? 'sm:border-s sm:border-[#EFE8E1]' : ''}`}
               >
-                <Icon className="mx-auto mb-2 h-6 w-6 text-[#A89888]" strokeWidth={1.15} />
-                <p className="mb-1 text-[12px] font-light text-[#4A4A4A]">{title}</p>
-                <p className="text-[10px] font-light leading-4 text-[#9A9088]">{text}</p>
+                <Icon className="mx-auto mb-2.5 h-9 w-9 text-[#A27A5C]" strokeWidth={1.2} />
+                <p className="mb-1.5 text-[14px] font-medium text-[#2F2B28]">{title}</p>
+                <p className="text-[12px] leading-6 text-[#5A544E]">{text}</p>
               </div>
             ))}
           </div>
@@ -224,24 +204,24 @@ function ChildPackageCard({
           <button
             type="button"
             onClick={() => navigate('/questionnaire')}
-            className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md border border-[#E7E0D8] bg-white px-3 py-2 text-[11px] font-light text-[#9A9088] hover:text-[#4A4A4A]"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#E7DCD2] bg-white px-4 py-2 text-[12px] text-[#5A544E] hover:text-[#2F2B28]"
           >
             חזרה
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-3.5 w-3.5 text-[#A27A5C]" />
           </button>
           <button
             type="button"
             onClick={onPurchase}
-            className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#6B6556] px-4 py-2.5 text-[14px] font-light text-white hover:bg-[#5A5548]"
+            className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#6E6758] px-4 py-3 text-[17px] text-white hover:bg-[#5A5548] sm:mx-6"
           >
+            <Lock className="h-5 w-5" strokeWidth={1.5} />
             {purchaseLabel}
-            <Lock className="h-4 w-4" strokeWidth={1.5} />
           </button>
           <div className="flex shrink-0 items-baseline gap-1.5">
             {originalPrice && originalPrice > price && (
-              <span className="text-sm font-light text-[#B5B0A8] line-through">₪{originalPrice}</span>
+              <span className="text-sm font-light text-[#B5B0A8] line-through">{originalPrice}₪</span>
             )}
-            <span className="text-[28px] font-light tracking-tight text-[#4A4A4A]">₪{price}</span>
+            <span className="text-[30px] tracking-tight text-[#1F1C1A]">{price}₪</span>
           </div>
         </div>
       </div>
@@ -250,9 +230,9 @@ function ChildPackageCard({
         {preview}
       </div>
 
-      <p className="order-3 mt-0 flex items-start gap-2 text-xs leading-6 text-[#B5B0A8] lg:col-start-2 lg:row-start-2">
-        <Lock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
-        הצצה לחבילה והסגנון העיצובי הנבחר — כל הפרטים המלאים, הקישורים וההמלצות מחכים לכם לאחר הרכישה באזור האישי.
+      <p className="order-3 mt-0 flex items-center gap-3 text-[13px] leading-6 text-[#3C3834] lg:col-start-2 lg:row-start-2">
+        הצצה לחבילה והסגנון העיצובי הנבחר – כל הפרטים המלאים, הקישורים וההמלצות מחכים לכם לאחר הרכישה באזור האישי.
+        <Lock className="h-7 w-7 flex-shrink-0 text-[#A27A5C]" strokeWidth={1.2} />
       </p>
     </div>
   )

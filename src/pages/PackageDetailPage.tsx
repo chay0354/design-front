@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   Camera,
@@ -7,12 +7,12 @@ import {
   ChevronRight,
   ExternalLink,
   Gift,
-  Heart,
-  Home,
-  Plus,
+  Palette,
+  ShoppingBag,
   Sparkles,
   Upload,
 } from 'lucide-react'
+import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { PageLoading } from '../components/PageLoading'
 import { ProductImage } from '../components/ProductImage'
@@ -20,14 +20,37 @@ import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { getChildrenForPackage, hasPurchased } from '../utils/auth'
 
-function SectionTitle({ children }: { children: ReactNode }) {
+const GENDER_LABELS: Record<string, string> = { boy: 'בנים', girl: 'בנות', unisex: 'יוניסקס' }
+
+function HeartBowIcon() {
   return (
-    <h2 className="mb-4 flex items-center justify-center gap-3 text-xl font-light text-[#4A4A4A] sm:text-2xl">
-      <Plus className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
-      {children}
-      <Plus className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
-    </h2>
+    <svg viewBox="0 0 64 56" className="mx-auto mb-3 h-16 w-16 text-[#A27A5C]" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+      <path d="M32 52S5 36 5 18C5 10 11 4 18.5 4 24.5 4 29 8 32 13c3-5 7.5-9 13.5-9C53 4 59 10 59 18c0 18-27 34-27 34z" />
+      <path d="M6 24h52M6 28h52" />
+      <path d="M32 26c-4-6-11-8-12-4s7 5 12 4zm0 0c4-6 11-8 12-4s-7 5-12 4zm0 0l-6 10m6-10l6 10" />
+    </svg>
   )
+}
+
+function usePurchasedItems(storageKey: string) {
+  const [checked, setChecked] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(storageKey) || '[]') as string[]
+    } catch {
+      return []
+    }
+  })
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(checked))
+  }, [checked, storageKey])
+
+  const toggle = (name: string) =>
+    setChecked((current) =>
+      current.includes(name) ? current.filter((item) => item !== name) : [...current, name],
+    )
+
+  return { checked, toggle }
 }
 
 export function PackageDetailPage() {
@@ -51,16 +74,17 @@ export function PackageDetailPage() {
   const isPurchased = pkg ? hasPurchased(user, pkg.id) : false
   const justPurchased = searchParams.get('purchased') === 'true'
   const childName = searchParams.get('childName') || ''
-  const childTheme = searchParams.get('theme') || ''
   const childColorPreference = searchParams.get('colorPreference') || ''
   const allUserChildren = user?.children || []
   const allChildren = pkg ? getChildrenForPackage(user, pkg.id) : []
   const selectedChild = allChildren[selectedChildIndex]
   const displayName = selectedChild?.name || childName
-  const displayTheme = selectedChild?.theme || childTheme
   const displayColors = selectedChild?.colorPreference || childColorPreference
   const content = pkg ? getPackageContent(pkg.id) : null
   const colorScale = getColorScaleForPreference(displayColors)
+  const { checked, toggle } = usePurchasedItems(
+    `petite-purchased-items:${user?.id ?? ''}:${packageId ?? ''}:${displayName}`,
+  )
 
   useEffect(() => {
     setSelectedChildIndex(0)
@@ -108,224 +132,221 @@ export function PackageDetailPage() {
     setSelectedChildIndex(newIndex)
   }
 
+  const hasSiblings = allUserChildren.length > 1
+  const titleParts = [
+    selectedChild?.theme ? `חבילת ${selectedChild.theme}` : pkg.name,
+    selectedChild?.gender ? GENDER_LABELS[selectedChild.gender] : '',
+    displayColors ? colorScale.name : '',
+  ].filter(Boolean)
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBFAF8]">
       <Header />
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-10 flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/account')}
-            className="inline-flex items-center gap-2 rounded-full bg-[#3F3A36] px-5 py-2.5 text-sm text-white transition-colors hover:bg-[#2F2B28]"
-          >
-            <ChevronRight className="h-4 w-4" />
-            חזרה לחשבון
-          </button>
-
-          {allUserChildren.length > 1 ? (
-            <div className="flex items-center gap-2 text-sm text-[#8B8B8B]">
-              <button
-                type="button"
-                onClick={() => goToSibling(-1)}
-                className="rounded-full p-1 text-[#C4B8A8] hover:text-[#4A4A4A]"
-                aria-label="חבילה קודמת"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <span>עבור בין החבילות של הילדים</span>
-              <button
-                type="button"
-                onClick={() => goToSibling(1)}
-                className="rounded-full p-1 text-[#C4B8A8] hover:text-[#4A4A4A]"
-                aria-label="חבילה הבאה"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-[#B5B0A8]">עבור בין החבילות של הילדים</p>
-          )}
-        </div>
-
-        <div className="mb-10 text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#EDE8E1]">
-            <Gift className="h-8 w-8 text-[#C4B8A8]" strokeWidth={1.25} />
+      <div className="mx-auto max-w-[820px] space-y-5 px-4 py-6 sm:px-6">
+        <section className="flex items-center justify-between gap-4 rounded-md border border-[#EEE8E1] bg-[#F7F4F0] px-5 py-3">
+          <div>
+            <h2 className="text-lg font-normal text-[#2F2B28]">בחרי חבילה</h2>
+            <p className="text-[12px] text-[#5A544E]">עברי בין החבילות של הילדים השונים</p>
           </div>
-          <h1 className="mb-3 text-3xl font-light text-[#4A4A4A] sm:text-4xl">{pkg.name}</h1>
-          <p className="mx-auto max-w-xl text-sm leading-relaxed text-[#8B8B8B] sm:text-base">
-            {pkg.description}
-            {displayName ? ` מותאם אישית עבור ${displayName}` : ''}.
-            {displayTheme ? ` נושא: ${displayTheme}.` : ''}
-          </p>
-        </div>
+          <div className="flex items-center gap-2 rounded-lg bg-[#93603A] px-3 py-1.5 text-white shadow-[0_2px_6px_rgba(90,55,30,0.25)]">
+            {hasSiblings && (
+              <button type="button" onClick={() => goToSibling(-1)} aria-label="חבילה קודמת" className="p-0.5 hover:opacity-80">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+            <span className="px-3 text-center leading-tight">
+              <span className="block text-[11px] text-white/85">החבילה של</span>
+              <span className="block text-base">{displayName || 'הילד/ה'}</span>
+            </span>
+            {hasSiblings && (
+              <button type="button" onClick={() => goToSibling(1)} aria-label="חבילה הבאה" className="p-0.5 hover:opacity-80">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </section>
 
-        <div className="mb-12 overflow-hidden rounded-2xl bg-[#F7F4F0]">
+        <section className="flex items-center justify-between gap-5 rounded-md bg-[#F3EEE9] px-5 py-6 sm:px-8">
+          <div className="min-w-0">
+            <h1 className="mb-2 flex flex-wrap items-center gap-2 text-xl font-normal text-[#2F2B28] sm:text-2xl">
+              {titleParts.map((part, index) => (
+                <span key={part} className="flex items-center gap-2">
+                  {index > 0 && <Sparkle className="h-3 w-3 text-[#C9A991]" />}
+                  {part}
+                </span>
+              ))}
+            </h1>
+            <p className="mb-1.5 text-[13px] text-[#3C3834]">{pkg.description}</p>
+            {displayName && (
+              <p className="text-lg text-[#B39A86]">מותאם אישית עבור: {displayName}</p>
+            )}
+          </div>
+          <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-white sm:h-28 sm:w-28">
+            <Gift className="h-12 w-12 text-[#8A6A50]" strokeWidth={1} />
+          </span>
+        </section>
+
+        <section className="rounded-md border border-[#9C9288] bg-white p-3">
           {content.heroImage ? (
             <img
               src={content.heroImage}
               alt={`תצוגת חבילה ${pkg.name}`}
-              className="aspect-[16/10] w-full object-cover"
+              className="aspect-[16/10] w-full rounded-sm object-cover"
             />
           ) : (
-            <div className="flex aspect-[16/10] items-center justify-center px-6 text-center text-sm text-[#B5A99A]">
+            <div className="flex aspect-[16/10] items-center justify-center bg-[#F7F4F0] px-6 text-center text-sm text-[#B5A99A]">
               תמונות עיצוב החבילה יתווספו בקרוב
             </div>
           )}
-        </div>
-
-        {content.galleryImages.length > 0 && (
-          <div className="mb-12 grid grid-cols-3 gap-3">
-            {content.galleryImages.map((image) => (
-              <img
-                key={image}
-                src={image}
-                alt=""
-                className="aspect-square rounded-xl object-cover"
-              />
-            ))}
+          {content.galleryImages.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              {content.galleryImages.map((image) => (
+                <img key={image} src={image} alt="" className="aspect-square rounded-sm object-cover" />
+              ))}
+            </div>
+          )}
+          <div className="px-2 pb-2 pt-3">
+            <h2 className="mb-1 flex items-center gap-2 text-xl font-normal text-[#2F2B28]">
+              <Sparkle className="h-3.5 w-3.5 text-[#C9A991]" />
+              כך הכל מתחבר יחד
+            </h2>
+            <p className="text-[13px] leading-6 text-[#3C3834]">
+              ההמחשה מציגה איך הגוונים והפריטים שבחבילה משתלבים לעיצוב שלם. הסידור הוא הצעה אחת
+              ליישום, וניתן להתאים אותו למבנה ולמידות החדר שלכם בקלות. בהמשך תמצאו גם טיפים שיעזרו
+              לכם בהתאמה.
+            </p>
           </div>
-        )}
-
-        <section className="mb-14 text-center">
-          <SectionTitle>איך להתאים</SectionTitle>
-          <p className="mx-auto max-w-2xl text-sm leading-7 text-[#8B8B8B]">
-            הסידור והצבעה ליישום, והפריטים נבחרו כדי להשלים את ההדמיה.
-            השתמשו בפלטת הגוונים וברשימת הקניות כדי לשחזר את המראה בחדר.
-          </p>
         </section>
 
-        <section className="mb-14">
-          <SectionTitle>פלטת {colorScale.name}</SectionTitle>
-          <div className="flex items-start justify-center gap-3 sm:gap-8">
+        <section className="rounded-md bg-white px-4 py-5 sm:px-6">
+          <h2 className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xl font-medium text-[#2F2B28]">
+            <span className="flex items-center gap-2">
+              <Palette className="h-5 w-5" strokeWidth={1.4} />
+              פלטת גוונים
+            </span>
+            <span className="flex items-center gap-1.5 text-[15px] font-normal text-[#3C3834]">
+              סקלה נבחרת
+              <Sparkle className="h-3 w-3 text-[#C9A991]" />
+              {colorScale.name}
+            </span>
+          </h2>
+          <div className="grid grid-cols-3 gap-y-6 sm:grid-cols-6">
             {colorScale.colors.map((color) => (
-              <div
-                key={`${color.roleLabel}-${color.name}`}
-                className="flex min-w-0 flex-1 max-w-[110px] flex-col items-center text-center"
-              >
+              <div key={`${color.roleLabel}-${color.name}`} className="flex flex-col items-center text-center">
                 <div
-                  className="mb-3 h-11 w-11 rounded-full border border-[#EDE8E1] sm:h-14 sm:w-14"
+                  className="mb-3 h-14 w-14 rounded-full sm:h-16 sm:w-16"
                   style={{ backgroundColor: color.hex }}
                 />
-                <p className="text-[11px] leading-tight text-[#4A4A4A] sm:text-xs">
-                  {color.roleLabel}
-                </p>
-                <p className="text-[11px] leading-tight text-[#8B8B8B] sm:text-xs">{color.name}</p>
-                {color.code && (
-                  <p className="mt-0.5 font-mono text-[10px] text-[#B5B0A8]">{color.code}</p>
-                )}
+                <p className="text-[13px] leading-tight text-[#2F2B28]">{color.roleLabel}</p>
+                <p className="text-[13px] leading-tight text-[#2F2B28]">{color.name}</p>
+                {color.code && <p className="mt-0.5 text-[11px] text-[#8B8B8B]">{color.code}</p>}
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mb-16">
-          <SectionTitle>רשימת קניות ישירה</SectionTitle>
-          <p className="mx-auto mb-8 max-w-2xl text-center text-sm leading-7 text-[#8B8B8B]">
-            כל הפריטים שנבחרו עבור {displayName || 'הילד/ה שלך'} נמצאים כאן בקליק אחד.
-            במידה ופריט אזל מ-AliExpress, חפשו תמונה זהה או היעזרו במדריך שבאזור האישי.
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-xl font-normal text-[#2F2B28]">
+            <ShoppingBag className="h-5 w-5" strokeWidth={1.4} />
+            רשימת קניות עם קישורים ישירים
+          </h2>
+          <p className="mb-6 rounded-md border border-[#E7E0D8] bg-[#F5F2EE] px-4 py-3 text-[12px] leading-6 text-[#3C3834]">
+            לינק לא זמין? העתיקו את תמונת המוצר מהרשימה והדביקו אותה בחיפוש לפי תמונה ב-AliExpress - כדי
+            למצוא את הפריט או חלופה דומה.
           </p>
 
           {content.shoppingCategories.length === 0 ? (
-            <p className="text-center text-sm text-[#8B8B8B]">
-              רשימת הקנייה לנושא זה תתווסף בקרוב.
-            </p>
+            <p className="text-center text-sm text-[#8B8B8B]">רשימת הקנייה לנושא זה תתווסף בקרוב.</p>
           ) : (
             <div className="space-y-8">
-              {content.shoppingCategories.map((category) => (
+              {content.shoppingCategories.map((category, categoryIndex) => (
                 <div key={category.category}>
-                  <h3 className="mb-4 text-center text-lg font-light text-[#4A4A4A]">
+                  <h3 className="mb-3 flex flex-wrap items-baseline gap-x-3 text-2xl font-normal text-[#2F2B28]">
                     {category.category}
+                    {categoryIndex === 0 && (
+                      <span className="text-sm text-[#5A544E]">סמנו V לצד הפריטים שרכשתם למעקב נוח</span>
+                    )}
                   </h3>
-                  <div className="divide-y divide-[#F0EBE4]">
-                    {category.items.map((item) => (
-                      <div key={item.name} className="flex items-center gap-4 py-5">
-                        <ProductImage
-                          src={item.image}
-                          alt={item.name}
-                          className="h-20 w-20 flex-shrink-0 rounded-xl border border-[#EDE8E1] bg-white object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="mb-1 text-[#4A4A4A]">{item.name}</p>
-                          {item.notes && (
-                            <p className="text-sm leading-relaxed text-[#8B8B8B]">{item.notes}</p>
-                          )}
+                  <div className="space-y-3">
+                    {category.items.map((item) => {
+                      const isChecked = checked.includes(item.name)
+                      return (
+                        <div key={item.name} className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={isChecked}
+                            aria-label={`סימון ${item.name} כנרכש`}
+                            onClick={() => toggle(item.name)}
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center border-[1.5px] ${
+                              isChecked ? 'border-[#93603A] bg-[#93603A] text-white' : 'border-[#93603A] bg-white'
+                            }`}
+                          >
+                            {isChecked && <Check className="h-3.5 w-3.5" strokeWidth={2.5} />}
+                          </button>
+                          <div className="flex min-w-0 flex-1 items-center gap-4 rounded-md bg-[#F5F2EE] p-3 sm:p-4">
+                            <ProductImage
+                              src={item.image}
+                              alt={item.name}
+                              className="h-20 w-20 shrink-0 rounded-sm bg-white object-cover sm:h-24 sm:w-24"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className={`mb-1 text-[15px] font-medium text-[#2F2B28] ${isChecked ? 'line-through opacity-60' : ''}`}>
+                                {item.name}
+                              </p>
+                              {item.notes && <p className="text-[13px] leading-relaxed text-[#5A544E]">{item.notes}</p>}
+                            </div>
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`קנייה: ${item.name}`}
+                              className="inline-flex shrink-0 items-center gap-2 rounded-md bg-[#C4AE9C] px-4 py-2.5 text-sm text-white transition-colors hover:bg-[#B39A86] sm:px-7"
+                            >
+                              קנייה
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
                         </div>
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`קנייה: ${item.name}`}
-                          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-[#E4DDD3] text-[#6B6B6B] transition-colors hover:border-[#C4B8A8] hover:text-[#4A4A4A]"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          <p className="mt-6 flex items-center gap-1.5 rounded-md border border-[#EEE5DC] bg-[#FBF7F3] px-4 py-2.5 text-[12px] text-[#3C3834]">
+            <span className="text-[#B39A86]">כדאי לדעת</span>
+            <Sparkle className="h-2.5 w-2.5 text-[#C9A991]" />
+            חלק מהקישורים למוצרים עשויים לתמוך ב-Petite Dreams, ללא עלות נוספת עבורכם.
+          </p>
         </section>
 
-        <section className="mb-16 border-t border-[#F0EBE4] pt-12">
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-start sm:text-right">
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-[#EDE8E1]">
-              <Home className="h-6 w-6 text-[#C4B8A8]" strokeWidth={1.5} />
-            </div>
-            <div className="flex-1">
-              <h2 className="mb-2 text-xl font-light text-[#4A4A4A]">מעבר לסטיילינג: יסודות החדר</h2>
-              <p className="mb-4 text-sm leading-7 text-[#8B8B8B]">
-                כדי שהעיצוב החדש ייראה במיטבו, חשוב שהתשתית תהיה נכונה. אם אתם שוקלים להחליף את
-                המיטה, הארון או שולחן הכתיבה, כל הדגשים המקצועיים מחכים באזור האישי.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('/account')}
-                className="text-sm text-[#8B7340] hover:underline"
-              >
-                אל ה-Furniture Masterclass
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-6 pt-4">
-          <h2 className="mb-3 flex items-center gap-2 text-xl font-light text-[#4A4A4A] sm:text-2xl">
-            <Upload className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.5} />
-            שיתוף התוצאות שלך
+        <section className="rounded-md border border-[#ECE6DF] bg-white px-5 py-6 sm:px-6">
+          <h2 className="mb-3 flex items-center gap-2 text-xl font-normal text-[#2F2B28]">
+            <Upload className="h-5 w-5" strokeWidth={1.4} />
+            שיתוף התוצאות שלכם
           </h2>
-          <p className="mb-8 text-sm leading-7 text-[#8B8B8B]">
-            נשמח לראות את החדר שיצרת! העלי תמונות לפני ואחרי ושתפי את היצירה שלך.
+          <p className="mb-6 text-[13px] leading-7 text-[#3C3834]">
+            נשמח לראות את החדר שיצרתם! העלו תמונות לפני ואחרי ושתפו את היצירה שלכם.
           </p>
           {!photosUploaded ? (
             <div>
               <div className="mb-5 grid gap-4 md:grid-cols-2">
                 {[
-                  {
-                    id: 'before-image',
-                    label: 'תמונה לפני',
-                    icon: Camera,
-                    file: beforeImage,
-                    setFile: setBeforeImage,
-                  },
-                  {
-                    id: 'after-image',
-                    label: 'תמונה אחרי',
-                    icon: Sparkles,
-                    file: afterImage,
-                    setFile: setAfterImage,
-                  },
+                  { id: 'before-image', label: 'תמונה לפני', icon: Camera, file: beforeImage, setFile: setBeforeImage },
+                  { id: 'after-image', label: 'תמונה אחרי', icon: Sparkles, file: afterImage, setFile: setAfterImage },
                 ].map(({ id, label, icon: Icon, file, setFile }) => (
                   <div key={id}>
-                    <div className="mb-2 flex items-center gap-2 text-sm text-[#8B8B8B]">
-                      <Icon className="h-4 w-4" strokeWidth={1.5} />
+                    <div className="mb-2 flex items-center gap-2 text-[12px] text-[#3C3834]">
                       {label}
+                      <Icon className="h-5 w-5 text-[#A89888]" strokeWidth={1.3} />
                     </div>
                     <label
                       htmlFor={id}
-                      className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#E4DDD3] bg-[#FBF9F6] px-6 py-10 text-center"
+                      className="flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-sm border border-dashed border-[#D9C6B5] bg-[#F8F5F2] px-6 py-8 text-center"
                     >
                       <input
                         type="file"
@@ -338,29 +359,29 @@ export function PackageDetailPage() {
                         <>
                           <Check className="mb-3 h-7 w-7 text-[#7BA05B]" />
                           <p className="text-sm text-[#7BA05B]">{file.name}</p>
-                          <p className="mt-1 text-xs text-[#B5B0A8]">לחצי להחלפה</p>
+                          <p className="mt-1 text-xs text-[#B5B0A8]">לחצו להחלפה</p>
                         </>
                       ) : (
                         <>
-                          <Upload className="mb-3 h-7 w-7 text-[#C4B8A8]" strokeWidth={1.25} />
-                          <p className="text-sm text-[#8B8B8B]">לחצי להעלאת תמונה</p>
-                          <p className="mt-1 text-xs text-[#B5B0A8]">JPG, PNG עד 10MB</p>
+                          <Upload className="mb-3 h-8 w-8 text-[#B39A86]" strokeWidth={1.3} />
+                          <p className="text-[13px] text-[#3C3834]">לחצו להעלאת תמונה</p>
+                          <p className="mt-1 text-[11px] text-[#5A544E]">JPG, PNG עד 10MB</p>
                         </>
                       )}
                     </label>
                   </div>
                 ))}
               </div>
-              <label className="mb-5 flex cursor-pointer items-center gap-3 rounded-2xl bg-[#F7F4F0] px-5 py-4 text-sm leading-6 text-[#8B8B8B]">
+              <label className="mb-5 flex cursor-pointer items-center gap-3 rounded-md border border-[#EEE8E1] bg-[#F8F5F2] px-5 py-4 text-[12px] leading-6 text-[#3C3834]">
                 <input
                   type="checkbox"
                   checked={allowSocialShare}
                   onChange={(e) => setAllowSocialShare(e.target.checked)}
-                  className="h-4 w-4 flex-shrink-0 accent-[#C4B8A8]"
+                  className="h-4 w-4 flex-shrink-0 accent-[#8A6A50]"
                 />
                 <span>
-                  אני מאשרת ל-PETITE DREAMS לשתף את התמונות שלי ברשתות החברתיות ובחומרי שיווק.
-                  התמונות עשויות לשמש כדוגמאות לעיצובים מוצלחים ולהשראה ללקוחות אחרים.
+                  אנחנו מאשרים ל-PETITE DREAMS לשתף את התמונות שלנו ברשתות החברתיות ובחומרי שיווק. התמונות
+                  עשויות לשמש כדוגמאות לעיצובים מוצלחים ולהשראה ללקוחות אחרים.
                 </span>
               </label>
               <button
@@ -369,41 +390,39 @@ export function PackageDetailPage() {
                   if (beforeImage && afterImage) {
                     setPhotosUploaded(true)
                   } else {
-                    alert('אנא העלי שתי תמונות - לפני ואחרי')
+                    alert('אנא העלו שתי תמונות - לפני ואחרי')
                   }
                 }}
-                className="w-full rounded-full bg-[#C4B8A8] py-3.5 text-sm text-white transition-colors hover:bg-[#B5A99A]"
+                className="w-full rounded-md bg-[#C4AE9C] py-3 text-sm text-white transition-colors hover:bg-[#B39A86]"
               >
                 שליחת תמונות
               </button>
             </div>
           ) : (
-            <div className="rounded-2xl bg-[#F7F4F0] py-10 text-center">
+            <div className="rounded-md bg-[#F7F4F0] py-10 text-center">
               <h3 className="mb-2 text-xl font-light text-[#4A4A4A]">תודה רבה על השיתוף!</h3>
               <p className="text-sm text-[#8B8B8B]">
                 {allowSocialShare
-                  ? 'נשמח לשתף את היצירה היפה שלך עם הקהילה שלנו.'
+                  ? 'נשמח לשתף את היצירה היפה שלכם עם הקהילה שלנו.'
                   : 'התמונות נשמרו לצפייה אישית בלבד.'}
               </p>
             </div>
           )}
         </section>
-      </div>
 
-      <section className="bg-[#F7F4F0] px-4 py-16 text-center">
-        <Heart className="mx-auto mb-5 h-9 w-9 text-[#C4B8A8]" strokeWidth={1.25} />
-        <h2 className="mb-4 text-2xl font-light text-[#4A4A4A] sm:text-3xl">עד הפעם הבאה!</h2>
-        <p className="mx-auto mb-2 max-w-xl text-sm leading-7 text-[#8B8B8B] sm:text-base">
-          ילדים גדלים, טעמים משתנים, וחדרים צריכים לגדול איתם.
-        </p>
-        <p className="mx-auto mb-6 max-w-xl text-sm leading-7 text-[#8B8B8B] sm:text-base">
-          נפגש כשהילד יגדל בעוד כמה שנים, כשיגיע הזמן להתאים את החדר מחדש בצורה מושלמת למי שהם
-          הפכו להיות.
-        </p>
-        <p className="text-sm text-[#C4B8A8]">
-          נזכיר לך בזמן הנכון - פשוט המשיכי ליהנות מהחדר היפה שלך!
-        </p>
-      </section>
+        <section className="rounded-md border border-[#E7E0D8] bg-[#F3F0ED] px-4 py-10 text-center">
+          <HeartBowIcon />
+          <h2 className="mb-4 text-2xl font-normal text-[#2F2B28]">עד הפעם הבאה!</h2>
+          <p className="mx-auto mb-3 max-w-xl text-[15px] leading-7 text-[#3C3834]">
+            ילדים גדלים, טעמים משתנים, וחדרים צריכים לגדול איתם.
+          </p>
+          <p className="mx-auto mb-6 max-w-xl text-[15px] leading-7 text-[#3C3834]">
+            נפגש כשהילד יגדל בעוד כמה שנים, כשיגיע הזמן להתאים את החדר מחדש בצורה מושלמת למי שהם הפכו
+            להיות.
+          </p>
+          <p className="text-lg text-[#C9B5A3]">נזכיר לכם בזמן הנכון - פשוט המשיכו ליהנות מהחדר היפה שלכם!</p>
+        </section>
+      </div>
     </div>
   )
 }

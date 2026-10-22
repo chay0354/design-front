@@ -91,7 +91,7 @@ export function getPackageStatusForChild(
   child: ChildInfo,
 ): { status: 'active' | 'expiring' | 'outdated'; message: string } {
   const yearsSincePurchase = getYearsSincePurchase(child.purchaseDate)
-  const currentChildAge = child.age + yearsSincePurchase
+  const currentChildAge = Math.floor(child.age + yearsSincePurchase)
 
   if (currentChildAge > pkg.ageRange[1]) {
     return {

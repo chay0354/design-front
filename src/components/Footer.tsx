@@ -21,10 +21,9 @@ export function Footer() {
               {[
                 ['/', 'בית'],
                 ['/about', 'אודות'],
-                ['/faq', 'שאלות נפוצות'],
                 ['/questionnaire', 'התחל'],
                 ['/account', 'החשבון שלי'],
-                ['/tips', 'טיפים ועצות'],
+                ['/faq', 'לפני שרוכשים'],
               ].map(([to, label]) => (
                 <li key={to}>
                   <Link to={to} className="text-sm text-[#6B6B6B] hover:text-[#C8B6A6]">
@@ -54,11 +53,11 @@ export function Footer() {
           <div>
             <h3 className="mb-4 font-normal text-[#4A4A4A]">יצירת קשר</h3>
             <a
-              href="mailto:info@petite-dreams.com"
+              href="mailto:studio@petite-dreams.com"
               className="flex items-center gap-2 text-sm text-[#6B6B6B] hover:text-[#C8B6A6]"
             >
               <Mail className="h-4 w-4" />
-              info@petite-dreams.com
+              studio@petite-dreams.com
             </a>
           </div>
         </div>

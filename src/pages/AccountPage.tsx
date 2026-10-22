@@ -3,16 +3,20 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import {
   Archive,
   Bed,
-  Calendar,
   Check,
   ChevronLeft,
+  CircleCheck,
   Gift,
+  Heart,
   Home,
   Lock,
   Pencil,
+  Play,
   Plus,
+  Ruler,
   Sparkles,
 } from 'lucide-react'
+import { BrushTitle, Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { PageLoading } from '../components/PageLoading'
 import { useAuth } from '../contexts/AuthContext'
@@ -27,7 +31,7 @@ import {
   type ChildInfo,
 } from '../utils/auth'
 
-const FALLBACK_ROOM = '/assets/hero-background.png'
+const FALLBACK_ROOM = '/assets/hero-background.jpg'
 
 type NoteTask = { id: string; text: string; done: boolean }
 type RoomNotesState = {
@@ -186,7 +190,7 @@ function RoomNotes({ userId }: { userId: string }) {
                   מקום למידות ולפרטים שחשוב לזכור.
                 </p>
               </div>
-              <Pencil className="h-5 w-5 shrink-0 text-[#C4B8A8]" strokeWidth={1.4} />
+              <Ruler className="h-6 w-6 shrink-0 text-[#A89888]" strokeWidth={1.3} />
             </div>
             <div className="rounded-xl border border-[#E7E0D6] bg-white px-4">
               {notes.measures.map((line, index) => (
@@ -217,13 +221,47 @@ function packagePreviewImage(content: PackageContent | null): string {
   return content.galleryImages.find(Boolean) ?? ''
 }
 
+const GENDER_LABELS: Record<string, string> = { boy: 'בנים', girl: 'בנות', unisex: 'יוניסקס' }
+
+function GrowCard({ onGrow }: { onGrow?: () => void }) {
+  return (
+    <aside className="flex flex-col items-center justify-center rounded-xl border border-[#EDE6DE] bg-[#F8F5F1] px-6 py-8 text-center">
+      <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_0_18px_rgba(201,169,145,0.35)]">
+        <Sparkle className="h-8 w-8 text-[#C9A991]" />
+      </span>
+      <h3 className="text-lg font-normal text-[#2F2B28]">המקום שלי כשאגדל</h3>
+      <div className="my-3 flex items-center gap-2" aria-hidden="true">
+        <span className="h-px w-8 bg-[#D9CBBE]" />
+        <Sparkle className="h-2.5 w-2.5 text-[#C9A991]" />
+        <span className="h-px w-8 bg-[#D9CBBE]" />
+      </div>
+      <p className="text-[13px] leading-7 text-[#4A4540]">
+        החדר גדל יחד איתם.
+        <br />
+        כשהגיע הזמן לשלב הבא,
+        <br />
+        יחכו כאן רעיונות וחבילות חדשות
+        <br />
+        שמתאימים לגיל החדש.
+      </p>
+      {onGrow ? (
+        <button type="button" onClick={onGrow} className="mt-5 text-sm italic text-[#B39A86] hover:underline">
+          נתראה בשלב הבא ♡
+        </button>
+      ) : (
+        <p className="mt-5 text-sm italic text-[#B39A86]">נתראה בשלב הבא ♡</p>
+      )}
+    </aside>
+  )
+}
+
 function PurchasedPackageRow({
   pkg,
   child,
   statusMessage,
   imageUrl,
   colors,
-  futureYear,
+  scaleName,
   showGrowCard,
   onOpen,
   onGrow,
@@ -233,81 +271,78 @@ function PurchasedPackageRow({
   statusMessage?: string
   imageUrl: string
   colors: string[]
-  futureYear?: number
+  scaleName?: string
   showGrowCard: boolean
   onOpen: () => void
   onGrow?: () => void
 }) {
+  const accent = colors[2] || '#B39A86'
+  const subtitle = [child?.gender ? GENDER_LABELS[child.gender] : '', scaleName].filter(Boolean)
+
   return (
-    <div className="grid items-center gap-8 lg:grid-cols-[220px_minmax(0,1.2fr)_minmax(260px,0.9fr)] lg:gap-10">
-      {showGrowCard ? (
-        <div className="text-center lg:text-right">
-          <Sparkles className="mx-auto mb-4 h-6 w-6 text-[#C4B8A8] lg:mx-0" strokeWidth={1.25} />
-          <h3 className="mb-3 text-lg font-light text-[#4A4A4A]">המקום שלי כשאגדל</h3>
-          <p className="mb-4 text-sm leading-7 text-[#8B8B8B]">
-            הבסיס האיכותי כבר כאן. כשיגיע הזמן להתאים את החדר, העדכון יחכה לכם בדיוק כאן.
-          </p>
-          {futureYear && (
-            <p className="flex items-center justify-center gap-2 text-xs text-[#C4B8A8] lg:justify-start">
-              <Calendar className="h-3.5 w-3.5" />
-              זמין ב-{futureYear}
+    <div className={`grid gap-4 ${showGrowCard ? 'lg:grid-cols-[minmax(0,1fr)_210px]' : ''}`}>
+      <article className="grid items-center gap-6 rounded-xl border border-[#EDE6DE] bg-white p-3 shadow-[0_4px_18px_rgba(120,100,80,0.05)] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
+        <div className="px-3 py-2 sm:px-5">
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-md bg-[#F3EEE8] px-2.5 py-1 text-[11px] text-[#4A4540]">
+            <CircleCheck className="h-3.5 w-3.5 text-[#A89888]" strokeWidth={1.5} />
+            {child
+              ? `מושלם עבור ${child.name}${child.age ? ` (גיל ${child.age})` : ''}`
+              : statusMessage || 'חבילה פעילה'}
+          </span>
+          <h3 className="mb-1 text-2xl font-normal text-[#2F2B28] sm:text-[1.7rem]">
+            {child?.theme ? `חבילת ${child.theme}` : pkg.name}
+          </h3>
+          {subtitle.length > 0 && (
+            <p
+              className="mb-4 flex items-center gap-1.5 text-base"
+              style={{ color: `color-mix(in srgb, ${accent} 75%, #6B4F3A)` }}
+            >
+              {subtitle.map((part, index) => (
+                <span key={part} className="flex items-center gap-1.5">
+                  {index > 0 && <Sparkle className="h-2.5 w-2.5" />}
+                  {part}
+                </span>
+              ))}
             </p>
           )}
-          {onGrow && (
-            <button
-              type="button"
-              onClick={onGrow}
-              className="mt-3 text-sm text-[#8B7340] hover:underline"
-            >
-              כבר הגיע הזמן?
-            </button>
-          )}
+          <p className="mb-6 text-[13px] leading-7 text-[#4A4540]">{pkg.description}</p>
+          <div className="mb-5 flex flex-wrap gap-3">
+            {colors.slice(0, 5).map((color) => (
+              <div
+                key={color}
+                className="h-8 w-8 rounded-full border border-[#EDE8E1]"
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="mb-3 w-full rounded-md py-2.5 text-sm text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: `color-mix(in srgb, ${accent} 80%, #8A7360)` }}
+          >
+            הצגת חבילה מלאה
+          </button>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="mx-auto flex items-center gap-1 text-[13px] text-[#A27A5C] hover:text-[#6B4F3A]"
+          >
+            מה כוללת החבילה?
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
         </div>
-      ) : (
-        <div className="hidden lg:block" />
-      )}
 
-      <div className="overflow-hidden rounded-2xl bg-[#F7F4F0]">
-        <img
-          src={imageUrl || FALLBACK_ROOM}
-          alt={`תצוגת ${pkg.name}`}
-          className="aspect-[5/4] w-full object-cover"
-        />
-      </div>
+        <div className="overflow-hidden rounded-md bg-[#F7F4F0]">
+          <img
+            src={imageUrl || FALLBACK_ROOM}
+            alt={`תצוגת ${pkg.name}`}
+            className="aspect-[6/5] w-full object-cover"
+          />
+        </div>
+      </article>
 
-      <div>
-        <div className="mb-3 flex items-center gap-2 text-xs text-[#8B8B8B]">
-          <Check className="h-3.5 w-3.5 text-[#C4B8A8]" />
-          {child
-            ? `מותאם עבור ${child.name}${child.age ? ` (גיל ${child.age})` : ''}`
-            : statusMessage || 'חבילה פעילה'}
-        </div>
-        <h3 className="mb-2 text-2xl font-light text-[#4A4A4A] sm:text-3xl">{pkg.name}</h3>
-        <p className="mb-5 text-sm leading-7 text-[#8B8B8B]">{pkg.description}</p>
-        <div className="mb-6 flex flex-wrap gap-2">
-          {colors.slice(0, 6).map((color) => (
-            <div
-              key={color}
-              className="h-6 w-6 rounded-full border border-[#EDE8E1]"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="mb-3 w-full rounded-full bg-[#C4B8A8] py-2.5 text-sm text-white transition-colors hover:bg-[#B5A99A]"
-        >
-          הצגת חבילה מלאה
-        </button>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="text-sm text-[#8B8B8B] hover:text-[#4A4A4A]"
-        >
-          מה כלול בחבילה?
-        </button>
-      </div>
+      {showGrowCard && <GrowCard onGrow={onGrow} />}
     </div>
   )
 }
@@ -341,6 +376,9 @@ export function AccountPage() {
     const fromScale = scale.colors.map((c) => c.hex)
     return fromScale.length > 0 ? fromScale : pkg.colorPalette
   }
+
+  const scaleNameFor = (child?: ChildInfo) =>
+    child?.colorPreference ? getColorScaleForPreference(child.colorPreference).name : undefined
 
   const packagesByChild = new Map<string, typeof childPackageEntries>()
   childPackageEntries.forEach((entry) => {
@@ -390,7 +428,7 @@ export function AccountPage() {
           ) : (
             <>
               {orphanPackages.length > 0 && (
-                <div className="mb-16 space-y-16">
+                <div className="mb-4 space-y-4">
                   {orphanPackages.map((pkg) => (
                     <PurchasedPackageRow
                       key={pkg.id}
@@ -413,11 +451,9 @@ export function AccountPage() {
 
                 if (activeEntries.length === 0) return null
 
-                const futureYear = new Date().getFullYear() + Math.max(1, 7 - child.age)
-
                 return (
-                  <div key={child.name} className="mb-16 space-y-16">
-                    {activeEntries.map((entry, index) => {
+                  <div key={child.name} className="mb-4 space-y-4">
+                    {activeEntries.map((entry) => {
                       const { pkg, child: entryChild } = entry
                       const status = getPackageStatus(pkg, entryChild)
 
@@ -429,8 +465,8 @@ export function AccountPage() {
                             statusMessage={status.message}
                             imageUrl={packagePreviewImage(getPackageContent(pkg.id))}
                             colors={colorsFor(pkg, entryChild)}
-                            futureYear={futureYear}
-                            showGrowCard={index === 0}
+                            scaleName={scaleNameFor(entryChild)}
+                            showGrowCard
                             onOpen={() => navigate(`/package/${pkg.id}`)}
                             onGrow={
                               status.status === 'expiring'
@@ -445,8 +481,9 @@ export function AccountPage() {
                 )
               })}
 
-              <p className="text-center text-xs leading-6 text-[#B5B0A8]">
-                כל חבילה כוללת פריטים נבחרים, קישורי רכישה והנחיות עיצוב מלאות.
+              <p className="flex items-center justify-center gap-3 rounded-lg border border-[#EDE6DE] bg-[#F8F5F1] px-4 py-3 text-center text-sm text-[#3C3834]">
+                <Heart className="h-5 w-5 shrink-0 text-[#C9A991]" strokeWidth={1.3} />
+                כל חבילה כוללת פריטים שנבחרו בקפידה, קישורים לרכישה והנחיות לעיצוב שמתאימים לכם.
               </p>
 
               {childPackageEntries.some(
@@ -473,6 +510,7 @@ export function AccountPage() {
                           statusMessage="ארכיון"
                           imageUrl={packagePreviewImage(getPackageContent(pkg.id))}
                           colors={colorsFor(pkg, entryChild)}
+                          scaleName={scaleNameFor(entryChild)}
                           showGrowCard={false}
                           onOpen={() => navigate(`/package/${pkg.id}`)}
                           onGrow={() => navigate('/questionnaire')}
@@ -486,21 +524,20 @@ export function AccountPage() {
           )}
         </section>
 
-        <section className="mb-16 rounded-2xl bg-[#BEB2A4] px-6 py-7 sm:px-10">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <div className="flex items-center gap-4 text-[#3F3A36]">
-              <Gift className="h-9 w-9 shrink-0 text-[#F7F3EE]" strokeWidth={1.25} />
-              <div>
-                <h3 className="text-lg font-medium">הנחה לאחים</h3>
-                <p className="mt-1 text-sm text-[#4A433C]">
-                  רוצה לעצב חדר לילד נוסף? קבלי 20% הנחה על החבילה הבאה
-                </p>
-              </div>
+        <p className="mb-2 text-base text-[#5A544E]">הצעות מיוחדות</p>
+        <section className="mb-16 rounded-md bg-gradient-to-b from-[#BCAA98] to-[#B09C88] px-6 py-8 sm:px-10">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row md:items-end">
+            <div className="text-center text-white md:text-right">
+              <Gift className="mx-auto mb-2 h-8 w-8 md:mx-0" strokeWidth={1.25} />
+              <h3 className="text-lg font-normal">הנחה לאחים</h3>
+              <p className="mt-1 text-sm text-white/90">
+                רוצה לעצב חדר לילד נוסף? קבלי 20% הנחה על החבילה הבאה
+              </p>
             </div>
             <button
               type="button"
               onClick={() => navigate('/questionnaire')}
-              className="rounded-lg bg-white px-5 py-2.5 text-sm text-[#5C564F] hover:bg-[#F7F3EE]"
+              className="rounded-sm bg-white px-6 py-2 text-[13px] text-[#8A7A6B] hover:bg-[#F7F3EE]"
             >
               הוספת חבילה נוספת
             </button>
@@ -509,10 +546,10 @@ export function AccountPage() {
 
         <section className="mb-20">
           <div className="mb-8 text-center">
-            <h2 className="mx-auto mb-3 w-fit rounded-full bg-[#E6DDD2] px-6 py-2 text-lg font-medium text-[#3F3A36] md:text-2xl">
+            <BrushTitle sparkles={false} className="mb-2 text-xl sm:text-2xl">
               ארגז הכלים לביצוע מושלם
-            </h2>
-            <p className="text-sm text-[#8B8B8B]">הסברים קצרים ליישום החבילה בחדר</p>
+            </BrushTitle>
+            <p className="text-base text-[#5A544E] sm:text-lg">כל מה שצריך כדי ליישם את העיצוב נכון בחדר שלכם</p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
@@ -520,34 +557,34 @@ export function AccountPage() {
               {
                 icon: '/assets/icons/checklist.png',
                 title: 'צ׳ק ליסט לביצוע מדויק',
-                subtitle: 'מה להכין לפני שמתחילים',
-                text: 'רשימה קצרה לפני צביעה, חיפוי קיר והתקנות, לפי החבילה שלכם.',
+                subtitle: 'כל מה שכדאי להכין לפני שמתחילים',
+                text: 'שלבים וטיפים ליישום נקי ומדויק של צבע או חיפוי קיר דקורטיבי, בהתאם לחבילה שבחרתם.',
               },
               {
                 icon: '/assets/icons/designed-corners.png',
                 title: 'יוצרים פינות מעוצבות',
-                subtitle: 'איך לסדר את הפינות בחדר',
-                text: 'איפה לשים מיטה, מדפים ופינת משחק כך שהחדר יישאר נוח.',
+                subtitle: 'מתאימים את העיצוב לחלל שלכם',
+                text: 'איך למקם ולשלב את האלמנטים בחדר ליצירת פינות הרמוניות ונעימות.',
               },
               {
                 icon: '/assets/icons/center-wall.png',
                 title: 'הקיר המרכזי',
-                subtitle: 'הקיר שעליו שמים את הדגש',
-                text: 'איך לבחור קיר אחד לצבע, לתמונות או לחיפוי, ושאר החדר נשאר שקט.',
+                subtitle: 'בוחרים את מוקד העיצוב בחדר',
+                text: 'איך לבחור את הקיר הנכון לצבע, חיפוי ותמונות וליצור מוקד עיצובי בחדר.',
               },
             ].map((guide) => (
               <article
                 key={guide.title}
-                className="flex flex-col rounded-2xl border border-[#E7E0D6] bg-white px-6 py-7 text-center"
+                className="flex flex-col rounded-lg border border-[#E3D6C9] bg-white px-6 py-7 text-center"
               >
-                <h3 className="text-lg font-medium text-[#3F3A36]">{guide.title}</h3>
-                <p className="mt-1 text-sm text-[#8B8B8B]">{guide.subtitle}</p>
+                <h3 className="text-lg font-medium text-[#2F2B28]">{guide.title}</h3>
+                <p className="mt-1 text-[13px] text-[#4A4540]">{guide.subtitle}</p>
                 <img src={guide.icon} alt="" className="mx-auto my-6 h-24 w-auto object-contain" />
-                <p className="text-sm leading-7 text-[#8B8B8B]">{guide.text}</p>
+                <p className="text-[13px] leading-6 text-[#3C3834]">{guide.text}</p>
                 <button
                   type="button"
                   onClick={() => navigate('/tips')}
-                  className="mx-auto mt-6 inline-flex items-center gap-1 text-sm text-[#A89888] hover:text-[#6B645C]"
+                  className="mx-auto mt-6 inline-flex items-center gap-1 text-sm text-[#A27A5C] hover:text-[#6B4F3A]"
                 >
                   לקריאת המדריך
                   <ChevronLeft className="h-4 w-4" />
@@ -559,10 +596,12 @@ export function AccountPage() {
 
         <section className="mb-20">
           <div className="mb-8 text-center">
-            <h2 className="mx-auto mb-3 w-fit rounded-full bg-[#E6DDD2] px-6 py-2 text-lg font-medium text-[#3F3A36] md:text-2xl">
+            <BrushTitle sparkles={false} className="mb-2 text-xl sm:text-2xl">
               Furniture Masterclass | יסודות החדר
-            </h2>
-            <p className="text-sm text-[#8B8B8B]">טיפים לבחירת הרהיטים הגדולים בחדר</p>
+            </BrushTitle>
+            <p className="text-base text-[#5A544E] sm:text-lg">
+              טיפים מקצועיים לבחירת הרהיטים הגדולים שילוו אתכם שנים
+            </p>
           </div>
 
           <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
@@ -591,15 +630,22 @@ export function AccountPage() {
             ].map(({ id, icon: Icon, image, title, description }) => (
               <article
                 key={id}
-                className="flex flex-col rounded-[22px] border border-[#E7E0D6] bg-white p-3 text-center shadow-[0_8px_24px_rgba(90,70,40,0.04)]"
+                className="flex flex-col overflow-hidden rounded-md border border-[#ECE5DD] bg-white text-center shadow-[0_4px_14px_rgba(90,70,40,0.05)]"
               >
                 <button
                   type="button"
-                  className="relative block w-full overflow-hidden rounded-xl"
+                  className="relative block w-full overflow-hidden"
                   onClick={() => setPlayingVideo(playingVideo === id ? null : id)}
                 >
                   {playingVideo !== id ? (
-                    <img src={image} alt="" className="aspect-[2.3/1] w-full object-cover" />
+                    <>
+                      <img src={image} alt="" className="aspect-[2.3/1] w-full object-cover" />
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 shadow">
+                          <Play className="h-5 w-5 fill-[#3C3834] text-[#3C3834]" />
+                        </span>
+                      </span>
+                    </>
                   ) : (
                     <div className="flex aspect-[2.3/1] w-full items-center justify-center bg-[#3F3A36]/80">
                       <div className="p-6 text-center text-white">
@@ -610,19 +656,19 @@ export function AccountPage() {
                   )}
                 </button>
 
-                <div className="flex flex-1 flex-col px-2 pb-2 pt-4">
-                  <div className="mb-2 flex items-center justify-center gap-2">
-                    <h3 className="text-base font-medium text-[#3F3A36]">{title}</h3>
-                    <Icon className="h-5 w-5 text-[#C4B8A8]" strokeWidth={1.4} />
+                <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+                  <div className="mb-1 flex items-center justify-center gap-2">
+                    <h3 className="text-base font-normal text-[#2F2B28]">{title}</h3>
+                    <Icon className="h-5 w-5 text-[#C4A890]" strokeWidth={1.3} />
                   </div>
-                  <p className="mb-4 text-sm leading-relaxed text-[#8B8B8B]">{description}</p>
+                  <p className="mb-4 text-[13px] leading-6 text-[#3C3834]">{description}</p>
                   <button
                     type="button"
                     onClick={() => {
                       setPlayingVideo(playingVideo === id ? null : id)
                       scrollToMasterclass()
                     }}
-                    className="mx-auto mt-auto rounded-xl border border-[#E4D9CC] px-8 py-2 text-sm text-[#A89888] hover:bg-[#F7F3EE]"
+                    className="mx-auto mt-auto rounded-sm border border-[#D9C6B5] px-9 py-1.5 text-[13px] text-[#A27A5C] hover:bg-[#F7F3EE]"
                   >
                     {playingVideo === id ? 'סגור וידאו' : 'צפייה בשיעור'}
                   </button>

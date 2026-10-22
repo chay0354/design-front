@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  ArrowLeft,
-  ArrowRight,
-  Paintbrush,
-  Scroll,
-  User,
-  Users,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, Heart, Leaf, PaintRoller, User, Users } from 'lucide-react'
+import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { Slider } from '../components/ui/slider'
 import { useData } from '../contexts/DataContext'
@@ -94,20 +88,25 @@ function ThemePicker({
         נושאים מותאמים ל{ageGroup.label.toLowerCase()}
       </p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {themes.map((theme) => (
-          <button
-            key={theme.id}
-            type="button"
-            onClick={() => onChange(theme.name)}
-            className={`rounded-sm border-2 p-4 text-center transition-all ${
-              value === theme.name
-                ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-            }`}
-          >
-            {theme.name}
-          </button>
-        ))}
+        {themes.map((theme) => {
+          const isSelected = value === theme.name
+          return (
+            <button
+              key={theme.id}
+              type="button"
+              onClick={() => onChange(theme.name)}
+              className={`flex items-center justify-center gap-2.5 rounded-md border px-4 py-3.5 text-center text-[15px] text-[#4A4540] transition-all ${
+                isSelected
+                  ? 'border-[#D9CBBE] bg-[#F3EEE8] shadow-[0_2px_10px_rgba(168,138,114,0.12)]'
+                  : 'border-[#E3DBD2] bg-white hover:border-[#D4C4B0]'
+              }`}
+            >
+              {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
+              {theme.name}
+              {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -222,7 +221,6 @@ function ColorPalettePreview({
 }
 
 function ColorPicker({
-  childName,
   gender,
   age,
   theme,
@@ -242,16 +240,14 @@ function ColorPicker({
   )
 
   return (
-    <div>
-      <h2 className="mb-3 text-center text-3xl font-light leading-snug text-[#4A4A4A] sm:text-4xl">
-        איזה גוון וצבעים של {childName || 'הילד/ה'}?
+    <div className="-m-2 rounded-lg bg-[#F8F4EF] px-3 py-6 sm:-m-4 sm:px-8 sm:py-8">
+      <h2 className="mb-2 flex items-center justify-center gap-3 text-center text-2xl font-light leading-snug text-[#3C3834] sm:text-[1.9rem]">
+        <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
+        בחרי את סקלת הגוונים שלך
+        <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
       </h2>
-      <p className="mb-8 text-center text-sm text-[#8A8178] sm:text-base">
-        {theme
-          ? `סקלות צבע זמינות לנושא "${theme}"`
-          : 'בחרו את סקלת הצבעים שמרגישה נכון לחדר'}
-      </p>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-5">
+      <p className="mb-8 text-center text-sm text-[#7A726A] sm:text-base">סגנונות מותאמים לחלומות גדולים</p>
+      <div className="grid gap-4 md:grid-cols-2 md:gap-6">
         {options.map((pref) => {
           const isSelected = value === pref.name
           return (
@@ -259,26 +255,37 @@ function ColorPicker({
               key={pref.scaleId}
               type="button"
               onClick={() => onChange(pref.name)}
-              className={`rounded-2xl border bg-white px-5 py-6 text-center transition-all sm:px-7 sm:py-7 ${
+              className={`rounded-lg border bg-[#FDFBF9] px-4 pt-4 pb-5 text-center transition-all sm:px-3.5 ${
                 isSelected
-                  ? 'border-[#C4B8A8] shadow-[0_8px_24px_rgba(176,160,140,0.16)]'
-                  : 'border-[#E7E0D8] hover:border-[#D4C4B0]'
+                  ? 'border-[#C9B5A3] shadow-[0_6px_20px_rgba(168,138,114,0.2)] ring-1 ring-[#C9B5A3]'
+                  : 'border-[#E3DBD2] shadow-[0_2px_8px_rgba(120,100,80,0.06)] hover:border-[#D4C4B0]'
               }`}
             >
               <ColorPalettePreview swatches={pref.swatches} />
-              <div className="mt-4 flex items-center justify-center gap-2 sm:mt-5 sm:flex-col sm:gap-2">
+              <div className="mt-4 flex flex-col items-center gap-1.5">
                 <PaletteIcon scaleId={pref.scaleId} />
-                <h3 className="text-lg font-normal text-[#4A4A4A] sm:text-xl">{scaleTitle(pref.name)}</h3>
+                <h3 className="flex items-center gap-2 text-xl font-light text-[#3C3834] sm:text-[1.6rem]">
+                  {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
+                  {scaleTitle(pref.name)}
+                  {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
+                </h3>
               </div>
               {pref.benefit && (
-                <p className="mx-auto mt-2 max-w-xs text-sm font-light leading-7 text-[#8A8178]">
-                  {pref.benefit}
-                </p>
+                <p className="mx-auto mt-1.5 max-w-[17rem] text-[13px] leading-6 text-[#6F6760]">{pref.benefit}</p>
               )}
             </button>
           )
         })}
       </div>
+      <div className="mt-6 flex items-center gap-2" aria-hidden="true">
+        <span className="h-px flex-1 bg-[#E9E1D8]" />
+        <Heart className="h-3 w-3 text-[#B8A899]" strokeWidth={1.4} />
+        <span className="h-px flex-1 bg-[#E9E1D8]" />
+      </div>
+      <p className="mt-2 flex items-center justify-center gap-2 text-center text-[13px] text-[#5A544E]">
+        <Leaf className="h-4 w-4 shrink-0 text-[#B8AD9C]" strokeWidth={1.4} />
+        כל סקלת צבעים נבחרה בקפידה כדי ליצור חלל שמזין את הדמיון, מרגיע את הלב ומלווה את הילד להתפתחות.
+      </p>
     </div>
   )
 }
@@ -292,58 +299,68 @@ function WallDesignPicker({
   value: string
   onChange: (wallDesignOption: string) => void
 }) {
+  const options = [
+    {
+      value: 'covering',
+      title: 'חיפוי קיר דקורטיבי',
+      text: 'פתרון מעוצב ללא לכלוך של צבע, עם אפשרות להסרה בקלות.',
+      image: '/assets/wall-panel.jpg',
+      icon: <PanelIcon />,
+    },
+    {
+      value: 'paint',
+      title: 'קיר כוח בצביעה',
+      text: 'צביעת קיר אחד – עבודה פשוטה יחסית. בסיס על-זמני שמתאים לכל גיל.',
+      image: '/assets/wall-paint.jpg',
+      icon: <PaintRoller className="h-12 w-12" strokeWidth={1} />,
+    },
+  ]
+
   return (
     <div>
-      <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
+      <h2 className="mb-2 text-center text-2xl font-light text-[#3C3834] sm:text-[2rem]">
         איך תרצו לעצב את הקיר המרכזי של {childName}?
       </h2>
-      <p className="mb-6 text-[#6B6B6B]">בחר/י את האופציה המתאימה לחדר שלו/ה</p>
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => onChange('paint')}
-          className={`w-full rounded-sm border-2 p-6 text-right transition-all ${
-            value === 'paint'
-              ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-              : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="mb-3 inline-block rounded-sm bg-[#F9F7F4] px-4 py-2 text-xl font-normal text-[#4A3728]">
-                קיר כוח בצביעה
-              </h3>
-              <p className="text-sm text-[#6B6B6B]">
-                צביעת קיר אחד — עבודה פשוטה של כשעתיים, בסיס על-זמני שמתאים לכל גיל.
-              </p>
-            </div>
-            <Paintbrush className="h-12 w-12 shrink-0 text-[#C8B6A6]" strokeWidth={1.5} />
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChange('covering')}
-          className={`w-full rounded-sm border-2 p-6 text-right transition-all ${
-            value === 'covering'
-              ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-              : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="mb-3 inline-block rounded-sm bg-[#F9F7F4] px-4 py-2 text-xl font-normal text-[#4A3728]">
-                חיפוי קיר דקורטיבי
-              </h3>
-              <p className="text-sm text-[#6B6B6B]">
-                פתרון מעוצב ללא לכלוך של צבע, עם אפשרות להסרה בקלות.
-              </p>
-            </div>
-            <Scroll className="h-12 w-12 shrink-0 text-[#C8B6A6]" strokeWidth={1.5} />
-          </div>
-        </button>
+      <p className="mb-6 text-center text-sm text-[#6B6B6B]">בחר/י את האופציה המתאימה לחדר שלו/ה</p>
+      <div className="grid gap-5 sm:grid-cols-2">
+        {options.map((option) => {
+          const isSelected = value === option.value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={`overflow-hidden rounded-md border bg-white text-right transition-all ${
+                isSelected
+                  ? 'border-[#C9B5A3] shadow-[0_6px_20px_rgba(168,138,114,0.2)] ring-1 ring-[#C9B5A3]'
+                  : 'border-[#E3DBD2] hover:border-[#D4C4B0]'
+              }`}
+            >
+              <img src={option.image} alt="" className="aspect-[3/2] w-full object-cover" />
+              <div className="flex items-start justify-between gap-3 px-4 py-4">
+                <div>
+                  <h3 className="mb-1.5 flex items-center gap-2 text-lg font-medium text-[#3C3834] sm:text-xl">
+                    {option.title}
+                    {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
+                  </h3>
+                  <p className="text-[13px] leading-6 text-[#5A544E]">{option.text}</p>
+                </div>
+                <span className="shrink-0 text-[#C2A893]">{option.icon}</span>
+              </div>
+            </button>
+          )
+        })}
       </div>
     </div>
+  )
+}
+
+function PanelIcon() {
+  return (
+    <svg viewBox="0 0 40 40" className="h-12 w-12" fill="none" stroke="currentColor" strokeWidth="1">
+      <rect x="6" y="6" width="28" height="28" rx="1" />
+      <path d="M6 9h28M6 31h28M12 9v22M18 9v22M24 9v22M30 9v22" />
+    </svg>
   )
 }
 
@@ -504,17 +521,23 @@ export function QuestionnairePage() {
     <div className="min-h-screen bg-[#FDFCFB]">
       <Header />
 
-      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+      <div
+        className={`mx-auto px-4 py-12 sm:px-6 lg:px-8 ${
+          step === 6 || siblingStep?.stepType === 'wall' ? 'max-w-5xl' : 'max-w-3xl'
+        }`}
+      >
         <div className="mb-8">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-[#8B8B8B]">
               שלב {step} מתוך {totalSteps}
             </span>
-            <span className="text-sm text-[#8B8B8B]">
-              התקדמות {Math.round((step / totalSteps) * 100)}%
-            </span>
+            <span
+              aria-label={`${Math.round((step / totalSteps) * 100)}%`}
+              data-percent={`${Math.round((step / totalSteps) * 100)}%`}
+              className="text-sm text-[#8B8B8B] before:content-[attr(data-percent)]"
+            />
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[#F5F1ED]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#F0EBE5]">
             <div
               className="h-full bg-[#C8B6A6] transition-all duration-300"
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -528,7 +551,7 @@ export function QuestionnairePage() {
           )}
         </div>
 
-        <div className="rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm md:p-12">
+        <div className="rounded-md border border-[#EAE3DB] bg-white p-6 shadow-[0_2px_10px_rgba(120,100,80,0.05)] sm:p-8 md:p-10">
           {step === 1 && (
             <div>
               <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">מה שם הילד/ה שלך?</h2>

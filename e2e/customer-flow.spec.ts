@@ -14,7 +14,7 @@ async function next(page: Page) {
 test.describe.serial('customer flow', () => {
   test('public pages open from the landing site', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'עיצוב חדר ילדים בקלות' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'עיצוב חדר ילדים קסום בקלות' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'אני רוצה חדר מעוצב עכשיו' })).toBeVisible()
 
     await page.getByRole('link', { name: 'אודות' }).first().click()
@@ -24,15 +24,19 @@ test.describe.serial('customer flow', () => {
     await expect(page.getByRole('link', { name: 'לכל החבילות' })).toBeVisible()
     await expect(page.getByRole('img', { name: 'חדר ילדים מעוצב בגוונים חמים' })).toBeVisible()
 
-    await page.goto('/faq')
+    await page.getByRole('link', { name: 'לפני שרוכשים' }).first().click()
+    await expect(page).toHaveURL(/\/faq$/)
     await expect(page.getByRole('heading', { name: 'שאלות ותשובות' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'רכישה, מוצרים ומשלוחים' })).toBeVisible()
+    await page.getByRole('button', { name: 'מה בעצם מקבלים בחבילת העיצוב?' }).click()
+    await expect(page.getByText(/כבר עשינו עבורכם את עבודת החיפוש/)).toBeVisible()
 
     await page.goto('/terms')
-    await expect(page.getByRole('heading', { name: /תקנון שימוש/ })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'צבעים' })).toBeVisible()
-    await expect(page.getByText('פלטת גוונים מותאמת להשראה עבור העיצוב הנבחר')).toBeVisible()
-    await expect(page.getByText('קישורים ישירים למוצרים מומלצים')).toBeVisible()
-    await expect(page.getByText('חריגים שייבחנו')).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: /תקנון ותנאי שימוש/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '16. יצירת קשר' })).toBeVisible()
+    await expect(page.getByText('תשמ"א–1981', { exact: false })).toBeVisible()
+    await expect(page.getByText(/הייתי מבקשת מעו"ד/)).toHaveCount(0)
+    await expect(page.getByText('[חודש ושנה]')).toHaveCount(0)
     await expect(page.getByText('₪480')).toHaveCount(0)
 
     await page.goto('/privacy')
@@ -65,16 +69,17 @@ test.describe.serial('customer flow', () => {
     await chooseUnderHeading(page, /איזה נושא נועה/)
     await next(page)
 
-    await chooseUnderHeading(page, /איזה גוון וצבעים של נועה/)
+    await chooseUnderHeading(page, /בחרי את סקלת הגוונים שלך/)
     await next(page)
 
+    await expect(page.getByRole('heading', { name: /הקיר המרכזי של נועה/ })).toBeVisible()
     await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
     await next(page)
 
     await chooseUnderHeading(page, /איזה נושא אייר/)
     await next(page)
 
-    await chooseUnderHeading(page, /איזה גוון וצבעים של אייר/)
+    await chooseUnderHeading(page, /בחרי את סקלת הגוונים שלך/)
     await next(page)
 
     await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
@@ -121,8 +126,13 @@ test.describe.serial('customer flow', () => {
 
     await expect(page).toHaveURL(/\/account$/, { timeout: 20_000 })
     await expect(page.getByRole('button', { name: 'התנתק' })).toBeVisible()
-    await expect(page.getByText(/מותאם עבור נועה/)).toBeVisible()
-    await expect(page.getByText(/מותאם עבור אייר/)).toBeVisible()
+    await expect(page.getByText(/מושלם עבור נועה/)).toBeVisible()
+    await expect(page.getByText(/מושלם עבור אייר/)).toBeVisible()
+    await expect(page.getByText('המקום שלי כשאגדל').first()).toBeVisible()
+    await page.getByRole('button', { name: 'הצגת חבילה מלאה' }).first().click()
+    await expect(page.getByText('בחרי חבילה')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'עד הפעם הבאה!' })).toBeVisible()
+    await page.goBack()
     for (const heading of await page.locator('h2, h3').allTextContents()) {
       expect(heading).not.toContain('—')
     }
