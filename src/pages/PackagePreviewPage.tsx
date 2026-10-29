@@ -1,4 +1,5 @@
-import { Armchair, ArrowLeft, Baby, CheckCircle2, Lock } from 'lucide-react'
+import { useLayoutEffect } from 'react'
+import { Armchair, ArrowLeft, CheckCircle2, Lock, createLucideIcon } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BrushMark, Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
@@ -16,8 +17,16 @@ import {
   type QuestionnaireChild,
 } from '../utils/questionnaire'
 
+const Rug = createLucideIcon('rug', [
+  ['rect', { x: '4', y: '7', width: '16', height: '10', rx: '0.8' }],
+  ['path', { d: 'M7 7v10M17 7v10' }],
+  ['path', { d: 'M12 9.5 14.5 12 12 14.5 9.5 12z' }],
+  ['path', { d: 'M4 8.5H2M4 10.5H2M4 12.5H2M4 14.5H2M4 16H2' }],
+  ['path', { d: 'M20 8.5h2M20 10.5h2M20 12.5h2M20 14.5h2M20 16h2' }],
+])
+
 const PLACEHOLDER = '/assets/lock-preview.png'
-const balloonIcon = '/assets/balloon-icon.svg'
+const giftIcon = '/assets/gift-icon.png'
 
 function CollageTile({ src }: { src: string }) {
   return (
@@ -33,7 +42,11 @@ function CollageTile({ src }: { src: string }) {
 
 function TeaserGrid({ src }: { src: string }) {
   return (
-    <img src={src} alt="" className="aspect-square w-full object-contain" />
+    <img
+      src={src}
+      alt=""
+      className="aspect-square w-full object-cover lg:object-contain max-lg:h-[46svh] max-lg:aspect-auto"
+    />
   )
 }
 
@@ -119,8 +132,8 @@ function ChildPackageCard({
   )
 
   return (
-    <div className="grid items-start gap-10 lg:grid-cols-2 lg:grid-rows-[1fr_auto] lg:items-stretch lg:gap-x-16 lg:gap-y-4">
-      <div className="order-2 flex flex-col justify-between gap-5 font-[family-name:var(--font-family)] lg:order-1 lg:row-start-1 lg:min-h-0">
+    <div className="grid items-start gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-x-16 lg:gap-y-4">
+      <div className="order-2 flex flex-col justify-between gap-5 font-[family-name:var(--font-family)] lg:order-1 lg:row-span-2 lg:h-full">
         <div className="text-center">
           <h2 className="whitespace-nowrap text-[28px] font-normal leading-tight tracking-tight text-[#2F2B28] sm:text-[34px]">
             <BrushMark className="px-8">חבילת העיצוב של {childName || 'הילד/ה'}</BrushMark>
@@ -135,7 +148,7 @@ function ChildPackageCard({
 
         <div className="rounded-[14px] bg-[#EFE6DE] px-4 py-4">
           <div className="grid items-start gap-4 sm:grid-cols-2 sm:gap-4">
-            <div className="rounded-xl bg-[#F3ECE5] px-2 py-3 text-center">
+            <div className="flex flex-col items-center justify-center rounded-xl bg-white px-3 py-4 text-center">
               <p className="text-[13px] text-[#5A544E]">סקלת הגוונים שנבחרה</p>
               <p className="text-[22px] leading-tight text-[#2F2B28]">{colorScale.name}</p>
               <div className="mt-3 flex items-end justify-center gap-2">
@@ -157,7 +170,7 @@ function ChildPackageCard({
               <div className="flex items-start gap-3">
                 <p className="min-w-0 flex-1 text-[12.5px] leading-6 text-[#4A4540]">{styleDescription}</p>
                 <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#F6F0EA]">
-                  <img src={balloonIcon} alt="" className="h-11 w-11 object-contain" />
+                  <img src={giftIcon} alt="" className="h-10 w-10 object-contain" />
                 </span>
               </div>
             </div>
@@ -168,7 +181,7 @@ function ChildPackageCard({
           <div className="grid grid-cols-2 gap-y-5 sm:grid-cols-4">
             {[
               {
-                icon: Baby,
+                icon: Rug,
                 title: 'סטיילינג בלבד',
                 text: 'חבילת העיצוב כוללת קונספט והנחיות סטיילינג בלבד. אינה כוללת פריטים עצמם או תכנון העמדה.',
               },
@@ -226,11 +239,11 @@ function ChildPackageCard({
         </div>
       </div>
 
-      <div className="order-1 lg:order-2 lg:row-start-1">
+      <div className="order-1 lg:order-2 lg:self-start">
         {preview}
       </div>
 
-      <p className="order-3 mt-0 flex items-center gap-3 text-[13px] leading-6 text-[#3C3834] lg:col-start-2 lg:row-start-2">
+      <p className="order-3 flex items-center gap-3 text-[13px] leading-6 text-[#3C3834] lg:order-2 lg:self-end">
         הצצה לחבילה והסגנון העיצובי הנבחר – כל הפרטים המלאים, הקישורים וההמלצות מחכים לכם לאחר הרכישה באזור האישי.
         <Lock className="h-7 w-7 flex-shrink-0 text-[#A27A5C]" strokeWidth={1.2} />
       </p>
@@ -243,6 +256,10 @@ export function PackagePreviewPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { packages, findMatchingPackages, loading } = useData()
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [searchParams])
 
   const childName = searchParams.get('childName') || ''
   const gender = (searchParams.get('gender') as 'boy' | 'girl' | 'unisex') || 'unisex'

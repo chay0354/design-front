@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { useLayoutEffect } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { AboutPage } from './pages/AboutPage'
@@ -18,11 +19,20 @@ import { TermsPage } from './pages/TermsPage'
 import { TipsPage } from './pages/TipsPage'
 import { BlockAdmin, RequireAdmin, RequireUser } from './components/RouteGuards'
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation()
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname, search])
+  return null
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <DataProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <div className="min-h-screen bg-[#FDFCFB] text-[#4A4A4A]">
             <Routes>
             <Route

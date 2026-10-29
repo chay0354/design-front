@@ -174,7 +174,7 @@ export function CheckoutPage() {
 
   const [processing, setProcessing] = useState(false)
 
-  const [paymentOption, setPaymentOption] = useState<'full' | 'installments'>('full')
+  const [paymentOption, setPaymentOption] = useState<'full' | 'installments'>('installments')
 
 
 
@@ -233,6 +233,8 @@ export function CheckoutPage() {
   const total =
 
     mainPkg.price + siblingOrders.reduce((sum, order) => sum + order.price, 0)
+
+  const monthlyPayment = Math.ceil(total / 6)
 
 
 
@@ -628,7 +630,7 @@ export function CheckoutPage() {
 
                     : paymentOption === 'installments'
 
-                      ? `שלמי ₪${Math.ceil(total / 6)} × 6 תשלומים`
+                      ? `שלמי ₪${monthlyPayment} × 6 תשלומים`
 
                       : `שלמי ₪${total} עכשיו`}
 
@@ -752,7 +754,7 @@ export function CheckoutPage() {
 
               <div className="mb-4 space-y-2">
 
-                {(['full', 'installments'] as const).map((option) => (
+                {(['installments', 'full'] as const).map((option) => (
 
                   <label key={option} className="block cursor-pointer">
 
@@ -786,11 +788,43 @@ export function CheckoutPage() {
 
                     >
 
-                      <div className="font-normal text-[#4A4A4A]">
+                      {option === 'installments' ? (
 
-                        {option === 'full' ? 'תשלום מלא' : '6 תשלומים'}
+                        <div>
 
-                      </div>
+                          <div className="text-sm text-[#6B6B6B]">6 תשלומים</div>
+
+                          <div className="text-3xl font-normal leading-tight text-[#4A4A4A]">
+
+                            ₪{monthlyPayment}
+
+                            <span className="ms-1 text-base text-[#6B6B6B]">לחודש</span>
+
+                          </div>
+
+                          {paymentOption === 'installments' && (
+
+                            <p className="mt-2 text-sm leading-6 text-[#4A4A4A]">
+
+                              תזכורת: 6 תשלומים של ₪{monthlyPayment} בכל חודש, סה״כ ₪{total}.
+
+                            </p>
+
+                          )}
+
+                        </div>
+
+                      ) : (
+
+                        <div className="flex items-baseline justify-between">
+
+                          <span className="text-sm text-[#6B6B6B]">תשלום אחד</span>
+
+                          <span className="text-base text-[#4A4A4A]">₪{total}</span>
+
+                        </div>
+
+                      )}
 
                     </div>
 

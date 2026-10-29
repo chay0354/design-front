@@ -117,6 +117,7 @@ test.describe.serial('customer flow', () => {
     await expect(page.getByRole('heading', { name: 'תשלום מאובטח' })).toBeVisible()
     await expect(page.getByText('נועה').first()).toBeVisible()
     await page.getByText('6 תשלומים', { exact: true }).click()
+    await expect(page.getByText(/תזכורת: 6 תשלומים של ₪\d+ בכל חודש/)).toBeVisible()
     await expect(page.getByRole('button', { name: /× 6 תשלומים/ })).toBeVisible()
 
     for (const box of await page.getByRole('checkbox').all()) {

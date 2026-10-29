@@ -192,30 +192,17 @@ function ColorPalettePreview({
   swatches: { hex: string; name: string }[]
 }) {
   const ordered = [...swatches].sort((a, b) => swatchLuminance(a.hex) - swatchLuminance(b.hex))
-  const dots = ordered.slice(0, 6)
 
   return (
-    <div className="rounded-xl bg-[#F6F1EB] px-3 py-3 sm:bg-transparent sm:px-0 sm:py-0">
-      <div className="flex h-9 overflow-hidden rounded-md sm:h-10" dir="ltr">
-        {ordered.map((swatch, index) => (
-          <div
-            key={`${swatch.hex}-${index}`}
-            className="min-w-0 flex-1"
-            style={{ backgroundColor: swatch.hex }}
-            title={swatch.name}
-          />
-        ))}
-      </div>
-      <div className="mt-2.5 flex justify-center gap-2 sm:hidden" dir="ltr">
-        {dots.map((swatch, index) => (
-          <div
-            key={`dot-${swatch.hex}-${index}`}
-            className="h-4 w-4 rounded-full border border-white"
-            style={{ backgroundColor: swatch.hex }}
-            title={swatch.name}
-          />
-        ))}
-      </div>
+    <div className="flex h-10 overflow-hidden rounded-md" dir="ltr">
+      {ordered.map((swatch, index) => (
+        <div
+          key={`${swatch.hex}-${index}`}
+          className="min-w-0 flex-1"
+          style={{ backgroundColor: swatch.hex }}
+          title={swatch.name}
+        />
+      ))}
     </div>
   )
 }
@@ -241,13 +228,13 @@ function ColorPicker({
 
   return (
     <div className="-m-2 rounded-lg bg-[#F8F4EF] px-3 py-6 sm:-m-4 sm:px-8 sm:py-8">
-      <h2 className="mb-2 flex items-center justify-center gap-3 text-center text-2xl font-light leading-snug text-[#3C3834] sm:text-[1.9rem]">
+      <h2 className="mb-2 flex items-center justify-center gap-3 text-center text-[1.9rem] font-light leading-snug text-[#3C3834]">
         <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
         בחרי את סקלת הגוונים שלך
         <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
       </h2>
-      <p className="mb-8 text-center text-sm text-[#7A726A] sm:text-base">סגנונות מותאמים לחלומות גדולים</p>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-6">
+      <p className="mb-8 text-center text-base text-[#7A726A]">סגנונות מותאמים לחלומות גדולים</p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         {options.map((pref) => {
           const isSelected = value === pref.name
           return (
@@ -255,7 +242,7 @@ function ColorPicker({
               key={pref.scaleId}
               type="button"
               onClick={() => onChange(pref.name)}
-              className={`rounded-lg border bg-[#FDFBF9] px-4 pt-4 pb-5 text-center transition-all sm:px-3.5 ${
+              className={`rounded-lg border bg-[#FDFBF9] px-3.5 pt-4 pb-5 text-center transition-all ${
                 isSelected
                   ? 'border-[#C9B5A3] shadow-[0_6px_20px_rgba(168,138,114,0.2)] ring-1 ring-[#C9B5A3]'
                   : 'border-[#E3DBD2] shadow-[0_2px_8px_rgba(120,100,80,0.06)] hover:border-[#D4C4B0]'
@@ -264,7 +251,7 @@ function ColorPicker({
               <ColorPalettePreview swatches={pref.swatches} />
               <div className="mt-4 flex flex-col items-center gap-1.5">
                 <PaletteIcon scaleId={pref.scaleId} />
-                <h3 className="flex items-center gap-2 text-xl font-light text-[#3C3834] sm:text-[1.6rem]">
+                <h3 className="flex items-center gap-2 text-center text-[1.6rem] font-light leading-tight text-[#3C3834]">
                   {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
                   {scaleTitle(pref.name)}
                   {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
@@ -405,6 +392,7 @@ export function QuestionnairePage() {
         wallDesignOption: formData.wallDesignOption,
         additionalChildren: JSON.stringify(formData.additionalChildren),
       })
+      window.scrollTo(0, 0)
       navigate(`/preview/recommended?${queryParams.toString()}`)
     }
   }
