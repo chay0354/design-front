@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Grid3X3, Home, LogOut, Settings, ShoppingBag, User } from 'lucide-react'
+import { Check, Grid3X3, Home, LogOut, Settings, ShoppingBag, User } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 function MenuIcon() {
@@ -157,7 +157,18 @@ export function Header() {
           PETITE DREAMS
         </Link>
 
-        <span className="sm:hidden">{cart}</span>
+        <Link
+          to={user ? '/account' : '/login'}
+          aria-label={user ? 'מחובר, לאזור האישי' : 'לא מחובר, להתחברות'}
+          className="relative text-[#5A544E] hover:text-[#3C3834] sm:hidden"
+        >
+          <User className="h-5 w-5" strokeWidth={1.6} />
+          {user && (
+            <span className="absolute -bottom-1 -left-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white text-[#5A544E]">
+              <Check className="h-2.5 w-2.5" strokeWidth={3} />
+            </span>
+          )}
+        </Link>
 
         <nav className="hidden items-center gap-7 text-sm sm:flex">
           {links}
