@@ -5,9 +5,11 @@ import { useAuth } from '../contexts/AuthContext'
 
 function MenuIcon() {
   return (
-    <svg viewBox="0 0 28 18" className="h-[18px] w-7" aria-hidden="true" dir="ltr">
-      <path d="M2 2h24M8 9h18M14 16h12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
+    <span dir="ltr" className="inline-flex">
+      <svg viewBox="0 0 28 18" className="h-[18px] w-7" aria-hidden="true">
+        <path d="M2 2h24M8 9h18M14 16h12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </span>
   )
 }
 
