@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react'
+﻿import type { ReactNode } from 'react'
 import { ArrowDown, Check, Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BrushMark, Sparkle } from '../components/BrushTitle'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 
-const heroPhoto = '/assets/hero-background.jpg'
+const heroPhoto = '/assets/hero-room.jpg'
 const ink = '#4A403A'
 
 const steps = [
@@ -162,23 +162,22 @@ export function LandingPage() {
       <Header />
 
       <main>
-        <section className="relative isolate overflow-hidden">
+        <section className="relative isolate overflow-hidden bg-[#EFECE7]">
           <img
             src={heroPhoto}
             alt="חדר ילדים מעוצב עם ג'ירפה, נורות דגלים ופינת משחק"
-            className="absolute inset-0 -z-10 h-full w-full object-cover object-bottom"
+            className="absolute inset-0 -z-10 h-full w-full origin-[62%_100%] scale-[1.17] object-cover object-[56%_100%] sm:scale-100 sm:object-bottom"
           />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#F6F3F0]/85 via-[#F6F3F0]/55 to-transparent" />
-          <div className="mx-auto max-w-2xl px-4 pt-6 pb-[150px] text-center sm:pt-14 sm:pb-[300px]">
-            <h1 className="text-[2.1rem] leading-[1.15] font-bold text-[#4A403A] sm:text-[3.2rem]">
+          <div className="mx-auto max-w-3xl px-4 pt-4 pb-[185px] text-center sm:pt-12 sm:pb-[500px]">
+            <h1 className="text-[2.3rem] leading-[0.95] font-semibold text-[#524436] sm:text-[3.6rem] sm:leading-[1.05]">
               חדר ילדים מעוצב
               <br />
               וחלומי בקלות
             </h1>
-            <div className="relative mx-auto mt-3 max-w-md px-6 py-2 sm:mt-5 sm:max-w-lg">
+            <div className="relative -mx-4 mt-2.5 px-4 py-[7px] sm:mx-auto sm:mt-5 sm:max-w-2xl sm:py-3">
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-[4%] inset-y-[-18%] -z-10 bg-[#C9B890]"
+                className="pointer-events-none absolute inset-x-[1%] inset-y-0 -z-10 bg-[#D9CFC2] sm:inset-x-[-4%]"
                 style={{
                   maskImage: 'url(/assets/title-brush.png)',
                   WebkitMaskImage: 'url(/assets/title-brush.png)',
@@ -188,14 +187,18 @@ export function LandingPage() {
                   WebkitMaskRepeat: 'no-repeat',
                 }}
               />
-              <p className="text-[13.5px] leading-5 font-medium text-[#3C3631] sm:text-base sm:leading-6">
-                כל מה שצריך כדי להפוך את חדר הילדים למקום נעים, מעוצב ומלא קסם, עם חבילת עיצוב מקצועית
-                שחוסכת לכם שעות של חיפושים והתלבטויות, במחיר נגיש.
+              <p className="mx-auto max-w-[340px] text-[13.5px] leading-[19px] font-medium text-[#524436] sm:max-w-xl sm:text-[17px] sm:leading-[27px]">
+                כל מה שצריך כדי להפוך את חדר הילדים למקום נעים,
+                <br className="sm:hidden" /> מעוצב ומלא קסם, עם חבילת עיצוב מקצועית שחוסכת לכם
+                <br className="sm:hidden" /> שעות של חיפושים והתלבטויות, במחיר נגיש.
               </p>
             </div>
-            <div className="mt-2 sm:mt-3">
-              <StartLink>אני רוצה חדר מעוצב עכשיו!</StartLink>
-            </div>
+            <Link
+              to="/questionnaire"
+              className="mt-[15px] inline-flex h-[34px] w-[257px] items-center justify-center rounded-lg bg-[#79715F] text-[15px] font-normal text-[#F3E7D9] transition-colors hover:bg-[#6A6352] sm:mt-6 sm:h-11 sm:w-[330px] sm:text-lg"
+            >
+              אני רוצה חדר מעוצב עכשיו!
+            </Link>
           </div>
         </section>
 
