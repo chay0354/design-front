@@ -5,7 +5,7 @@ import { BrushMark, Sparkle } from '../components/BrushTitle'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 
-const heroPhoto = '/assets/hero-room.jpg'
+const heroPhoto = '/assets/hero-room.jpg?v=3'
 const ink = '#4A403A'
 
 const steps = [
@@ -162,13 +162,13 @@ export function LandingPage() {
       <Header />
 
       <main>
-        <section className="relative isolate overflow-hidden bg-[#EFECE7]">
+        <section className="relative isolate bg-[#EFECE7]">
           <img
             src={heroPhoto}
             alt="חדר ילדים מעוצב עם ג'ירפה, נורות דגלים ופינת משחק"
-            className="absolute inset-0 -z-10 h-full w-full origin-[62%_100%] scale-[1.17] object-cover object-[56%_100%] sm:scale-100 sm:object-bottom"
+            className="mx-auto block h-auto w-full sm:h-[680px] sm:w-auto"
           />
-          <div className="mx-auto max-w-3xl px-4 pt-4 pb-[185px] text-center sm:pt-12 sm:pb-[500px]">
+          <div className="absolute inset-x-0 top-0 mx-auto max-w-3xl px-4 pt-4 text-center sm:pt-12">
             <h1 className="text-[2.3rem] leading-[0.95] font-semibold text-[#524436] sm:text-[3.6rem] sm:leading-[1.05]">
               חדר ילדים מעוצב
               <br />
