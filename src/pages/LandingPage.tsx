@@ -178,7 +178,7 @@ export function LandingPage() {
             <div className="relative mx-auto mt-3 max-w-md px-6 py-2 sm:mt-5 sm:max-w-lg">
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-[-6%] inset-y-[-18%] -z-10 bg-[#C9C4BC]"
+                className="pointer-events-none absolute inset-x-[4%] inset-y-[-18%] -z-10 bg-[#C9B890]"
                 style={{
                   maskImage: 'url(/assets/title-brush.png)',
                   WebkitMaskImage: 'url(/assets/title-brush.png)',
