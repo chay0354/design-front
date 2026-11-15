@@ -178,7 +178,7 @@ export function LandingPage() {
             <div className="relative mx-auto mt-3 max-w-md px-6 py-2 sm:mt-5 sm:max-w-lg">
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-[-6%] inset-y-[-18%] -z-10 bg-[#D7B48C]"
+                className="pointer-events-none absolute inset-x-[-6%] inset-y-[-18%] -z-10 bg-[#C9C4BC]"
                 style={{
                   maskImage: 'url(/assets/title-brush.png)',
                   WebkitMaskImage: 'url(/assets/title-brush.png)',
@@ -188,12 +188,12 @@ export function LandingPage() {
                   WebkitMaskRepeat: 'no-repeat',
                 }}
               />
-              <p className="text-[13.5px] leading-6 font-medium text-[#3C3631] sm:text-base sm:leading-7">
+              <p className="text-[13.5px] leading-5 font-medium text-[#3C3631] sm:text-base sm:leading-6">
                 כל מה שצריך כדי להפוך את חדר הילדים למקום נעים, מעוצב ומלא קסם, עם חבילת עיצוב מקצועית
                 שחוסכת לכם שעות של חיפושים והתלבטויות, במחיר נגיש.
               </p>
             </div>
-            <div className="mt-4 sm:mt-6">
+            <div className="mt-2 sm:mt-3">
               <StartLink>אני רוצה חדר מעוצב עכשיו!</StartLink>
             </div>
           </div>
@@ -239,13 +239,12 @@ export function LandingPage() {
               </li>
             ))}
           </ol>
-          <div className="mx-auto mt-5 flex max-w-md items-center gap-4 rounded-full bg-[#EFEAE5] px-6 py-3">
-            <p className="flex-1 text-[13.5px] leading-6 text-[#2F2A26] sm:text-[15px]">
-              <span className="font-bold">מעצבים גם את החדר של האח או האחות?</span>
-              <br />
-              <span className="font-medium">תקבלו 20% הנחה על החבילה הנוספת.</span>
+          <div className="mx-auto mt-5 flex max-w-md items-center gap-2.5 rounded-full bg-[#EFEAE5] px-4 py-3 sm:gap-4 sm:px-6">
+            <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-[#2F2A26] sm:text-[15px] sm:leading-6">
+              <span className="block whitespace-nowrap font-bold">מעצבים גם את החדר של האח או האחות?</span>
+              <span className="block whitespace-nowrap font-medium">תקבלו 20% הנחה על החבילה הנוספת.</span>
             </p>
-            <Heart className="h-8 w-8 shrink-0 text-[#4A403A]" strokeWidth={1.2} />
+            <Heart className="h-6 w-6 shrink-0 text-[#4A403A] sm:h-8 sm:w-8" strokeWidth={1.2} />
           </div>
         </section>
 
