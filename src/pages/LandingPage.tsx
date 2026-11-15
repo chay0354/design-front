@@ -149,9 +149,9 @@ function StartLink({ children }: { children: string }) {
 function SectionTitle({ children, brush = false }: { children: string; brush?: boolean }) {
   return (
     <h2 className="flex items-center justify-center gap-4 text-center text-[1.3rem] leading-tight font-semibold whitespace-nowrap text-[#2F2A26] sm:gap-8 sm:text-[1.9rem]">
-      <Sparkle className="h-3 w-3 text-[#3C3631]" />
+      <Sparkle className="h-3 w-3 text-[#A67C52]" />
       {brush ? <BrushMark className="px-6">{children}</BrushMark> : <span>{children}</span>}
-      <Sparkle className="h-3 w-3 text-[#3C3631]" />
+      <Sparkle className="h-3 w-3 text-[#A67C52]" />
     </h2>
   )
 }
@@ -170,17 +170,23 @@ export function LandingPage() {
           />
           <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#F6F3F0]/85 via-[#F6F3F0]/55 to-transparent" />
           <div className="mx-auto max-w-2xl px-4 pt-6 pb-[150px] text-center sm:pt-14 sm:pb-[300px]">
-            <h1 className="text-[2.1rem] leading-[1.15] font-bold text-[#3C3631] sm:text-[3.2rem]">
+            <h1 className="text-[2.1rem] leading-[1.15] font-bold text-[#4A403A] sm:text-[3.2rem]">
               חדר ילדים מעוצב
               <br />
               וחלומי בקלות
             </h1>
             <div className="relative mx-auto mt-3 max-w-md px-6 py-2 sm:mt-5 sm:max-w-lg">
-              <img
-                src="/assets/title-brush.png"
-                alt=""
+              <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 -z-10 h-full w-full opacity-80 grayscale"
+                className="pointer-events-none absolute inset-x-[-6%] inset-y-[-18%] -z-10 bg-[#D7B48C]"
+                style={{
+                  maskImage: 'url(/assets/title-brush.png)',
+                  WebkitMaskImage: 'url(/assets/title-brush.png)',
+                  maskSize: '100% 100%',
+                  WebkitMaskSize: '100% 100%',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                }}
               />
               <p className="text-[13.5px] leading-6 font-medium text-[#3C3631] sm:text-base sm:leading-7">
                 כל מה שצריך כדי להפוך את חדר הילדים למקום נעים, מעוצב ומלא קסם, עם חבילת עיצוב מקצועית
