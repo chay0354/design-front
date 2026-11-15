@@ -18,7 +18,7 @@ export function BrushMark({ children, className = '' }: { children: ReactNode; c
         src="/assets/title-brush.png"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute top-[58%] left-1/2 h-[135%] w-[118%] max-w-none -translate-x-1/2 -translate-y-1/2 select-none"
+        className="pointer-events-none absolute top-[58%] left-1/2 h-[135%] w-[min(118%,100vw)] max-w-none -translate-x-1/2 -translate-y-1/2 select-none"
       />
       <span className="relative">{children}</span>
     </span>

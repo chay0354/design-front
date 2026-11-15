@@ -18,11 +18,11 @@ import {
 } from '../utils/questionnaire'
 
 const Rug = createLucideIcon('rug', [
-  ['rect', { x: '4', y: '7', width: '16', height: '10', rx: '0.8' }],
-  ['path', { d: 'M7 7v10M17 7v10' }],
-  ['path', { d: 'M12 9.5 14.5 12 12 14.5 9.5 12z' }],
-  ['path', { d: 'M4 8.5H2M4 10.5H2M4 12.5H2M4 14.5H2M4 16H2' }],
-  ['path', { d: 'M20 8.5h2M20 10.5h2M20 12.5h2M20 14.5h2M20 16h2' }],
+  ['rect', { x: '4', y: '7', width: '16', height: '10', rx: '0.8', key: 'body' }],
+  ['path', { d: 'M7 7v10M17 7v10', key: 'bands' }],
+  ['path', { d: 'M12 9.5 14.5 12 12 14.5 9.5 12z', key: 'diamond' }],
+  ['path', { d: 'M4 8.5H2M4 10.5H2M4 12.5H2M4 14.5H2M4 16H2', key: 'fringe-right' }],
+  ['path', { d: 'M20 8.5h2M20 10.5h2M20 12.5h2M20 14.5h2M20 16h2', key: 'fringe-left' }],
 ])
 
 const PLACEHOLDER = '/assets/lock-preview.png'

@@ -7,7 +7,7 @@ function MenuIcon() {
   return (
     <span dir="ltr" className="inline-flex">
       <svg viewBox="0 0 28 18" className="h-[18px] w-7" aria-hidden="true">
-        <path d="M2 2h24M8 9h18M14 16h12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M4 3h20M4 9h20M4 15h20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     </span>
   )
@@ -139,10 +139,10 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#EFEAE4] bg-white">
-      <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-[60px] sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:h-[68px] sm:px-6 lg:px-8">
         <button
           type="button"
-          className="text-[#C4B5A6] sm:hidden"
+          className="text-[#4A403A] sm:hidden"
           aria-label="תפריט"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
@@ -152,9 +152,10 @@ export function Header() {
 
         <Link
           to="/"
-          className="absolute left-1/2 shrink-0 -translate-x-1/2 whitespace-nowrap text-xl font-light tracking-[0.06em] text-[#3C3834] sm:static sm:translate-x-0"
+          aria-label="PETITE DREAMS"
+          className="absolute left-1/2 shrink-0 -translate-x-1/2 sm:static sm:translate-x-0"
         >
-          PETITE DREAMS
+          <img src="/assets/logo-header.png" alt="" className="h-11 w-auto sm:h-12" />
         </Link>
 
         <Link
