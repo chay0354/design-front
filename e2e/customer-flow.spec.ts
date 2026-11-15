@@ -14,8 +14,8 @@ async function next(page: Page) {
 test.describe.serial('customer flow', () => {
   test('public pages open from the landing site', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'עיצוב חדר ילדים קסום בקלות' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'אני רוצה חדר מעוצב עכשיו' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'חדר ילדים מעוצב וחלומי בקלות' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'אני רוצה חדר מעוצב עכשיו!' })).toBeVisible()
 
     await page.getByRole('link', { name: 'אודות' }).first().click()
     await expect(page).toHaveURL(/\/about$/)
@@ -178,6 +178,7 @@ test.describe.serial('customer flow', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
 
+    await page.getByRole('button', { name: 'תפריט' }).click()
     const logo = page.getByRole('link', { name: 'PETITE DREAMS' })
     const home = page.locator('header').getByRole('link', { name: 'בית', exact: true })
     const logoBox = await logo.boundingBox()

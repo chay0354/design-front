@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const PUBLIC_PAGES = [
-  { path: '/', heading: 'עיצוב חדר ילדים קסום בקלות' },
+  { path: '/', heading: 'חדר ילדים מעוצב וחלומי בקלות' },
   { path: '/about', heading: 'אודות PETITE DREAMS' },
   { path: '/faq', heading: 'שאלות ותשובות' },
   { path: '/terms', heading: /תקנון ותנאי שימוש/ },
@@ -203,6 +203,7 @@ test.describe.serial('qa audit', () => {
     }
 
     await page.goto('/')
+    await page.getByRole('button', { name: 'תפריט' }).click()
     const logo = await page.getByRole('link', { name: 'PETITE DREAMS' }).boundingBox()
     const home = await page.locator('header').getByRole('link', { name: 'בית', exact: true }).boundingBox()
     expect(logo && home).toBeTruthy()

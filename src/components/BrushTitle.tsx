@@ -13,7 +13,7 @@ export function Sparkle({ className = 'h-3 w-3 text-[#A88A72]' }: { className?: 
 
 export function BrushMark({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <span className={`relative inline-block px-2 ${className}`}>
+    <span className={`relative inline-block min-w-0 max-w-full px-2 ${className}`}>
       <img
         src="/assets/title-brush.png"
         alt=""
@@ -37,7 +37,7 @@ export function BrushTitle({
   className?: string
 }) {
   return (
-    <Tag className={`flex items-center justify-center gap-4 text-center font-light text-[#3C3834] ${className}`}>
+    <Tag className={`flex max-w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center font-light text-[#3C3834] ${className}`}>
       {sparkles && <Sparkle />}
       <BrushMark>{children}</BrushMark>
       {sparkles && <Sparkle />}

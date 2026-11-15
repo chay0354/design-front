@@ -1,10 +1,25 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Grid3X3, Home, LogOut, Settings, ShoppingBag, User } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 28 18" className="h-[18px] w-7" aria-hidden="true" dir="ltr">
+      <path d="M2 2h24M8 9h18M14 16h12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function Header() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [location.pathname])
 
   const handleLogout = async () => {
     const wasAdmin = user?.isAdmin
@@ -73,57 +88,86 @@ export function Header() {
       isActive ? 'text-[#A88A72]' : 'text-[#4A4540]'
     }`
 
+  const links = (
+    <>
+      <NavLink to="/" end className={navLink} onClick={() => setMenuOpen(false)}>
+        <Home className="h-4 w-4" strokeWidth={1.5} />
+        בית
+      </NavLink>
+      {user && (
+        <NavLink to="/account" className={navLink} onClick={() => setMenuOpen(false)}>
+          <User className="h-4 w-4" strokeWidth={1.5} />
+          החשבון שלי
+        </NavLink>
+      )}
+      <NavLink to="/about" className={navLink} onClick={() => setMenuOpen(false)}>
+        אודות
+      </NavLink>
+      <NavLink to="/faq" className={navLink} onClick={() => setMenuOpen(false)}>
+        לפני שרוכשים
+      </NavLink>
+      {user ? (
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="whitespace-nowrap rounded-md bg-[#B39A86] px-4 py-1.5 text-sm text-white transition-colors hover:bg-[#A28A76]"
+        >
+          התנתק
+        </button>
+      ) : (
+        <Link
+          to="/login"
+          onClick={() => setMenuOpen(false)}
+          className="whitespace-nowrap rounded-md bg-[#B39A86] px-4 py-1.5 text-sm text-white transition-colors hover:bg-[#A28A76]"
+        >
+          התחבר
+        </Link>
+      )}
+    </>
+  )
+
+  const cart = (
+    <Link to={cartTarget} aria-label="סל הקניות" className="relative text-[#4A4540] hover:text-[#3C3834]">
+      <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
+      <span className="absolute -bottom-1 -left-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#B39A86] px-1 text-[10px] leading-none text-white">
+        {intendedPackage ? 1 : 0}
+      </span>
+    </Link>
+  )
+
   return (
     <header className="sticky top-0 z-50 border-b border-[#EFEAE4] bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:h-[60px] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-0 lg:px-8">
+      <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-[60px] sm:px-6 lg:px-8">
+        <button
+          type="button"
+          className="text-[#C4B5A6] sm:hidden"
+          aria-label="תפריט"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <MenuIcon />
+        </button>
+
         <Link
           to="/"
-          className="shrink-0 whitespace-nowrap text-xl font-light tracking-[0.06em] text-[#3C3834]"
+          className="absolute left-1/2 shrink-0 -translate-x-1/2 whitespace-nowrap text-xl font-light tracking-[0.06em] text-[#3C3834] sm:static sm:translate-x-0"
         >
           PETITE DREAMS
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm sm:flex-nowrap sm:gap-7">
-          <NavLink to="/" end className={navLink}>
-            <Home className="h-4 w-4" strokeWidth={1.5} />
-            בית
-          </NavLink>
-          {user && (
-            <NavLink to="/account" className={navLink}>
-              <User className="h-4 w-4" strokeWidth={1.5} />
-              החשבון שלי
-            </NavLink>
-          )}
-          <NavLink to="/about" className={navLink}>
-            אודות
-          </NavLink>
-          <NavLink to="/faq" className={navLink}>
-            לפני שרוכשים
-          </NavLink>
-          {user ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="whitespace-nowrap rounded-md bg-[#B39A86] px-4 py-1.5 text-sm text-white transition-colors hover:bg-[#A28A76]"
-            >
-              התנתק
-            </button>
-          ) : (
-            <Link
-              to="/login"
-              className="whitespace-nowrap rounded-md bg-[#B39A86] px-4 py-1.5 text-sm text-white transition-colors hover:bg-[#A28A76]"
-            >
-              התחבר
-            </Link>
-          )}
-          <Link to={cartTarget} aria-label="סל הקניות" className="relative text-[#4A4540] hover:text-[#3C3834]">
-            <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
-            <span className="absolute -bottom-1 -left-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#B39A86] px-1 text-[10px] leading-none text-white">
-              {intendedPackage ? 1 : 0}
-            </span>
-          </Link>
+        <span className="sm:hidden">{cart}</span>
+
+        <nav className="hidden items-center gap-7 text-sm sm:flex">
+          {links}
+          {cart}
         </nav>
       </div>
+
+      {menuOpen && (
+        <nav className="flex flex-col items-start gap-4 border-t border-[#EFEAE4] px-5 py-4 text-sm sm:hidden">
+          {links}
+        </nav>
+      )}
     </header>
   )
 }
