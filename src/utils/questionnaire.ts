@@ -1,4 +1,12 @@
 import { getColorScaleForPreference } from '../data/colorScales'
+import {
+  getAgeGroup,
+  getAgeGroupIdForAge,
+  getQuestionnaireThemesForChild,
+  PACKAGE_AGE_GROUPS,
+  type CatalogGender,
+  type PackageAgeGroupId,
+} from '../data/packageCatalog'
 
 export interface QuestionnaireChild {
   name: string
@@ -9,6 +17,138 @@ export interface QuestionnaireChild {
   wallDesignOption: string
 }
 
+export interface RoomChild {
+  name: string
+  gender: 'boy' | 'girl' | 'unisex' | ''
+  age: number
+}
+
+export type AgeChoice =
+  | { type: 'child'; childIndex: number }
+  | { type: 'bridge'; ageGroupId: PackageAgeGroupId }
+
+export interface QuestionnaireRoom {
+  children: RoomChild[]
+  designGender: CatalogGender | ''
+  ageChoice: AgeChoice | null
+  theme: string
+  colorPreference: string
+  wallDesignOption: string
+}
+
+export type QuestionnaireStep =
+  | { kind: 'rooms' }
+  | { kind: 'child'; roomIndex: number; childIndex: number }
+  | { kind: 'design-gender'; roomIndex: number }
+  | { kind: 'design-age'; roomIndex: number }
+  | { kind: 'theme'; roomIndex: number }
+  | { kind: 'color'; roomIndex: number }
+  | { kind: 'wall'; roomIndex: number }
+
+export function emptyRoom(): QuestionnaireRoom {
+  return {
+    children: [{ name: '', gender: '', age: 5 }],
+    designGender: '',
+    ageChoice: null,
+    theme: '',
+    colorPreference: '',
+    wallDesignOption: '',
+  }
+}
+
+export function ageGroupIndex(age: number): number {
+  return PACKAGE_AGE_GROUPS.findIndex((group) => group.id === getAgeGroupIdForAge(age))
+}
+
+/** Age groups that sit in a full gap between the youngest and oldest child. */
+export function bridgeAgeGroups(children: { age: number }[]): PackageAgeGroupId[] {
+  if (children.length < 2) return []
+  const indexes = children.map((child) => ageGroupIndex(child.age))
+  const min = Math.min(...indexes)
+  const max = Math.max(...indexes)
+  if (max - min < 2) return []
+  return PACKAGE_AGE_GROUPS.slice(min + 1, max).map((group) => group.id)
+}
+
+export function normalizeRoom(room: QuestionnaireRoom): QuestionnaireRoom {
+  let ageChoice = room.ageChoice
+  if (ageChoice?.type === 'child' && !room.children[ageChoice.childIndex]) ageChoice = null
+  if (
+    ageChoice?.type === 'bridge' &&
+    !bridgeAgeGroups(room.children).includes(ageChoice.ageGroupId)
+  ) {
+    ageChoice = null
+  }
+  const next = { ...room, ageChoice }
+  return roomThemeStillValid(next) ? next : { ...next, theme: '', colorPreference: '' }
+}
+
+/** Child details first, then each room chooses a design gender and, when shared, an age. */
+export function buildQuestionnaireSteps(rooms: QuestionnaireRoom[]): QuestionnaireStep[] {
+  const steps: QuestionnaireStep[] = [{ kind: 'rooms' }]
+  rooms.forEach((room, roomIndex) => {
+    room.children.forEach((_, childIndex) => {
+      steps.push({ kind: 'child', roomIndex, childIndex })
+    })
+  })
+  rooms.forEach((room, roomIndex) => {
+    steps.push({ kind: 'design-gender', roomIndex })
+    if (room.children.length > 1) steps.push({ kind: 'design-age', roomIndex })
+    steps.push({ kind: 'theme', roomIndex })
+    steps.push({ kind: 'color', roomIndex })
+    steps.push({ kind: 'wall', roomIndex })
+  })
+  return steps
+}
+
+/** The package follows the gender and age chosen for the room, not each child's own details. */
+export function roomDesignProfile(room: QuestionnaireRoom): { gender: CatalogGender; age: number } {
+  const gender: CatalogGender = room.designGender || 'unisex'
+  if (room.ageChoice?.type === 'child') {
+    const child = room.children[room.ageChoice.childIndex]
+    if (child) return { gender, age: child.age }
+  }
+  if (room.ageChoice?.type === 'bridge') {
+    return { gender, age: getAgeGroup(room.ageChoice.ageGroupId).range[0] || 1 }
+  }
+  if (room.children.length === 1) return { gender, age: room.children[0].age }
+  const oldest = room.children.reduce(
+    (lead, child) => (child.age > lead.age ? child : lead),
+    room.children[0],
+  )
+  return { gender, age: oldest?.age || 5 }
+}
+
+export function roomThemeStillValid(room: QuestionnaireRoom): boolean {
+  if (!room.theme) return false
+  const profile = roomDesignProfile(room)
+  return getQuestionnaireThemesForChild(profile.gender, profile.age).some(
+    (theme) => theme.name === room.theme,
+  )
+}
+
+export function formatRoomNames(children: { name: string }[]): string {
+  const names = children.map((child) => child.name.trim()).filter(Boolean)
+  if (names.length === 0) return 'החדר'
+  if (names.length === 1) return names[0]
+  return `${names.slice(0, -1).join(', ')} ו${names[names.length - 1]}`
+}
+
+export function roomPackagePrice(basePrice: number, roomIndex: number): number {
+  return roomIndex === 0 ? basePrice : Math.round(basePrice * 0.8)
+}
+
+export function parseRoomsParam(raw: string | null): QuestionnaireRoom[] | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as QuestionnaireRoom[]
+    if (!Array.isArray(parsed) || parsed.length === 0) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
 export {
   getQuestionnaireThemesForChild,
   getAgeGroupIdForAge,
@@ -16,26 +156,6 @@ export {
 } from '../data/packageCatalog'
 
 export { filterColorScalesForChild } from '../data/themeColorScales'
-
-export const MAIN_CHILD_STEPS = 6
-export const STEPS_PER_SIBLING = 3
-
-export function totalQuestionnaireSteps(siblingCount: number): number {
-  return MAIN_CHILD_STEPS + STEPS_PER_SIBLING * siblingCount
-}
-
-export function getSiblingStepInfo(step: number): {
-  childIndex: number
-  stepType: 'theme' | 'color' | 'wall'
-} | null {
-  if (step <= MAIN_CHILD_STEPS) return null
-  const offset = step - MAIN_CHILD_STEPS - 1
-  const stepTypes = ['theme', 'color', 'wall'] as const
-  return {
-    childIndex: Math.floor(offset / STEPS_PER_SIBLING),
-    stepType: stepTypes[offset % STEPS_PER_SIBLING],
-  }
-}
 
 export function wallDesignLabel(option: string): string {
   if (option === 'paint') return 'קיר כוח בצביעה'

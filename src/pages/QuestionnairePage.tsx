@@ -1,6 +1,46 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Heart, Leaf, PaintRoller, User, Users } from 'lucide-react'
+import {
+  ArrowLeft,
+  Atom,
+  Bird,
+  Bone,
+  Car,
+  Cloud,
+  Compass,
+  Crown,
+  Drama,
+  FerrisWheel,
+  Fish,
+  Flower2,
+  Gamepad2,
+  Heart,
+  Info,
+  Leaf,
+  MoonStar,
+  Mountain,
+  Music,
+  PaintRoller,
+  Palette,
+  PawPrint,
+  Plus,
+  Rainbow,
+  Rocket,
+  Shell,
+  Ship,
+  Shirt,
+  Sofa,
+  Sparkles,
+  Users,
+  Star,
+  Tent,
+  TreePine,
+  Trophy,
+  User,
+  Waves,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { Slider } from '../components/ui/slider'
@@ -8,68 +48,78 @@ import { useData } from '../contexts/DataContext'
 import { getQuestionnaireOptionsForScales } from '../data/colorScales'
 import { filterColorScalesForChild } from '../data/themeColorScales'
 import {
-  genderLabel,
+  bridgeAgeGroups,
+  buildQuestionnaireSteps,
+  emptyRoom,
+  formatRoomNames,
   getQuestionnaireThemesForChild,
-  getSiblingStepInfo,
   getAgeGroupIdForAge,
-  totalQuestionnaireSteps,
+  normalizeRoom,
+  roomDesignProfile,
+  type AgeChoice,
   type CatalogGender,
-  type QuestionnaireChild,
+  type QuestionnaireRoom,
+  type RoomChild,
 } from '../utils/questionnaire'
 import { getAgeGroup } from '../data/packageCatalog'
 
-interface FormData {
-  childName: string
-  gender: 'boy' | 'girl' | 'unisex' | ''
-  age: string
-  theme: string
-  colorPreference: string
-  wallDesignOption: string
-  additionalChildren: QuestionnaireChild[]
-}
-
 const genderOptions = [
-  { value: 'boy' as const, label: 'בן', icon: 'user' },
-  { value: 'girl' as const, label: 'בת', icon: 'girl' },
-  { value: 'unisex' as const, label: 'ניטרלי', icon: 'users' },
+  { value: 'boy' as const, label: 'בן' },
+  { value: 'girl' as const, label: 'בת' },
 ]
 
-function GenderIcon({ type, size = 'lg' }: { type: string; size?: 'lg' | 'sm' }) {
-  const dim = size === 'lg' ? 'h-16 w-16' : 'h-8 w-8'
-  const color = '#B5A99A'
+const themeIcons: Record<string, LucideIcon> = {
+  safari: PawPrint,
+  adventures: Compass,
+  'sea-ships': Ship,
+  transport: Car,
+  'junior-superheroes': Drama,
+  dinosaurs: Bone,
+  gamers: Gamepad2,
+  superheroes: Drama,
+  science: Atom,
+  sports: Trophy,
+  'flowers-dream-garden': Flower2,
+  'magical-forest-animals': PawPrint,
+  'moon-stars-sky': MoonStar,
+  'sea-shells-treasures': Shell,
+  'fairies-magic-forest': Sparkles,
+  'fairytales-princesses': Crown,
+  'unicorn-rainbow': Rainbow,
+  'butterflies-birds': Bird,
+  'floral-boho': Flower2,
+  'fashion-style': Shirt,
+  'music-dance-stage': Music,
+  'sea-surfing-freedom': Waves,
+  'nordic-forest': TreePine,
+  'clouds-dreams': Cloud,
+  'pastel-safari': PawPrint,
+  'beaches-shells': Shell,
+  'camping-nature': Tent,
+  underwater: Fish,
+  'sky-stars': Star,
+  'circus-magic': FerrisWheel,
+  'journeys-discovery': Compass,
+  'nature-adventure': Mountain,
+  'music-world': Music,
+  'creation-inspiration': Palette,
+  space: Rocket,
+  'nature-explore': Leaf,
+}
 
-  if (type === 'users') {
-    return <Users className={dim} strokeWidth={1.5} color={color} />
-  }
-  if (type === 'girl') {
-    return (
-      <svg
-        className={dim}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="7" r="3.5" />
-        <path d="M6 20v-1.5a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4V20" />
-        <path d="M8.5 7.5 L7 11" />
-        <path d="M15.5 7.5 L17 11" />
-      </svg>
-    )
-  }
-  return <User className={dim} strokeWidth={1.5} color={color} />
+function ThemeGlyph({ themeId }: { themeId: string }) {
+  const Icon = themeIcons[themeId] ?? Sparkles
+  return <Icon className="h-9 w-9 text-[#C4B39A]" strokeWidth={1.4} />
 }
 
 function ThemePicker({
-  childName,
+  title,
   gender,
   age,
   value,
   onChange,
 }: {
-  childName: string
+  title: string
   gender: CatalogGender
   age: number
   value: string
@@ -80,14 +130,9 @@ function ThemePicker({
 
   return (
     <div>
-      <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-        איזה נושא {childName}{' '}
-        {gender === 'boy' ? 'אוהב' : gender === 'girl' ? 'אוהבת' : 'אוהב/ת'}?
-      </h2>
-      <p className="mb-6 text-[#6B6B6B]">
-        נושאים מותאמים ל{ageGroup.label.toLowerCase()}
-      </p>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">{title}</h2>
+      <p className="mb-6 text-center text-[#8A847C]">נושאים מותאמים ל{ageGroup.label.toLowerCase()}</p>
+      <div className="grid grid-cols-2 gap-3">
         {themes.map((theme) => {
           const isSelected = value === theme.name
           return (
@@ -95,15 +140,14 @@ function ThemePicker({
               key={theme.id}
               type="button"
               onClick={() => onChange(theme.name)}
-              className={`flex items-center justify-center gap-2.5 rounded-md border px-4 py-3.5 text-center text-[15px] text-[#4A4540] transition-all ${
+              className={`flex flex-col items-center gap-3 rounded-2xl border px-3 py-6 text-center transition-all ${
                 isSelected
-                  ? 'border-[#D9CBBE] bg-[#F3EEE8] shadow-[0_2px_10px_rgba(168,138,114,0.12)]'
-                  : 'border-[#E3DBD2] bg-white hover:border-[#D4C4B0]'
+                  ? 'border-[#D5E0CC] bg-[#F4F7F0] shadow-[0_2px_10px_rgba(140,150,120,0.12)]'
+                  : 'border-[#E7E1D8] bg-white hover:border-[#D4C4B0]'
               }`}
             >
-              {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
-              {theme.name}
-              {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
+              <ThemeGlyph themeId={theme.id} />
+              <span className="text-[15px] text-[#4A4540]">{theme.name}</span>
             </button>
           )
         })}
@@ -214,7 +258,6 @@ function ColorPicker({
   value,
   onChange,
 }: {
-  childName: string
   gender: CatalogGender
   age: number
   theme: string
@@ -278,11 +321,9 @@ function ColorPicker({
 }
 
 function WallDesignPicker({
-  childName,
   value,
   onChange,
 }: {
-  childName: string
   value: string
   onChange: (wallDesignOption: string) => void
 }) {
@@ -306,9 +347,9 @@ function WallDesignPicker({
   return (
     <div>
       <h2 className="mb-2 text-center text-2xl font-light text-[#3C3834] sm:text-[2rem]">
-        איך תרצו לעצב את הקיר המרכזי של {childName}?
+        איך תרצו לעצב את הקיר המרכזי?
       </h2>
-      <p className="mb-6 text-center text-sm text-[#6B6B6B]">בחר/י את האופציה המתאימה לחדר שלו/ה</p>
+      <p className="mb-6 text-center text-sm text-[#6B6B6B]">בחר/י את האופציה המתאימה לחדר</p>
       <div className="grid gap-5 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = value === option.value
@@ -354,6 +395,8 @@ function PanelIcon() {
 export function QuestionnairePage() {
   const navigate = useNavigate()
   const { colorScales } = useData()
+  const [stepIndex, setStepIndex] = useState(0)
+  const [rooms, setRooms] = useState<QuestionnaireRoom[]>([emptyRoom()])
 
   useEffect(() => {
     const previousTitle = document.title
@@ -362,491 +405,606 @@ export function QuestionnairePage() {
       document.title = previousTitle
     }
   }, [])
-  const [step, setStep] = useState(1)
-  const [formData, setFormData] = useState<FormData>({
-    childName: '',
-    gender: '',
-    age: '5',
-    theme: '',
-    colorPreference: '',
-    wallDesignOption: '',
-    additionalChildren: [],
-  })
-  const [showAddChild, setShowAddChild] = useState(false)
-  const [newChildName, setNewChildName] = useState('')
-  const [newChildAge, setNewChildAge] = useState(5)
-  const [newChildGender, setNewChildGender] = useState<'boy' | 'girl' | 'unisex' | ''>('')
 
-  const totalSteps = totalQuestionnaireSteps(formData.additionalChildren.length)
+  const steps = buildQuestionnaireSteps(rooms)
+  const safeIndex = Math.min(stepIndex, steps.length - 1)
+  const current = steps[safeIndex]
+  const stepNumber = safeIndex + 1
+  const totalSteps = steps.length
 
-  const handleNext = () => {
-    if (step < totalSteps) {
-      setStep(step + 1)
-    } else {
-      const queryParams = new URLSearchParams({
-        childName: formData.childName,
-        gender: formData.gender,
-        age: formData.age,
-        theme: formData.theme,
-        colorPreference: formData.colorPreference,
-        wallDesignOption: formData.wallDesignOption,
-        additionalChildren: JSON.stringify(formData.additionalChildren),
-      })
-      window.scrollTo(0, 0)
-      navigate(`/preview/recommended?${queryParams.toString()}`)
-    }
+  const updateRoom = (roomIndex: number, recipe: (room: QuestionnaireRoom) => QuestionnaireRoom) => {
+    setRooms((currentRooms) =>
+      currentRooms.map((room, index) => (index === roomIndex ? recipe(room) : room)),
+    )
   }
 
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1)
+  const updateChild = (roomIndex: number, childIndex: number, partial: Partial<RoomChild>) => {
+    updateRoom(roomIndex, (room) =>
+      normalizeRoom({
+        ...room,
+        children: room.children.map((child, index) =>
+          index === childIndex ? { ...child, ...partial } : child,
+        ),
+      }),
+    )
+  }
+
+  const colorStillValid = (room: QuestionnaireRoom, theme: string) => {
+    if (!theme || !room.colorPreference) return false
+    const profile = roomDesignProfile(room)
+    const options = getQuestionnaireOptionsForScales(
+      filterColorScalesForChild(colorScales, profile.gender, profile.age, theme),
+    )
+    return options.some((option) => option.name === room.colorPreference)
+  }
+
+  const applyTheme = (roomIndex: number, theme: string) => {
+    updateRoom(roomIndex, (room) => ({
+      ...room,
+      theme,
+      colorPreference: colorStillValid(room, theme) ? room.colorPreference : '',
+    }))
   }
 
   const canProceed = () => {
-    if (step === 1) return formData.childName.trim() !== ''
-    if (step === 2) return formData.gender !== ''
-    if (step === 3) return formData.age !== ''
-    if (step === 4) return formData.theme !== ''
-    if (step === 5) return formData.colorPreference !== ''
-    if (step === 6) return formData.wallDesignOption !== ''
-
-    const siblingStep = getSiblingStepInfo(step)
-    if (!siblingStep) return false
-
-    const child = formData.additionalChildren[siblingStep.childIndex]
-    if (!child) return false
-
-    if (siblingStep.stepType === 'theme') return child.theme !== ''
-    if (siblingStep.stepType === 'color') return child.colorPreference !== ''
-    return child.wallDesignOption !== ''
+    if (current.kind === 'rooms') {
+      return rooms.every(
+        (room) =>
+          room.children.length > 0 && room.children.every((child) => child.name.trim() !== ''),
+      )
+    }
+    if (current.kind === 'child') {
+      return rooms[current.roomIndex]?.children[current.childIndex]?.gender !== ''
+    }
+    if (current.kind === 'design-gender') return rooms[current.roomIndex]?.designGender !== ''
+    if (current.kind === 'design-age') return rooms[current.roomIndex]?.ageChoice !== null
+    if (current.kind === 'theme') return rooms[current.roomIndex]?.theme !== ''
+    if (current.kind === 'color') return rooms[current.roomIndex]?.colorPreference !== ''
+    return rooms[current.roomIndex]?.wallDesignOption !== ''
   }
 
-  const handleAddChild = () => {
-    if (newChildName.trim() && newChildGender) {
-      setFormData({
-        ...formData,
-        additionalChildren: [
-          ...formData.additionalChildren,
-          {
-            name: newChildName,
-            age: newChildAge,
-            gender: newChildGender,
-            theme: '',
-            colorPreference: '',
-            wallDesignOption: '',
-          },
-        ],
-      })
-      setNewChildName('')
-      setNewChildAge(5)
-      setNewChildGender('')
-      setShowAddChild(false)
+  const handleNext = () => {
+    if (safeIndex < steps.length - 1) {
+      setStepIndex(safeIndex + 1)
+      window.scrollTo(0, 0)
+      return
+    }
+    const queryParams = new URLSearchParams({ rooms: JSON.stringify(rooms) })
+    window.scrollTo(0, 0)
+    navigate(`/preview/recommended?${queryParams.toString()}`)
+  }
+
+  const handleBack = () => {
+    if (safeIndex > 0) {
+      setStepIndex(safeIndex - 1)
+      window.scrollTo(0, 0)
     }
   }
 
-  const handleRemoveChild = (index: number) => {
-    const additionalChildren = formData.additionalChildren.filter((_, i) => i !== index)
-    const newTotal = totalQuestionnaireSteps(additionalChildren.length)
-    setFormData({ ...formData, additionalChildren })
-    if (step > newTotal) setStep(newTotal)
-  }
-
-  const updateSibling = (index: number, partial: Partial<QuestionnaireChild>) => {
-    const updated = [...formData.additionalChildren]
-    updated[index] = { ...updated[index], ...partial }
-    setFormData({ ...formData, additionalChildren: updated })
-  }
-
-  const siblingStep = getSiblingStepInfo(step)
-  const activeSibling =
-    siblingStep && siblingStep.childIndex < formData.additionalChildren.length
-      ? formData.additionalChildren[siblingStep.childIndex]
-      : null
-
-  const colorPreferenceStillValid = (
-    gender: CatalogGender,
-    age: number,
-    theme: string,
-    colorPreference: string,
-  ) => {
-    if (!theme || !colorPreference) return false
-    const options = getQuestionnaireOptionsForScales(
-      filterColorScalesForChild(colorScales, gender, age, theme),
-    )
-    return options.some((option) => option.name === colorPreference)
-  }
-
-  const applyThemeChange = (theme: string) => {
-    const gender = formData.gender as CatalogGender
-    const age = parseInt(formData.age, 10)
-    const colorStillValid = colorPreferenceStillValid(
-      gender,
-      age,
-      theme,
-      formData.colorPreference,
-    )
-    setFormData({
-      ...formData,
-      theme,
-      colorPreference: colorStillValid ? formData.colorPreference : '',
-    })
-  }
-
-  const applySiblingThemeChange = (index: number, theme: string) => {
-    const child = formData.additionalChildren[index]
-    const colorStillValid = colorPreferenceStillValid(
-      child.gender,
-      child.age,
-      theme,
-      child.colorPreference,
-    )
-    updateSibling(index, {
-      theme,
-      colorPreference: colorStillValid ? child.colorPreference : '',
-    })
-  }
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const wide = current.kind === 'wall' || current.kind === 'color'
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB]">
+    <div className="min-h-screen bg-[#F7F4EF]">
       <Header />
 
-      <div
-        className={`mx-auto px-4 py-12 sm:px-6 lg:px-8 ${
-          step === 6 || siblingStep?.stepType === 'wall' ? 'max-w-5xl' : 'max-w-3xl'
-        }`}
-      >
-        <div className="mb-8">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-[#8B8B8B]">
-              שלב {step} מתוך {totalSteps}
-            </span>
+      <div className={`mx-auto px-4 py-8 sm:px-6 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
+        <div className="mb-5 flex items-center justify-between text-sm text-[#8A847C]">
+          <span dir="ltr">
+            {pad(stepNumber)} / {pad(totalSteps)}
+          </span>
+        </div>
+        <div className="mb-6 flex gap-1.5">
+          {steps.map((item, index) => (
             <span
-              aria-label={`${Math.round((step / totalSteps) * 100)}%`}
-              data-percent={`${Math.round((step / totalSteps) * 100)}%`}
-              className="text-sm text-[#8B8B8B] before:content-[attr(data-percent)]"
+              key={`${item.kind}-${index}`}
+              className={`h-1.5 flex-1 rounded-full ${index <= safeIndex ? 'bg-[#7E8B74]' : 'bg-[#E6E0D8]'}`}
             />
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[#F0EBE5]">
-            <div
-              className="h-full bg-[#C8B6A6] transition-all duration-300"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
-            />
-          </div>
-          {activeSibling && (
-            <p className="mt-3 text-center text-sm text-[#C8B6A6]">
-              מגדירים את החבילה של {activeSibling.name} ({genderLabel(activeSibling.gender)},{' '}
-              {activeSibling.age} שנים)
-            </p>
-          )}
+          ))}
         </div>
 
-        <div className="rounded-md border border-[#EAE3DB] bg-white p-6 shadow-[0_2px_10px_rgba(120,100,80,0.05)] sm:p-8 md:p-10">
-          {step === 1 && (
-            <div>
-              <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">מה שם הילד/ה שלך?</h2>
-              <p className="mb-6 text-[#6B6B6B]">נשתמש בזה כדי להתאים אישית את חבילת העיצוב</p>
-              <input
-                type="text"
-                value={formData.childName}
-                onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
-                placeholder="הכנס/י את שם הילד/ה"
-                className="w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-4 py-3 focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-                autoFocus
+        <div className="rounded-[28px] border border-[#EAE3DB] bg-white p-5 shadow-[0_8px_30px_rgba(120,100,80,0.05)] sm:p-8">
+          {current.kind === 'rooms' && (
+            <RoomsStep
+              rooms={rooms}
+              onChange={(next) => setRooms(next.map((room) => normalizeRoom(room)))}
+            />
+          )}
+
+          {current.kind === 'child' && (
+            <ChildStep
+              child={rooms[current.roomIndex].children[current.childIndex]}
+              roomNumber={current.roomIndex + 1}
+              roomCount={rooms.length}
+              onChange={(partial) => updateChild(current.roomIndex, current.childIndex, partial)}
+            />
+          )}
+
+          {current.kind === 'design-gender' && (
+            <DesignGenderStep
+              value={rooms[current.roomIndex].designGender}
+              onChange={(designGender) =>
+                updateRoom(current.roomIndex, (room) => normalizeRoom({ ...room, designGender }))
+              }
+            />
+          )}
+
+          {current.kind === 'design-age' && (
+            <DesignAgeStep
+              room={rooms[current.roomIndex]}
+              onChange={(ageChoice) =>
+                updateRoom(current.roomIndex, (room) => normalizeRoom({ ...room, ageChoice }))
+              }
+            />
+          )}
+
+          {current.kind === 'theme' && (
+            <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
+              <ThemePicker
+                title={themeTitle(rooms[current.roomIndex])}
+                gender={roomDesignProfile(rooms[current.roomIndex]).gender}
+                age={roomDesignProfile(rooms[current.roomIndex]).age}
+                value={rooms[current.roomIndex].theme}
+                onChange={(theme) => applyTheme(current.roomIndex, theme)}
               />
-            </div>
+            </RoomDesignStep>
           )}
 
-          {step === 2 && (
-            <div>
-              <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                מה המגדר של {formData.childName}?
-              </h2>
-              <p className="mb-6 text-[#6B6B6B]">זה עוזר לנו להמליץ על הנושאים הטובים ביותר</p>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {genderOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      const nextGender = option.value
-                      const themes = getQuestionnaireThemesForChild(
-                        nextGender,
-                        parseInt(formData.age, 10) || 5,
-                      )
-                      const themeStillValid = themes.some((t) => t.name === formData.theme)
-                      setFormData({
-                        ...formData,
-                        gender: nextGender,
-                        theme: themeStillValid ? formData.theme : '',
-                      })
-                    }}
-                    className={`rounded-sm border-2 p-6 transition-all ${
-                      formData.gender === option.value
-                        ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-                        : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                    }`}
-                  >
-                    <div className="mb-3 flex justify-center">
-                      <GenderIcon type={option.icon} />
-                    </div>
-                    <div className="font-normal">{option.label}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+          {current.kind === 'color' && rooms[current.roomIndex].theme !== '' && (
+            <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
+              <ColorPicker
+                gender={roomDesignProfile(rooms[current.roomIndex]).gender}
+                age={roomDesignProfile(rooms[current.roomIndex]).age}
+                theme={rooms[current.roomIndex].theme}
+                value={rooms[current.roomIndex].colorPreference}
+                onChange={(colorPreference) =>
+                  updateRoom(current.roomIndex, (room) => ({ ...room, colorPreference }))
+                }
+              />
+            </RoomDesignStep>
           )}
 
-          {step === 3 && (
-            <div>
-              <h2 className="mb-4 text-3xl font-light text-[#4A4A4A]">
-                {formData.gender === 'boy'
-                  ? 'בן כמה'
-                  : formData.gender === 'girl'
-                    ? 'בת כמה'
-                    : 'בן/בת כמה'}{' '}
-                {formData.childName}?
-              </h2>
-              <p className="mb-6 text-[#6B6B6B]">עיצובים מותאמים לגיל עושים את כל ההבדל</p>
-
-              <div className="mb-8" dir="ltr">
-                <div className="mb-6 text-center">
-                  <span className="text-5xl font-light text-[#C8B6A6]">{formData.age}</span>
-                  <span className="ml-2 text-2xl text-[#8B8B8B]">שנים</span>
-                </div>
-                <Slider
-                  value={[parseInt(formData.age, 10)]}
-                  onValueChange={(value) => {
-                    const themes =
-                      formData.gender !== ''
-                        ? getQuestionnaireThemesForChild(
-                            formData.gender as CatalogGender,
-                            value[0],
-                          )
-                        : []
-                    const themeStillValid = themes.some((t) => t.name === formData.theme)
-                    setFormData({
-                      ...formData,
-                      age: value[0].toString(),
-                      theme: themeStillValid ? formData.theme : '',
-                    })
-                  }}
-                  min={1}
-                  max={12}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="mt-2 flex justify-between text-sm text-[#8B8B8B]">
-                  <span>1</span>
-                  <span>12</span>
-                </div>
-              </div>
-
-              <div className="mt-8 border-t border-[#E8DED2] pt-8">
-                <h3 className="mb-4 text-xl font-light text-[#4A4A4A]">יש לכם עוד ילדים?</h3>
-                <p className="mb-4 text-base font-normal text-[#7BA05B]">
-                  הוסיפו אח/אחות — לכל ילד/ה תבחרו נושא, צבעים וקיר בנפרד, עם 20% הנחה על כל
-                  חבילה נוספת!
-                </p>
-
-                {formData.additionalChildren.map((child, index) => (
-                  <div
-                    key={index}
-                    className="mb-2 flex items-center justify-between rounded-sm bg-[#F9F7F4] p-4"
-                  >
-                    <span className="text-[#4A4A4A]">
-                      {child.name} ({child.age} שנים, {genderLabel(child.gender)})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveChild(index)}
-                      className="text-sm text-[#C87C7C] hover:text-[#B56B6B]"
-                    >
-                      הסר
-                    </button>
-                  </div>
-                ))}
-
-                {!showAddChild && formData.additionalChildren.length < 2 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAddChild(true)}
-                    className="w-full rounded-sm border-2 border-dashed border-[#C8B6A6] py-3 text-[#C8B6A6] transition-colors hover:bg-[#F9F7F4]"
-                  >
-                    + הוסף אח/אחות
-                  </button>
-                )}
-
-                {showAddChild && (
-                  <div className="space-y-4 rounded-sm bg-[#F9F7F4] p-4">
-                    <input
-                      type="text"
-                      value={newChildName}
-                      onChange={(e) => setNewChildName(e.target.value)}
-                      placeholder="שם הילד/ה"
-                      className="w-full rounded-sm border border-[#E8DED2] px-4 py-2 focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-                    />
-                    <div>
-                      <label className="mb-2 block text-sm text-[#6B6B6B]">מגדר</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {genderOptions.map((option) => (
-                          <button
-                            type="button"
-                            key={option.value}
-                            onClick={() => setNewChildGender(option.value)}
-                            className={`rounded-sm border-2 p-3 transition-all ${
-                              newChildGender === option.value
-                                ? 'border-[#C8B6A6] bg-white'
-                                : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-                            }`}
-                          >
-                            <div className="mb-1 flex justify-center">
-                              <GenderIcon type={option.icon} size="sm" />
-                            </div>
-                            <div className="text-xs">{option.label}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div dir="ltr">
-                      <label className="mb-2 block text-sm text-[#6B6B6B]">גיל</label>
-                      <div className="mb-2 text-center">
-                        <span className="text-2xl font-light text-[#C8B6A6]">{newChildAge}</span>
-                        <span className="ml-2 text-lg text-[#8B8B8B]">שנים</span>
-                      </div>
-                      <Slider
-                        value={[newChildAge]}
-                        onValueChange={(value) => setNewChildAge(value[0])}
-                        min={1}
-                        max={12}
-                        step={1}
-                      />
-                      <div className="mt-2 flex justify-between text-sm text-[#8B8B8B]">
-                        <span>1</span>
-                        <span>12</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={handleAddChild}
-                        disabled={!newChildName.trim() || !newChildGender}
-                        className={`flex-1 rounded-sm py-2 transition-colors ${
-                          newChildName.trim() && newChildGender
-                            ? 'bg-[#C8B6A6] text-white hover:bg-[#B5A99A]'
-                            : 'cursor-not-allowed bg-[#E8DED2] text-[#C5C5C5]'
-                        }`}
-                      >
-                        הוסף
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddChild(false)
-                          setNewChildName('')
-                          setNewChildAge(5)
-                          setNewChildGender('')
-                        }}
-                        className="flex-1 rounded-sm bg-[#F5F1ED] py-2 text-[#6B6B6B] hover:bg-[#E8DED2]"
-                      >
-                        ביטול
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+          {current.kind === 'wall' && (
+            <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
+              <WallDesignPicker
+                value={rooms[current.roomIndex].wallDesignOption}
+                onChange={(wallDesignOption) =>
+                  updateRoom(current.roomIndex, (room) => ({ ...room, wallDesignOption }))
+                }
+              />
+            </RoomDesignStep>
           )}
 
-          {step === 4 && formData.gender !== '' && (
-            <ThemePicker
-              childName={formData.childName}
-              gender={formData.gender as CatalogGender}
-              age={parseInt(formData.age, 10)}
-              value={formData.theme}
-              onChange={applyThemeChange}
-            />
-          )}
-
-          {step === 5 && formData.gender !== '' && formData.theme !== '' && (
-            <ColorPicker
-              childName={formData.childName}
-              gender={formData.gender as CatalogGender}
-              age={parseInt(formData.age, 10)}
-              theme={formData.theme}
-              value={formData.colorPreference}
-              onChange={(colorPreference) => setFormData({ ...formData, colorPreference })}
-            />
-          )}
-
-          {step === 6 && (
-            <WallDesignPicker
-              childName={formData.childName}
-              value={formData.wallDesignOption}
-              onChange={(wallDesignOption) => setFormData({ ...formData, wallDesignOption })}
-            />
-          )}
-
-          {activeSibling && siblingStep?.stepType === 'theme' && (
-            <ThemePicker
-              childName={activeSibling.name}
-              gender={activeSibling.gender}
-              age={activeSibling.age}
-              value={activeSibling.theme}
-              onChange={(theme) => applySiblingThemeChange(siblingStep.childIndex, theme)}
-            />
-          )}
-
-          {activeSibling && siblingStep?.stepType === 'color' && activeSibling.theme !== '' && (
-            <ColorPicker
-              childName={activeSibling.name}
-              gender={activeSibling.gender}
-              age={activeSibling.age}
-              theme={activeSibling.theme}
-              value={activeSibling.colorPreference}
-              onChange={(colorPreference) =>
-                updateSibling(siblingStep.childIndex, { colorPreference })
-              }
-            />
-          )}
-
-          {activeSibling && siblingStep?.stepType === 'wall' && (
-            <WallDesignPicker
-              childName={activeSibling.name}
-              value={activeSibling.wallDesignOption}
-              onChange={(wallDesignOption) =>
-                updateSibling(siblingStep.childIndex, { wallDesignOption })
-              }
-            />
-          )}
-
-          <div className="mt-8 flex items-center justify-between border-t border-[#E8DED2] pt-6">
+          <div className="mt-8 flex items-center justify-between">
             <button
               type="button"
               onClick={handleBack}
-              disabled={step === 1}
-              className={`flex items-center gap-2 rounded-sm px-6 py-3 transition-colors ${
-                step === 1
-                  ? 'cursor-not-allowed text-[#C5C5C5]'
-                  : 'text-[#6B6B6B] hover:bg-[#F9F7F4]'
-              }`}
+              disabled={safeIndex === 0}
+              className={`text-sm ${safeIndex === 0 ? 'cursor-not-allowed text-[#C5C5C5]' : 'text-[#8A847C]'}`}
             >
-              <ArrowRight className="h-4 w-4" />
-              חזור
+              חזרה
             </button>
-
             <button
               type="button"
               onClick={handleNext}
               disabled={!canProceed()}
-              className={`flex items-center gap-2 rounded-sm px-6 py-3 transition-all ${
+              className={`inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm transition-colors ${
                 canProceed()
-                  ? 'bg-[#C8B6A6] text-white shadow-sm hover:bg-[#B5A99A]'
+                  ? 'bg-[#C4B49A] text-white hover:bg-[#B3A288]'
                   : 'cursor-not-allowed bg-[#E8DED2] text-[#C5C5C5]'
               }`}
             >
-              {step === totalSteps ? 'סיים' : 'הבא'}
+              {safeIndex === steps.length - 1 ? 'סיום' : 'המשך'}
               <ArrowLeft className="h-4 w-4" />
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ChoiceRadio({ selected }: { selected: boolean }) {
+  return (
+    <span
+      className={`h-5 w-5 shrink-0 rounded-full border ${
+        selected ? 'border-[#C4A574] bg-[#C4A574]' : 'border-[#D5CBBF] bg-white'
+      }`}
+    />
+  )
+}
+
+function childAgeLabel(child: RoomChild) {
+  const who = child.gender === 'girl' ? 'בת' : 'בן'
+  if (child.age === 1) return `${who} שנה`
+  if (child.age === 2) return `${who} שנתיים`
+  return `${who} ${child.age}`
+}
+
+const ageWords: Record<number, string> = {
+  0: 'אפס',
+  1: 'שנה',
+  2: 'שנתיים',
+  3: 'שלוש',
+  4: 'ארבע',
+  5: 'חמש',
+  6: 'שש',
+  7: 'שבע',
+  8: 'שמונה',
+  9: 'תשע',
+  10: 'עשר',
+}
+
+function DesignGenderStep({
+  value,
+  onChange,
+}: {
+  value: CatalogGender | ''
+  onChange: (gender: CatalogGender) => void
+}) {
+  const options: { value: CatalogGender; label: string; hint?: string; icon: LucideIcon }[] = [
+    { value: 'boy', label: 'חדר לבן', icon: User },
+    { value: 'girl', label: 'חדר לבת', icon: User },
+    { value: 'unisex', label: 'חדר ניטרלי', hint: '(מתאים לבנים ולבנות)', icon: Users },
+  ]
+
+  return (
+    <div>
+      <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
+        לפי איזה מגדר תרצו
+        <br />
+        לעצב את החדר?
+      </h2>
+      <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
+        כך נוכל להתאים לכם נושאי עיצוב, צבעים
+        <br />
+        והשראה שיתאימו בדיוק לכם.
+      </p>
+      <div className="space-y-3">
+        {options.map((option) => {
+          const selected = value === option.value
+          const Icon = option.icon
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-right transition-colors ${
+                selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
+              }`}
+            >
+              <Icon className="h-6 w-6 shrink-0 text-[#C4B39A]" strokeWidth={1.4} />
+              <span className="flex-1">
+                <span className="block text-[#3C3834]">{option.label}</span>
+                {option.hint && <span className="block text-sm text-[#8A847C]">{option.hint}</span>}
+              </span>
+              <ChoiceRadio selected={selected} />
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DesignAgeStep({
+  room,
+  onChange,
+}: {
+  room: QuestionnaireRoom
+  onChange: (choice: AgeChoice) => void
+}) {
+  const bridges = bridgeAgeGroups(room.children)
+  const selectedKey =
+    room.ageChoice?.type === 'child'
+      ? `child-${room.ageChoice.childIndex}`
+      : room.ageChoice?.type === 'bridge'
+        ? `bridge-${room.ageChoice.ageGroupId}`
+        : ''
+
+  return (
+    <div>
+      <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
+        לפי איזה גיל תרצו לבחור
+        <br />
+        את נושא העיצוב?
+      </h2>
+      <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
+        כשאתם בגילאים שונים חולקים חדר, תוכלו
+        <br />
+        לבחור את נושא העיצוב לפי גילו של אחד מהם
+        {bridges.length > 0 && (
+          <>
+            , או לפי
+            <br />
+            נושאים שמתאימים לטווח הגילאים שביניהם.
+          </>
+        )}
+        {bridges.length === 0 && '.'}
+      </p>
+      <div className="space-y-3">
+        {room.children.map((child, index) => {
+          const key = `child-${index}`
+          const selected = selectedKey === key
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange({ type: 'child', childIndex: index })}
+              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 transition-colors ${
+                selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
+              }`}
+            >
+              <span className="text-[#3C3834]">
+                לפי {child.name}, {childAgeLabel(child)}
+              </span>
+              <ChoiceRadio selected={selected} />
+            </button>
+          )
+        })}
+        {bridges.map((ageGroupId) => {
+          const group = getAgeGroup(ageGroupId)
+          const key = `bridge-${ageGroupId}`
+          const selected = selectedKey === key
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange({ type: 'bridge', ageGroupId })}
+              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-right transition-colors ${
+                selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
+              }`}
+            >
+              <span>
+                <span className="block text-[#3C3834]">לפי גילאי {group.range[0]}-{group.range[1]}</span>
+                <span className="block text-sm text-[#8A847C]">נושאים חוצי גילאים</span>
+              </span>
+              <ChoiceRadio selected={selected} />
+            </button>
+          )
+        })}
+      </div>
+      {bridges.map((ageGroupId) => {
+        const group = getAgeGroup(ageGroupId)
+        const oldest = room.children.reduce((lead, child) => (child.age > lead.age ? child : lead))
+        const youngest = room.children.reduce((lead, child) => (child.age < lead.age ? child : lead))
+        const forOlder = oldest.gender === 'girl' ? 'עבורה' : 'עבורו'
+        const forYounger = youngest.gender === 'girl' ? 'עבורה' : 'עבורו'
+        const from = ageWords[group.range[0]] ?? String(group.range[0])
+        const to = ageWords[group.range[1]] ?? String(group.range[1])
+        return (
+          <div key={ageGroupId} className="mt-4 flex items-start gap-2 rounded-2xl bg-[#F8F4EF] px-4 py-3 text-sm leading-6 text-[#6F6A64]">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B39A]" strokeWidth={1.6} />
+            <p>
+              נושאים חוצי גילאים הם נושאים שמתאימים לטווח שבין גיל {from} ל{to}, כך שזה לא מרגיש
+              קטן מדי {forOlder} ולא גדול מדי {forYounger}.
+            </p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function themeTitle(room: QuestionnaireRoom) {
+  const named = room.children.filter((child) => child.name.trim())
+  if (named.length === 1) {
+    const child = named[0]
+    const verb =
+      room.designGender === 'girl' ? 'אוהבת' : room.designGender === 'boy' ? 'אוהב' : 'אוהב/ת'
+    return `איזה נושא ${child.name} ${verb}?`
+  }
+  return 'איזה נושא אחד אוהבים בחדר?'
+}
+
+function RoomDesignStep({
+  room,
+  roomNumber,
+  roomCount,
+  children,
+}: {
+  room: QuestionnaireRoom
+  roomNumber: number
+  roomCount: number
+  children: ReactNode
+}) {
+  if (roomCount < 2) return <>{children}</>
+  return (
+    <div>
+      <p className="mb-4 text-center text-sm text-[#8A847C]">
+        חדר {roomNumber} מתוך {roomCount} | {formatRoomNames(room.children)}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+function RoomsStep({
+  rooms,
+  onChange,
+}: {
+  rooms: QuestionnaireRoom[]
+  onChange: (rooms: QuestionnaireRoom[]) => void
+}) {
+  const update = (recipe: (rooms: QuestionnaireRoom[]) => QuestionnaireRoom[]) => onChange(recipe(rooms))
+
+  return (
+    <div>
+      <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">
+        למי מעצבים את החדר?
+      </h2>
+      <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
+        ספרו לנו את שמות הילדים
+        <br />
+        וחלקו אותם לחדרים
+      </p>
+
+      <div className="space-y-4">
+        {rooms.map((room, roomIndex) => (
+          <div key={roomIndex} className="rounded-2xl border border-[#E7E1D8] p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-[#6F6A64]">
+                <Sofa className="h-4 w-4" strokeWidth={1.5} />
+                {roomIndex + 1} חדר
+              </span>
+              {rooms.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => update((list) => list.filter((_, index) => index !== roomIndex))}
+                  className="text-xs text-[#C87C7C]"
+                >
+                  הסרת חדר
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {room.children.map((child, childIndex) => (
+                <div key={childIndex} className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={`הסרת ${child.name || 'ילד'}`}
+                    onClick={() =>
+                      update((list) =>
+                        list.map((item, index) => {
+                          if (index !== roomIndex) return item
+                          const children = item.children.filter((_, i) => i !== childIndex)
+                          return {
+                            ...item,
+                            children: children.length > 0 ? children : [{ name: '', gender: '', age: 5 }],
+                          }
+                        }),
+                      )
+                    }
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#B7A89A]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="text"
+                    value={child.name}
+                    onChange={(event) =>
+                      update((list) =>
+                        list.map((item, index) =>
+                          index === roomIndex
+                            ? {
+                                ...item,
+                                children: item.children.map((entry, i) =>
+                                  i === childIndex ? { ...entry, name: event.target.value } : entry,
+                                ),
+                              }
+                            : item,
+                        ),
+                      )
+                    }
+                    placeholder="שם הילד/ה"
+                    className="w-full rounded-full border border-[#E8DED2] bg-[#FBF9F6] px-4 py-2.5 text-center focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
+                  />
+                  <User className="h-4 w-4 shrink-0 text-[#C4B39A]" strokeWidth={1.5} />
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                update((list) =>
+                  list.map((item, index) =>
+                    index === roomIndex
+                      ? { ...item, children: [...item.children, { name: '', gender: '', age: 5 }] }
+                      : item,
+                  ),
+                )
+              }
+              className="mt-3 flex w-full items-center justify-center gap-1 text-sm text-[#8A847C]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              הוספת ילד לחדר זה
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-3 text-sm text-[#6F6254]">
+        <img src="/assets/gift-icon.png" alt="" className="h-10 w-10 object-contain" />
+        <p>
+          <span className="font-medium">מוסיפים חדר נוסף</span>
+          <br />
+          ונהנים מ־20% הנחה
+          <br />
+          על חבילת העיצוב הנוספת!
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => update((list) => [...list, emptyRoom()])}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#8E9878] py-3 text-white hover:bg-[#7E8B74]"
+      >
+        <Plus className="h-4 w-4" />
+        הוספת חדר נוסף
+      </button>
+    </div>
+  )
+}
+
+function ChildStep({
+  child,
+  roomNumber,
+  roomCount,
+  onChange,
+}: {
+  child: RoomChild
+  roomNumber: number
+  roomCount: number
+  onChange: (partial: Partial<RoomChild>) => void
+}) {
+  return (
+    <div>
+      <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">
+        קצת על {child.name}
+      </h2>
+      <p className="mb-4 text-center text-sm text-[#8A847C]">ספרו לנו עוד קצת</p>
+      <p className="mx-auto mb-6 w-fit rounded-full bg-[#F6F1EA] px-4 py-1 text-sm text-[#8A847C]">
+        חדר {roomNumber} מתוך {roomCount} | {child.name}
+      </p>
+
+      <p className="mb-3 text-center text-[#4A4540]">בן או בת?</p>
+      <div className="mb-8 grid grid-cols-2 gap-3">
+        {genderOptions.map((option) => {
+          const selected = child.gender === option.value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange({ gender: option.value })}
+              className={`flex flex-col items-center gap-2 rounded-2xl border py-5 transition-all ${
+                selected
+                  ? 'border-[#B7C7A4] bg-[#E3EDD6] ring-1 ring-[#B7C7A4]'
+                  : 'border-[#E7E1D8] bg-white hover:border-[#D4C4B0]'
+              }`}
+            >
+              <User className="h-7 w-7 text-[#C4B39A]" strokeWidth={1.4} />
+              <span className="text-[#4A4540]">{option.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <p className="mb-2 text-center text-[#4A4540]">באיזה גיל?</p>
+      <div className="mb-4 text-center">
+        <div className="text-5xl font-light text-[#7E8B74]">{child.age}</div>
+        <div className="text-sm text-[#8A847C]">שנים</div>
+      </div>
+      <div dir="ltr">
+        <Slider
+          value={[child.age]}
+          onValueChange={(value) => onChange({ age: value[0] })}
+          min={1}
+          max={12}
+          step={1}
+        />
+        <div className="mt-2 flex justify-between text-sm text-[#8A847C]">
+          <span>1</span>
+          <span>12</span>
         </div>
       </div>
     </div>

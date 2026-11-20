@@ -8,7 +8,7 @@ async function chooseUnderHeading(page: Page, heading: RegExp) {
 }
 
 async function next(page: Page) {
-  await page.getByRole('button', { name: 'הבא' }).click()
+  await page.getByRole('button', { name: 'המשך' }).click()
 }
 
 test.describe.serial('customer flow', () => {
@@ -49,46 +49,46 @@ test.describe.serial('customer flow', () => {
   test('new user signs up and completes a package purchase', async ({ page }) => {
     test.setTimeout(120_000)
     await page.goto('/questionnaire')
-    await expect(page.getByText('שלב 1 מתוך 6')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'למי מעצבים את החדר?' })).toBeVisible()
+    await expect(page.getByText('01 / 06')).toBeVisible()
 
-    await page.getByPlaceholder('הכנס/י את שם הילד/ה').fill('נועה')
+    await page.getByPlaceholder('שם הילד/ה').fill('נועה')
+    await page.getByRole('button', { name: 'הוספת חדר נוסף' }).click()
+    await page.getByPlaceholder('שם הילד/ה').nth(1).fill('אייר')
+    await expect(page.getByText('01 / 11')).toBeVisible()
     await next(page)
 
+    await expect(page.getByRole('heading', { name: 'קצת על נועה' })).toBeVisible()
     await page.getByRole('button', { name: 'בת', exact: true }).click()
     await next(page)
 
-    await expect(page.getByRole('heading', { name: /בת כמה נועה/ })).toBeVisible()
-    await page.getByRole('button', { name: '+ הוסף אח/אחות' }).click()
-    await page.getByPlaceholder('שם הילד/ה').fill('אייר')
+    await expect(page.getByRole('heading', { name: 'קצת על אייר' })).toBeVisible()
     await page.getByRole('button', { name: 'בן', exact: true }).click()
-    await page.getByRole('button', { name: 'הוסף', exact: true }).click()
-    await expect(page.getByText('אייר (5 שנים, בן)')).toBeVisible()
-    await expect(page.getByText('שלב 3 מתוך 9')).toBeVisible()
     await next(page)
 
+    await page.getByRole('button', { name: 'חדר לבת' }).click()
+    await next(page)
     await chooseUnderHeading(page, /איזה נושא נועה/)
     await next(page)
-
     await chooseUnderHeading(page, /בחרי את סקלת הגוונים שלך/)
     await next(page)
-
-    await expect(page.getByRole('heading', { name: /הקיר המרכזי של נועה/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /הקיר המרכזי/ })).toBeVisible()
     await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
     await next(page)
 
+    await page.getByRole('button', { name: 'חדר לבן' }).click()
+    await next(page)
     await chooseUnderHeading(page, /איזה נושא אייר/)
     await next(page)
-
     await chooseUnderHeading(page, /בחרי את סקלת הגוונים שלך/)
     await next(page)
-
     await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
-    await page.getByRole('button', { name: 'סיים' }).click()
+    await page.getByRole('button', { name: 'סיום' }).click()
 
     await expect(page).toHaveURL(/\/preview\/recommended/)
     await expect(page.getByText('חבילת העיצוב של נועה')).toBeVisible()
     await expect(page.getByText('חבילת העיצוב של אייר')).toBeVisible()
-    await expect(page.getByText(/חסכתם ₪\d+ בהנחת אחים/)).toBeVisible()
+    await expect(page.getByText(/חסכתם ₪\d+ בהנחת חדר נוסף/)).toBeVisible()
     await expect(page.getByText(/סה״כ \d+ ש״ח - לחודש ל-6 תשלומים/)).toBeVisible()
     await expect(page.getByText(/או \d+ בתשלום 1/)).toBeVisible()
     const teasers = page.locator('img[src*="/assets/design-packages/"]')

@@ -7,7 +7,7 @@ const PUBLIC_PAGES = [
   { path: '/terms', heading: /תקנון ותנאי שימוש/ },
   { path: '/privacy', heading: 'מדיניות פרטיות' },
   { path: '/tips', heading: 'טיפים ועצות שימושיות' },
-  { path: '/questionnaire', heading: 'מה שם הילד/ה שלך?' },
+  { path: '/questionnaire', heading: 'למי מעצבים את החדר?' },
   { path: '/login', heading: 'ברוכה שובך' },
 ]
 
@@ -64,7 +64,7 @@ async function layoutProblems(page: Page, label: string): Promise<Problem[]> {
 }
 
 async function next(page: Page) {
-  await page.getByRole('button', { name: 'הבא' }).click()
+  await page.getByRole('button', { name: 'המשך' }).click()
 }
 
 test.describe.serial('qa audit', () => {
@@ -120,19 +120,20 @@ test.describe.serial('qa audit', () => {
 
   test('questionnaire blocks empty answers and keeps the redesigned steps', async ({ page }) => {
     await page.goto('/questionnaire')
-    await expect(page.getByRole('button', { name: 'הבא' })).toBeDisabled()
-    await expect(page.locator('[data-percent="17%"]')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'המשך' })).toBeDisabled()
+    await expect(page.getByText('01 / 06')).toBeVisible()
 
-    await page.getByPlaceholder('הכנס/י את שם הילד/ה').fill('ארד')
+    await page.getByPlaceholder('שם הילד/ה').fill('ארד')
     await next(page)
-    await expect(page.getByRole('button', { name: 'הבא' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'המשך' })).toBeDisabled()
     await page.getByRole('button', { name: 'בן', exact: true }).click()
     await next(page)
+    await page.getByRole('button', { name: 'חדר לבן' }).click()
     await next(page)
 
-    const theme = page.getByRole('heading', { level: 2 }).locator('..').getByRole('button').first()
+    const theme = page.getByRole('heading', { level: 2, name: /איזה נושא/ }).locator('..').getByRole('button').first()
     await theme.click()
-    await expect(theme.locator('svg')).toHaveCount(2)
+    await expect(theme.locator('svg')).toHaveCount(1)
     await next(page)
 
     await expect(page.getByRole('heading', { name: 'בחרי את סקלת הגוונים שלך' })).toBeVisible()
@@ -141,7 +142,7 @@ test.describe.serial('qa audit', () => {
     await page.getByRole('heading', { level: 2 }).locator('..').getByRole('button').first().click()
     await next(page)
 
-    await expect(page.getByRole('heading', { name: /הקיר המרכזי של ארד/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /הקיר המרכזי/ })).toBeVisible()
     await expect(page.locator('img[src="/assets/wall-panel.jpg"]')).toBeVisible()
     await expect(page.locator('img[src="/assets/wall-paint.jpg"]')).toBeVisible()
     const covering = page.getByRole('button', { name: /חיפוי קיר דקורטיבי/ })
@@ -150,7 +151,7 @@ test.describe.serial('qa audit', () => {
     const paintBox = await paint.boundingBox()
     expect(coveringBox && paintBox && coveringBox.x > paintBox.x).toBeTruthy()
     await covering.click()
-    await page.getByRole('button', { name: 'סיים' }).click()
+    await page.getByRole('button', { name: 'סיום' }).click()
     await expect(page).toHaveURL(/\/preview\/recommended/)
     await expect(page.getByText('חבילת העיצוב של ארד')).toBeVisible()
     await expect(page.getByText('חיפוי קיר דקורטיבי')).toHaveCount(0)
@@ -226,17 +227,18 @@ test.describe.serial('qa audit', () => {
     attachMonitors(page, problems, 'purchase')
 
     await page.goto('/questionnaire')
-    await page.getByPlaceholder('הכנס/י את שם הילד/ה').fill('נועה')
+    await page.getByPlaceholder('שם הילד/ה').fill('נועה')
     await next(page)
     await page.getByRole('button', { name: 'בת', exact: true }).click()
     await next(page)
+    await page.getByRole('button', { name: 'חדר לבת' }).click()
     await next(page)
-    await page.getByRole('heading', { level: 2 }).locator('..').getByRole('button').first().click()
+    await page.getByRole('heading', { level: 2, name: /איזה נושא/ }).locator('..').getByRole('button').first().click()
     await next(page)
     await page.getByRole('heading', { level: 2 }).locator('..').getByRole('button').first().click()
     await next(page)
     await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
-    await page.getByRole('button', { name: 'סיים' }).click()
+    await page.getByRole('button', { name: 'סיום' }).click()
     await expect(page).toHaveURL(/\/preview\/recommended/)
 
     await page.getByRole('button', { name: 'לרכישה מיידית' }).click()

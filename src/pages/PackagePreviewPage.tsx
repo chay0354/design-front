@@ -14,6 +14,10 @@ import {
 } from '../data/packageCatalog'
 import type { ThemePackage } from '../data/themePackages'
 import {
+  formatRoomNames,
+  parseRoomsParam,
+  roomDesignProfile,
+  roomPackagePrice,
   type QuestionnaireChild,
 } from '../utils/questionnaire'
 
@@ -261,6 +265,7 @@ export function PackagePreviewPage() {
     window.scrollTo(0, 0)
   }, [searchParams])
 
+  const rooms = parseRoomsParam(searchParams.get('rooms'))
   const childName = searchParams.get('childName') || ''
   const gender = (searchParams.get('gender') as 'boy' | 'girl' | 'unisex') || 'unisex'
   const age = parseInt(searchParams.get('age') || '5', 10)
@@ -272,18 +277,37 @@ export function PackagePreviewPage() {
     ? (JSON.parse(additionalChildrenParam) as QuestionnaireChild[])
     : []
 
-  const recommendedPackages = findMatchingPackages(gender, age, theme, colorPreference)
-  const mainPackage = recommendedPackages[0] || packages[0]
-
-  const additionalPackagesDetails = additionalChildren.map((child) => {
-    const childPackages = findMatchingPackages(
-      child.gender,
-      child.age,
-      child.theme,
-      child.colorPreference,
-    )
-    return { child, package: childPackages[0] || packages[0] }
+  const roomCards = (rooms
+    ? rooms.map((room) => {
+        const profile = roomDesignProfile(room)
+        return {
+          name: formatRoomNames(room.children),
+          gender: profile.gender,
+          age: profile.age,
+          theme: room.theme,
+          colorPreference: room.colorPreference,
+          wallDesignOption: room.wallDesignOption,
+        }
+      })
+    : [
+        { name: childName, gender, age, theme, colorPreference, wallDesignOption },
+        ...additionalChildren.map((child) => ({
+          name: child.name,
+          gender: child.gender,
+          age: child.age,
+          theme: child.theme,
+          colorPreference: child.colorPreference,
+          wallDesignOption: child.wallDesignOption,
+        })),
+      ]
+  ).map((card, index) => {
+    const matched = findMatchingPackages(card.gender, card.age, card.theme, card.colorPreference)
+    const pkg = matched[0] || packages[0]
+    return { ...card, package: pkg, price: pkg ? roomPackagePrice(pkg.price, index) : 0 }
   })
+
+  const mainCard = roomCards[0]
+  const mainPackage = mainCard?.package
 
   if (loading || !mainPackage) {
     return (
@@ -295,15 +319,17 @@ export function PackagePreviewPage() {
   }
 
   const handlePurchase = () => {
-    const queryParams = new URLSearchParams({
-      childName,
-      childAge: age.toString(),
-      gender,
-      theme,
-      colorPreference,
-      wallDesignOption,
-      additionalChildren: JSON.stringify(additionalChildren),
-    })
+    const queryParams = rooms
+      ? new URLSearchParams({ rooms: JSON.stringify(rooms) })
+      : new URLSearchParams({
+          childName,
+          childAge: age.toString(),
+          gender,
+          theme,
+          colorPreference,
+          wallDesignOption,
+          additionalChildren: JSON.stringify(additionalChildren),
+        })
 
     if (!user) {
       sessionStorage.setItem('intended_package', mainPackage.id)
@@ -314,17 +340,13 @@ export function PackagePreviewPage() {
     }
   }
 
-  const grandTotal =
-    mainPackage.price +
-    additionalPackagesDetails.reduce(
-      (sum, item) => sum + Math.round(item.package.price * 0.8),
-      0,
-    )
-
-  const totalSavings = additionalPackagesDetails.reduce(
-    (sum, item) => sum + Math.round(item.package.price * 0.2),
+  const grandTotal = roomCards.reduce((sum, card) => sum + card.price, 0)
+  const totalSavings = roomCards.reduce(
+    (sum, card) => sum + (card.package ? card.package.price - card.price : 0),
     0,
   )
+  const discountLabel = rooms ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'
+  const savingsLabel = rooms ? 'בהנחת חדר נוסף' : 'בהנחת אחים'
   const installmentCount = 6
   const monthlyPayment = Math.round(grandTotal / installmentCount)
 
@@ -336,45 +358,35 @@ export function PackagePreviewPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="space-y-16">
-          <ChildPackageCard
-            childName={childName}
-            gender={gender}
-            age={age}
-            theme={theme}
-            colorPreference={colorPreference}
-            pkg={mainPackage}
-            price={mainPackage.price}
-            onPurchase={handlePurchase}
-            purchaseLabel={purchaseLabel}
-          />
-
-          {additionalPackagesDetails.map((item, index) => (
+          {roomCards.map((card, index) => (
             <ChildPackageCard
-              key={`${item.child.name}-${index}`}
-              childName={item.child.name}
-              gender={item.child.gender}
-              age={item.child.age}
-              theme={item.child.theme}
-              colorPreference={item.child.colorPreference}
-              pkg={item.package}
-              price={Math.round(item.package.price * 0.8)}
-              originalPrice={item.package.price}
-              discountLabel="הנחת אחים 20%"
+              key={`${card.name}-${index}`}
+              childName={card.name}
+              gender={card.gender}
+              age={card.age}
+              theme={card.theme}
+              colorPreference={card.colorPreference}
+              pkg={card.package}
+              price={card.price}
+              originalPrice={index > 0 ? card.package.price : undefined}
+              discountLabel={index > 0 ? discountLabel : undefined}
               onPurchase={handlePurchase}
               purchaseLabel={purchaseLabel}
             />
           ))}
         </div>
 
-        {additionalChildren.length > 0 && (
+        {roomCards.length > 1 && (
           <div className="mt-16 border-t border-[#F0EBE4] pt-10 text-center">
-            {additionalPackagesDetails.map((item) => (
-              <p key={item.child.name} className="mb-2 text-sm text-[#8B8B8B]">
-                חבילת {item.child.name} · ₪{Math.round(item.package.price * 0.8)}
+            {roomCards.slice(1).map((card) => (
+              <p key={card.name} className="mb-2 text-sm text-[#8B8B8B]">
+                חבילת {card.name} · ₪{card.price}
               </p>
             ))}
             {totalSavings > 0 && (
-              <p className="mb-4 text-sm text-[#7BA05B]">חסכתם ₪{totalSavings} בהנחת אחים</p>
+              <p className="mb-4 text-sm text-[#7BA05B]">
+                חסכתם ₪{totalSavings} {savingsLabel}
+              </p>
             )}
             <p className="text-2xl font-light text-[#4A4A4A]">
               סה״כ {monthlyPayment} ש״ח - לחודש ל-{installmentCount} תשלומים

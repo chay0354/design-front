@@ -14,7 +14,13 @@ import { useData } from '../contexts/DataContext'
 
 import {
 
+  formatRoomNames,
+
   genderLabel,
+
+  parseRoomsParam,
+
+  roomDesignProfile,
 
   type QuestionnaireChild,
 
@@ -72,28 +78,52 @@ export function CheckoutPage() {
 
   const { getPackageById, findMatchingPackages, loading: dataLoading } = useData()
 
-  const childName = searchParams.get('childName') || ''
+  const rooms = parseRoomsParam(searchParams.get('rooms'))
 
-  const childAge = parseInt(searchParams.get('childAge') || '0', 10)
+  const legacyChildren: QuestionnaireChild[] = (() => {
+    const raw = searchParams.get('additionalChildren')
+    if (!raw) return []
+    try {
+      return JSON.parse(raw) as QuestionnaireChild[]
+    } catch {
+      return []
+    }
+  })()
 
-  const childGender = searchParams.get('gender') || ''
+  const roomProfiles = rooms
+    ? rooms.map((room) => {
+        const profile = roomDesignProfile(room)
+        return {
+          name: formatRoomNames(room.children),
+          age: profile.age,
+          gender: profile.gender,
+          theme: room.theme,
+          colorPreference: room.colorPreference,
+          wallDesignOption: room.wallDesignOption,
+        }
+      })
+    : null
 
-  const childTheme = searchParams.get('theme') || ''
+  const primary = roomProfiles?.[0]
+  const childName = primary?.name || searchParams.get('childName') || ''
+  const childAge = primary?.age ?? parseInt(searchParams.get('childAge') || '0', 10)
+  const childGender = primary?.gender || searchParams.get('gender') || ''
+  const childTheme = primary?.theme || searchParams.get('theme') || ''
+  const childColorPreference = primary?.colorPreference || searchParams.get('colorPreference') || ''
 
-  const childColorPreference = searchParams.get('colorPreference') || ''
-
-  const additionalChildrenParam = searchParams.get('additionalChildren')
-
-  const additionalChildren: QuestionnaireChild[] = additionalChildrenParam
-
-    ? (JSON.parse(additionalChildrenParam) as QuestionnaireChild[])
-
-    : []
-
-
+  const additionalChildren: QuestionnaireChild[] = roomProfiles
+    ? roomProfiles.slice(1).map((room) => ({
+        name: room.name,
+        age: room.age,
+        gender: room.gender,
+        theme: room.theme,
+        colorPreference: room.colorPreference,
+        wallDesignOption: room.wallDesignOption,
+      }))
+    : legacyChildren
 
   const mainPkg = useMemo(() => {
-    if (packageId) {
+    if (packageId && !rooms) {
       const fromId = getPackageById(packageId)
       if (fromId) return fromId
     }
@@ -107,9 +137,11 @@ export function CheckoutPage() {
       )[0]
     }
 
+    if (packageId) return getPackageById(packageId)
     return undefined
   }, [
     packageId,
+    rooms,
     getPackageById,
     findMatchingPackages,
     childGender,
@@ -118,45 +150,24 @@ export function CheckoutPage() {
     childColorPreference,
   ])
 
-
-
   const siblingOrders = useMemo(
-
     () =>
-
       additionalChildren.map((child) => {
-
         const matched =
-
           findMatchingPackages(
-
             child.gender,
-
             child.age,
-
             child.theme,
-
             child.colorPreference,
-
           )[0] || mainPkg
-
         return {
-
           child,
-
           pkg: matched!,
-
           price: matched ? Math.round(matched.price * 0.8) : 0,
-
         }
-
       }),
-
     [additionalChildren, findMatchingPackages, mainPkg],
-
   )
-
-
 
   const [cardNumber, setCardNumber] = useState('')
 
@@ -222,7 +233,10 @@ export function CheckoutPage() {
 
     if (childColorPreference) previewParams.set('colorPreference', childColorPreference)
 
-    if (additionalChildrenParam) previewParams.set('additionalChildren', additionalChildrenParam)
+    const roomsParam = searchParams.get('rooms')
+    if (roomsParam) previewParams.set('rooms', roomsParam)
+    const extraChildren = searchParams.get('additionalChildren')
+    if (extraChildren) previewParams.set('additionalChildren', extraChildren)
 
     return <Navigate to={`/preview/recommended?${previewParams.toString()}`} replace />
 
@@ -728,7 +742,7 @@ export function CheckoutPage() {
 
                     <div className="mt-2 flex justify-between text-sm">
 
-                      <span className="text-[#7BA05B]">הנחת אחים 20%</span>
+                      <span className="text-[#7BA05B]">{searchParams.get('rooms') ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'}</span>
 
                       <span className="font-normal text-[#4A4A4A]">₪{order.price}</span>
 
