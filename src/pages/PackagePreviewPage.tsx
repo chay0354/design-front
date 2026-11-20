@@ -14,7 +14,10 @@ import {
 } from '../data/packageCatalog'
 import type { ThemePackage } from '../data/themePackages'
 import {
+  INSTALLMENT_COUNT,
+  ROOM_PACKAGE_PRICE,
   formatRoomNames,
+  installmentAmount,
   parseRoomsParam,
   roomDesignProfile,
   roomPackagePrice,
@@ -234,11 +237,16 @@ function ChildPackageCard({
             <Lock className="h-5 w-5" strokeWidth={1.5} />
             {purchaseLabel}
           </button>
-          <div className="flex shrink-0 items-baseline gap-1.5">
-            {originalPrice && originalPrice > price && (
-              <span className="text-sm font-light text-[#B5B0A8] line-through">{originalPrice}₪</span>
-            )}
-            <span className="text-[30px] tracking-tight text-[#1F1C1A]">{price}₪</span>
+          <div className="flex shrink-0 flex-col items-end">
+            <div className="flex items-baseline gap-1.5">
+              {originalPrice && originalPrice > price && (
+                <span className="text-sm font-light text-[#B5B0A8] line-through">{originalPrice}₪</span>
+              )}
+              <span className="text-[30px] tracking-tight text-[#1F1C1A]">{price}₪</span>
+            </div>
+            <span className="text-[11px] text-[#8B8B8B]">
+              {installmentAmount(price)} ש״ח ב-{INSTALLMENT_COUNT} תשלומים
+            </span>
           </div>
         </div>
       </div>
@@ -303,7 +311,7 @@ export function PackagePreviewPage() {
   ).map((card, index) => {
     const matched = findMatchingPackages(card.gender, card.age, card.theme, card.colorPreference)
     const pkg = matched[0] || packages[0]
-    return { ...card, package: pkg, price: pkg ? roomPackagePrice(pkg.price, index) : 0 }
+    return { ...card, package: pkg, price: pkg ? roomPackagePrice(ROOM_PACKAGE_PRICE, index) : 0 }
   })
 
   const mainCard = roomCards[0]
@@ -342,13 +350,12 @@ export function PackagePreviewPage() {
 
   const grandTotal = roomCards.reduce((sum, card) => sum + card.price, 0)
   const totalSavings = roomCards.reduce(
-    (sum, card) => sum + (card.package ? card.package.price - card.price : 0),
+    (sum, card) => sum + (card.package ? ROOM_PACKAGE_PRICE - card.price : 0),
     0,
   )
   const discountLabel = rooms ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'
   const savingsLabel = rooms ? 'בהנחת חדר נוסף' : 'בהנחת אחים'
-  const installmentCount = 6
-  const monthlyPayment = Math.round(grandTotal / installmentCount)
+  const monthlyPayment = installmentAmount(grandTotal)
 
   const purchaseLabel = 'לרכישה מיידית'
 
@@ -368,7 +375,7 @@ export function PackagePreviewPage() {
               colorPreference={card.colorPreference}
               pkg={card.package}
               price={card.price}
-              originalPrice={index > 0 ? card.package.price : undefined}
+              originalPrice={index > 0 ? ROOM_PACKAGE_PRICE : undefined}
               discountLabel={index > 0 ? discountLabel : undefined}
               onPurchase={handlePurchase}
               purchaseLabel={purchaseLabel}
@@ -389,7 +396,7 @@ export function PackagePreviewPage() {
               </p>
             )}
             <p className="text-2xl font-light text-[#4A4A4A]">
-              סה״כ {monthlyPayment} ש״ח - לחודש ל-{installmentCount} תשלומים
+              סה״כ {monthlyPayment} ש״ח - לחודש ל-{INSTALLMENT_COUNT} תשלומים
             </p>
             <p className="mt-2 text-base text-[#8B8B8B]">או {grandTotal} בתשלום 1</p>
           </div>

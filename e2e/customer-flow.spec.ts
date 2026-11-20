@@ -73,7 +73,7 @@ test.describe.serial('customer flow', () => {
     await chooseUnderHeading(page, /סקלת הגוונים לחדר של נועה/)
     await next(page)
     await expect(page.getByRole('heading', { name: /הקיר המרכזי/ })).toBeVisible()
-    await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
+    await page.getByRole('button', { name: /קיר מרכזי בצביעה/ }).click()
     await next(page)
 
     await page.getByRole('button', { name: 'חדר לבן' }).click()
@@ -82,14 +82,14 @@ test.describe.serial('customer flow', () => {
     await next(page)
     await chooseUnderHeading(page, /סקלת הגוונים לחדר של אייר/)
     await next(page)
-    await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
+    await page.getByRole('button', { name: /קיר מרכזי בצביעה/ }).click()
     await page.getByRole('button', { name: 'סיום' }).click()
 
     await expect(page).toHaveURL(/\/preview\/recommended/)
     await expect(page.getByText('חבילת העיצוב של נועה')).toBeVisible()
     await expect(page.getByText('חבילת העיצוב של אייר')).toBeVisible()
     await expect(page.getByText(/חסכתם ₪\d+ בהנחת חדר נוסף/)).toBeVisible()
-    await expect(page.getByText(/סה״כ \d+ ש״ח - לחודש ל-6 תשלומים/)).toBeVisible()
+    await expect(page.getByText(/סה״כ \d+ ש״ח - לחודש ל-12 תשלומים/)).toBeVisible()
     await expect(page.getByText(/או \d+ בתשלום 1/)).toBeVisible()
     const teasers = page.locator('img[src*="/assets/design-packages/"]')
     await expect(teasers.first()).toBeVisible()
@@ -116,9 +116,9 @@ test.describe.serial('customer flow', () => {
 
     await expect(page.getByRole('heading', { name: 'תשלום מאובטח' })).toBeVisible()
     await expect(page.getByText('נועה').first()).toBeVisible()
-    await page.getByText('6 תשלומים', { exact: true }).click()
-    await expect(page.getByText(/תזכורת: 6 תשלומים של ₪\d+ בכל חודש/)).toBeVisible()
-    await expect(page.getByRole('button', { name: /× 6 תשלומים/ })).toBeVisible()
+    await page.getByText('12 תשלומים', { exact: true }).click()
+    await expect(page.getByText(/תזכורת: 12 תשלומים של ₪\d+ בכל חודש/)).toBeVisible()
+    await expect(page.getByRole('button', { name: /× 12 תשלומים/ })).toBeVisible()
 
     for (const box of await page.getByRole('checkbox').all()) {
       await box.check()

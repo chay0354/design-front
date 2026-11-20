@@ -155,7 +155,7 @@ export function Header() {
           aria-label="PETITE DREAMS"
           className="absolute left-1/2 shrink-0 -translate-x-1/2 sm:static sm:translate-x-0"
         >
-          <img src="/assets/logo-header.png" alt="" className="h-11 w-auto sm:h-12" />
+          <img src="/assets/logo-header.png?v=4" alt="" className="h-11 w-auto sm:h-12" />
         </Link>
 
         <Link

@@ -146,7 +146,7 @@ test.describe.serial('qa audit', () => {
     await expect(page.locator('img[src="/assets/wall-panel.jpg"]')).toBeVisible()
     await expect(page.locator('img[src="/assets/wall-paint.jpg"]')).toBeVisible()
     const covering = page.getByRole('button', { name: /חיפוי קיר דקורטיבי/ })
-    const paint = page.getByRole('button', { name: /קיר כוח בצביעה/ })
+    const paint = page.getByRole('button', { name: /קיר מרכזי בצביעה/ })
     const coveringBox = await covering.boundingBox()
     const paintBox = await paint.boundingBox()
     expect(coveringBox && paintBox && coveringBox.x > paintBox.x).toBeTruthy()
@@ -237,7 +237,7 @@ test.describe.serial('qa audit', () => {
     await next(page)
     await page.getByRole('heading', { level: 2 }).locator('..').getByRole('button').first().click()
     await next(page)
-    await page.getByRole('button', { name: /קיר כוח בצביעה/ }).click()
+    await page.getByRole('button', { name: /קיר מרכזי בצביעה/ }).click()
     await page.getByRole('button', { name: 'סיום' }).click()
     await expect(page).toHaveURL(/\/preview\/recommended/)
 

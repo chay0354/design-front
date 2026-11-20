@@ -68,6 +68,26 @@ const genderOptions = [
   { value: 'girl' as const, label: 'בת' },
 ]
 
+function GirlIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="7" r="3.5" />
+      <path d="M6 20v-1.5a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4V20" />
+      <path d="M8.5 7.5 7 11" />
+      <path d="M15.5 7.5 17 11" />
+    </svg>
+  )
+}
+
 const themeIcons: Record<string, LucideIcon> = {
   safari: PawPrint,
   adventures: Compass,
@@ -344,7 +364,7 @@ function WallDesignPicker({
     },
     {
       value: 'paint',
-      title: 'קיר כוח בצביעה',
+      title: 'קיר מרכזי בצביעה',
       text: 'צביעת קיר אחד – עבודה פשוטה יחסית. בסיס על-זמני שמתאים לכל גיל.',
       image: '/assets/wall-paint.jpg',
       icon: <PaintRoller className="h-12 w-12" strokeWidth={1} />,
@@ -497,13 +517,13 @@ export function QuestionnairePage() {
     <div className="min-h-screen bg-[#F7F4EF]">
       <Header />
 
-      <div className={`mx-auto px-4 py-8 sm:px-6 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
-        <div className="mb-5 flex items-center justify-between text-sm text-[#8A847C]">
+      <div className={`mx-auto px-4 pt-2 pb-4 sm:px-6 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
+        <div className="mb-2 flex items-center justify-between text-sm text-[#8A847C] sm:mb-5">
           <span dir="ltr">
             {pad(stepNumber)} / {pad(totalSteps)}
           </span>
         </div>
-        <div className="mb-6 flex gap-1.5">
+        <div className="mb-3 flex gap-1.5 sm:mb-6">
           {steps.map((item, index) => (
             <span
               key={`${item.kind}-${index}`}
@@ -512,7 +532,7 @@ export function QuestionnairePage() {
           ))}
         </div>
 
-        <div className="rounded-[28px] border border-[#EAE3DB] bg-white p-5 shadow-[0_8px_30px_rgba(120,100,80,0.05)] sm:p-8">
+        <div className="rounded-[28px] border border-[#EAE3DB] bg-white p-4 shadow-[0_8px_30px_rgba(120,100,80,0.05)] sm:p-8">
           {current.kind === 'rooms' && (
             <RoomsStep
               rooms={rooms}
@@ -523,8 +543,6 @@ export function QuestionnairePage() {
           {current.kind === 'child' && (
             <ChildStep
               child={rooms[current.roomIndex].children[current.childIndex]}
-              roomNumber={current.roomIndex + 1}
-              roomCount={rooms.length}
               onChange={(partial) => updateChild(current.roomIndex, current.childIndex, partial)}
             />
           )}
@@ -549,45 +567,39 @@ export function QuestionnairePage() {
           )}
 
           {current.kind === 'theme' && (
-            <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
-              <ThemePicker
-                title={themeTitle(rooms[current.roomIndex])}
-                gender={roomDesignProfile(rooms[current.roomIndex]).gender}
-                age={roomDesignProfile(rooms[current.roomIndex]).age}
-                value={rooms[current.roomIndex].theme}
-                onChange={(theme) => applyTheme(current.roomIndex, theme)}
-              />
-            </RoomDesignStep>
+            <ThemePicker
+              title={themeTitle(rooms[current.roomIndex])}
+              gender={roomDesignProfile(rooms[current.roomIndex]).gender}
+              age={roomDesignProfile(rooms[current.roomIndex]).age}
+              value={rooms[current.roomIndex].theme}
+              onChange={(theme) => applyTheme(current.roomIndex, theme)}
+            />
           )}
 
           {current.kind === 'color' && rooms[current.roomIndex].theme !== '' && (
-            <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
-              <ColorPicker
-                gender={roomDesignProfile(rooms[current.roomIndex]).gender}
-                age={roomDesignProfile(rooms[current.roomIndex]).age}
-                theme={rooms[current.roomIndex].theme}
-                room={rooms[current.roomIndex]}
-                value={rooms[current.roomIndex].colorPreference}
-                onChange={(colorPreference) =>
-                  updateRoom(current.roomIndex, (room) => ({ ...room, colorPreference }))
-                }
-              />
-            </RoomDesignStep>
+            <ColorPicker
+              gender={roomDesignProfile(rooms[current.roomIndex]).gender}
+              age={roomDesignProfile(rooms[current.roomIndex]).age}
+              theme={rooms[current.roomIndex].theme}
+              room={rooms[current.roomIndex]}
+              value={rooms[current.roomIndex].colorPreference}
+              onChange={(colorPreference) =>
+                updateRoom(current.roomIndex, (room) => ({ ...room, colorPreference }))
+              }
+            />
           )}
 
           {current.kind === 'wall' && (
-            <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
-              <WallDesignPicker
-                room={rooms[current.roomIndex]}
-                value={rooms[current.roomIndex].wallDesignOption}
-                onChange={(wallDesignOption) =>
-                  updateRoom(current.roomIndex, (room) => ({ ...room, wallDesignOption }))
-                }
-              />
-            </RoomDesignStep>
+            <WallDesignPicker
+              room={rooms[current.roomIndex]}
+              value={rooms[current.roomIndex].wallDesignOption}
+              onChange={(wallDesignOption) =>
+                updateRoom(current.roomIndex, (room) => ({ ...room, wallDesignOption }))
+              }
+            />
           )}
 
-          <div className="mt-8 flex items-center justify-between">
+          <div className="mt-5 flex items-center justify-between sm:mt-8">
             <button
               type="button"
               onClick={handleBack}
@@ -665,9 +677,7 @@ function DesignGenderStep({
   return (
     <div>
       <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
-        לפי איזה מגדר תרצו
-        <br />
-        את {roomPhrase(room)}?
+        {roomPhrase(room)} יעוצב כ:
       </h2>
       <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
         כך נוכל להתאים לכם נושאי עיצוב, צבעים
@@ -687,7 +697,11 @@ function DesignGenderStep({
                 selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
               }`}
             >
-              <Icon className="h-6 w-6 shrink-0 text-[#C4B39A]" strokeWidth={1.4} />
+              {option.value === 'girl' ? (
+                <GirlIcon className="h-6 w-6 shrink-0 text-[#C4B39A]" />
+              ) : (
+                <Icon className="h-6 w-6 shrink-0 text-[#C4B39A]" strokeWidth={1.4} />
+              )}
               <span className="flex-1">
                 <span className="block text-[#3C3834]">{option.label}</span>
                 {option.hint && <span className="block text-sm text-[#8A847C]">{option.hint}</span>}
@@ -810,13 +824,8 @@ function themeTitle(room: QuestionnaireRoom) {
       room.designGender === 'girl' ? 'אוהבת' : room.designGender === 'boy' ? 'אוהב' : 'אוהב/ת'
     return `איזה נושא ${child.name} ${verb}?`
   }
-  return (
-    <>
-      איזה נושא אחד אוהבים
-      <br />
-      {roomPhrase(room, 'be')}?
-    </>
-  )
+  const verb = named.every((child) => child.gender === 'girl') ? 'אוהבות' : 'אוהבים'
+  return `איזה נושא אחד ${formatRoomNames(named)} ${verb}?`
 }
 
 const roomOrdinals = ['הראשון', 'השני', 'השלישי', 'הרביעי', 'החמישי', 'השישי', 'השביעי', 'השמיני', 'התשיעי', 'העשירי']
@@ -838,28 +847,6 @@ function roomPhrase(room: QuestionnaireRoom, prefix: 'et' | 'le' | 'be' = 'et') 
   return `החדר של ${label}`
 }
 
-function RoomDesignStep({
-  room,
-  roomNumber,
-  roomCount,
-  children,
-}: {
-  room: QuestionnaireRoom
-  roomNumber: number
-  roomCount: number
-  children: ReactNode
-}) {
-  if (roomCount < 2) return <>{children}</>
-  return (
-    <div>
-      <p className="mb-4 text-center text-sm text-[#8A847C]">
-        חדר {roomNumber} מתוך {roomCount} | {formatRoomNames(room.children)}
-      </p>
-      {children}
-    </div>
-  )
-}
-
 function RoomsStep({
   rooms,
   onChange,
@@ -874,7 +861,7 @@ function RoomsStep({
       <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">
         למי מעצבים את החדר?
       </h2>
-      <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
+      <p className="mb-4 text-center text-sm leading-6 text-[#8A847C] sm:mb-6">
         ספרו לנו את שמות הילדים
         <br />
         וחלקו אותם לחדרים
@@ -964,7 +951,7 @@ function RoomsStep({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-3 text-sm text-[#6F6254]">
+      <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-2.5 text-sm text-[#6F6254] sm:mt-4 sm:py-3">
         <img src="/assets/gift-icon.png" alt="" className="h-10 w-10 object-contain" />
         <p>
           <span className="font-medium">מוסיפים חדר נוסף</span>
@@ -978,7 +965,7 @@ function RoomsStep({
       <button
         type="button"
         onClick={() => update((list) => [...list, emptyRoom()])}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#8E9878] py-3 text-white hover:bg-[#7E8B74]"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#8E9878] py-2.5 text-white hover:bg-[#7E8B74] sm:mt-4 sm:py-3"
       >
         <Plus className="h-4 w-4" />
         הוספת חדר נוסף
@@ -989,13 +976,9 @@ function RoomsStep({
 
 function ChildStep({
   child,
-  roomNumber,
-  roomCount,
   onChange,
 }: {
   child: RoomChild
-  roomNumber: number
-  roomCount: number
   onChange: (partial: Partial<RoomChild>) => void
 }) {
   return (
@@ -1003,10 +986,7 @@ function ChildStep({
       <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">
         קצת על {child.name}
       </h2>
-      <p className="mb-4 text-center text-sm text-[#8A847C]">ספרו לנו עוד קצת</p>
-      <p className="mx-auto mb-6 w-fit rounded-full bg-[#F6F1EA] px-4 py-1 text-sm text-[#8A847C]">
-        חדר {roomNumber} מתוך {roomCount} | {child.name}
-      </p>
+      <p className="mb-6 text-center text-sm text-[#8A847C]">ספרו לנו עוד קצת</p>
 
       <p className="mb-3 text-center text-[#4A4540]">בן או בת?</p>
       <div className="mb-8 grid grid-cols-2 gap-3">
@@ -1023,7 +1003,11 @@ function ChildStep({
                   : 'border-[#E7E1D8] bg-white hover:border-[#D4C4B0]'
               }`}
             >
-              <User className="h-7 w-7 text-[#C4B39A]" strokeWidth={1.4} />
+              {option.value === 'girl' ? (
+                <GirlIcon className="h-7 w-7 text-[#C4B39A]" />
+              ) : (
+                <User className="h-7 w-7 text-[#C4B39A]" strokeWidth={1.4} />
+              )}
               <span className="text-[#4A4540]">{option.label}</span>
             </button>
           )

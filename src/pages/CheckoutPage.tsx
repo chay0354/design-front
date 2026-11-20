@@ -20,7 +20,11 @@ import {
 
   parseRoomsParam,
 
+  INSTALLMENT_COUNT,
+  ROOM_PACKAGE_PRICE,
+  installmentAmount,
   roomDesignProfile,
+  roomPackagePrice,
 
   type QuestionnaireChild,
 
@@ -152,7 +156,7 @@ export function CheckoutPage() {
 
   const siblingOrders = useMemo(
     () =>
-      additionalChildren.map((child) => {
+      additionalChildren.map((child, index) => {
         const matched =
           findMatchingPackages(
             child.gender,
@@ -163,7 +167,7 @@ export function CheckoutPage() {
         return {
           child,
           pkg: matched!,
-          price: matched ? Math.round(matched.price * 0.8) : 0,
+          price: roomPackagePrice(ROOM_PACKAGE_PRICE, index + 1),
         }
       }),
     [additionalChildren, findMatchingPackages, mainPkg],
@@ -246,9 +250,9 @@ export function CheckoutPage() {
 
   const total =
 
-    mainPkg.price + siblingOrders.reduce((sum, order) => sum + order.price, 0)
+    ROOM_PACKAGE_PRICE + siblingOrders.reduce((sum, order) => sum + order.price, 0)
 
-  const monthlyPayment = Math.ceil(total / 6)
+  const monthlyPayment = installmentAmount(total)
 
 
 
@@ -644,7 +648,7 @@ export function CheckoutPage() {
 
                     : paymentOption === 'installments'
 
-                      ? `שלמי ₪${monthlyPayment} × 6 תשלומים`
+                      ? `שלמי ₪${monthlyPayment} × ${INSTALLMENT_COUNT} תשלומים`
 
                       : `שלמי ₪${total} עכשיו`}
 
@@ -694,7 +698,7 @@ export function CheckoutPage() {
 
                     <span className="text-sm text-[#6B6B6B]">חבילה ראשית</span>
 
-                    <span className="font-normal text-[#4A4A4A]">₪{mainPkg.price}</span>
+                    <span className="font-normal text-[#4A4A4A]">₪{ROOM_PACKAGE_PRICE}</span>
 
                   </div>
 
@@ -806,7 +810,7 @@ export function CheckoutPage() {
 
                         <div>
 
-                          <div className="text-sm text-[#6B6B6B]">6 תשלומים</div>
+                          <div className="text-sm text-[#6B6B6B]">{INSTALLMENT_COUNT} תשלומים</div>
 
                           <div className="text-3xl font-normal leading-tight text-[#4A4A4A]">
 
@@ -820,7 +824,7 @@ export function CheckoutPage() {
 
                             <p className="mt-2 text-sm leading-6 text-[#4A4A4A]">
 
-                              תזכורת: 6 תשלומים של ₪{monthlyPayment} בכל חודש, סה״כ ₪{total}.
+                              תזכורת: {INSTALLMENT_COUNT} תשלומים של ₪{monthlyPayment} בכל חודש, סה״כ ₪{total}.
 
                             </p>
 

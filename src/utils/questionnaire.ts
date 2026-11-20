@@ -134,8 +134,15 @@ export function formatRoomNames(children: { name: string }[]): string {
   return `${names.slice(0, -1).join(', ')} ו${names[names.length - 1]}`
 }
 
+export const ROOM_PACKAGE_PRICE = 660
+export const INSTALLMENT_COUNT = 12
+
 export function roomPackagePrice(basePrice: number, roomIndex: number): number {
   return roomIndex === 0 ? basePrice : Math.round(basePrice * 0.8)
+}
+
+export function installmentAmount(total: number): number {
+  return Math.round(total / INSTALLMENT_COUNT)
 }
 
 export function parseRoomsParam(raw: string | null): QuestionnaireRoom[] | null {
@@ -158,7 +165,7 @@ export {
 export { filterColorScalesForChild } from '../data/themeColorScales'
 
 export function wallDesignLabel(option: string): string {
-  if (option === 'paint') return 'קיר כוח בצביעה'
+  if (option === 'paint') return 'קיר מרכזי בצביעה'
   if (option === 'covering') return 'חיפוי קיר דקורטיבי'
   return 'לא נבחר'
 }
