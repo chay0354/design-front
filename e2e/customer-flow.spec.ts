@@ -53,7 +53,7 @@ test.describe.serial('customer flow', () => {
     await expect(page.getByText('01 / 06')).toBeVisible()
 
     await page.getByPlaceholder('שם הילד/ה').fill('נועה')
-    await page.getByRole('button', { name: 'הוספת חדר נוסף' }).click()
+    await page.getByRole('button', { name: 'הוספת חדר' }).click()
     await page.getByPlaceholder('שם הילד/ה').nth(1).fill('אייר')
     await expect(page.getByText('01 / 11')).toBeVisible()
     await next(page)

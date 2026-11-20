@@ -17,6 +17,7 @@ import {
   Heart,
   Info,
   Leaf,
+  Minus,
   MoonStar,
   Mountain,
   Music,
@@ -846,6 +847,8 @@ function roomPhrase(room: QuestionnaireRoom, prefix: 'et' | 'le' | 'be' = 'et') 
   return `החדר של ${label}`
 }
 
+const MAX_ROOMS = 5
+
 function RoomsStep({
   rooms,
   onChange,
@@ -854,6 +857,16 @@ function RoomsStep({
   onChange: (rooms: QuestionnaireRoom[]) => void
 }) {
   const update = (recipe: (rooms: QuestionnaireRoom[]) => QuestionnaireRoom[]) => onChange(recipe(rooms))
+
+  const setRoomCount = (count: number) => {
+    const next = Math.max(1, Math.min(MAX_ROOMS, count))
+    if (next === rooms.length) return
+    if (next > rooms.length) {
+      update((list) => [...list, ...Array.from({ length: next - list.length }, () => emptyRoom())])
+      return
+    }
+    update((list) => list.slice(0, next))
+  }
 
   return (
     <div>
@@ -866,24 +879,61 @@ function RoomsStep({
         וחלקו אותם לחדרים
       </p>
 
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#E7E1D8] bg-[#FBF9F6] px-3 py-3">
+        <p className="min-w-0 flex-1 text-sm leading-5 text-[#4A4540]">
+          כמה חדרים תרצה לרכוש עבורם חבילות עיצוב?
+        </p>
+        <div className="flex shrink-0 items-center gap-2" dir="ltr">
+          <button
+            type="button"
+            aria-label="הורדת חדר"
+            disabled={rooms.length <= 1}
+            onClick={() => setRoomCount(rooms.length - 1)}
+            className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+              rooms.length <= 1
+                ? 'cursor-not-allowed border-[#E8DED2] text-[#C5C5C5]'
+                : 'border-[#D5CBBF] text-[#6F6A64] hover:bg-white'
+            }`}
+          >
+            <Minus className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+          <span className="min-w-6 text-center text-lg font-medium text-[#3C3834]">{rooms.length}</span>
+          <button
+            type="button"
+            aria-label="הוספת חדר"
+            disabled={rooms.length >= MAX_ROOMS}
+            onClick={() => setRoomCount(rooms.length + 1)}
+            className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+              rooms.length >= MAX_ROOMS
+                ? 'cursor-not-allowed border-[#E8DED2] text-[#C5C5C5]'
+                : 'border-[#D5CBBF] text-[#6F6A64] hover:bg-white'
+            }`}
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-4 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-2.5 text-sm text-[#6F6254]">
+        <img src="/assets/gift-icon.png" alt="" className="h-10 w-10 object-contain" />
+        <p>
+          <span className="font-medium">מוסיפים חדר נוסף</span>
+          <br />
+          ונהנים מ־20% הנחה
+          <br />
+          על חבילת העיצוב הנוספת!
+        </p>
+      </div>
+
       <div className="space-y-4">
         {rooms.map((room, roomIndex) => (
           <div key={roomIndex} className="rounded-2xl border border-[#E7E1D8] p-4">
-            <div className="relative mb-3 flex items-center justify-center text-[#6F6A64]">
+            <div className="mb-3 flex items-center justify-center text-[#6F6A64]">
               <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap leading-none">
                 <Sparkle className="h-2.5 w-2.5 shrink-0 text-[#C4A574]" />
                 <span className="leading-none">{roomDesignLabel(roomIndex)}</span>
                 <Sparkle className="h-2.5 w-2.5 shrink-0 text-[#C4A574]" />
               </span>
-              {rooms.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => update((list) => list.filter((_, index) => index !== roomIndex))}
-                  className="absolute start-0 text-xs text-[#C87C7C]"
-                >
-                  הסרת חדר
-                </button>
-              )}
             </div>
             <div className="space-y-2">
               {room.children.map((child, childIndex) => (
@@ -950,26 +1000,6 @@ function RoomsStep({
           </div>
         ))}
       </div>
-
-      <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-2.5 text-sm text-[#6F6254] sm:mt-4 sm:py-3">
-        <img src="/assets/gift-icon.png" alt="" className="h-10 w-10 object-contain" />
-        <p>
-          <span className="font-medium">מוסיפים חדר נוסף</span>
-          <br />
-          ונהנים מ־20% הנחה
-          <br />
-          על חבילת העיצוב הנוספת!
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => update((list) => [...list, emptyRoom()])}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#8E9878] py-2.5 text-white hover:bg-[#7E8B74] sm:mt-4 sm:py-3"
-      >
-        <Plus className="h-4 w-4" />
-        הוספת חדר נוסף
-      </button>
     </div>
   )
 }
