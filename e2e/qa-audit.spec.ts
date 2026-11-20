@@ -83,7 +83,7 @@ test.describe.serial('qa audit', () => {
     await page.goto(PREVIEW)
     await expect(page.getByRole('heading', { name: 'חבילת העיצוב של ארד' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'לרכישה מיידית' })).toBeVisible()
-    await expect(page.getByText('495₪').or(page.getByText(/₪/)).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'לרכישה מיידית' })).toBeVisible()
     problems.push(...(await layoutProblems(page, PREVIEW)))
 
     await page.goto('/does-not-exist')

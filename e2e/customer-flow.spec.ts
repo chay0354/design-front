@@ -88,9 +88,9 @@ test.describe.serial('customer flow', () => {
     await expect(page).toHaveURL(/\/preview\/recommended/)
     await expect(page.getByText('חבילת העיצוב של נועה')).toBeVisible()
     await expect(page.getByText('חבילת העיצוב של אייר')).toBeVisible()
-    await expect(page.getByText(/חסכתם ₪\d+ בהנחת חדר נוסף/)).toBeVisible()
-    await expect(page.getByText(/סה״כ \d+ ש״ח - לחודש ל-12 תשלומים/)).toBeVisible()
-    await expect(page.getByText(/או \d+ בתשלום 1/)).toBeVisible()
+    await expect(page.getByText(/חסכתם ₪\d+ בהנחת חדר נוסף/)).toHaveCount(0)
+    await expect(page.getByText(/סה״כ \d+ ש״ח - לחודש ל-12 תשלומים/)).toHaveCount(0)
+    await expect(page.getByText(/או \d+ בתשלום 1/)).toHaveCount(0)
     const teasers = page.locator('img[src*="/assets/design-packages/"]')
     await expect(teasers.first()).toBeVisible()
     expect(await teasers.count()).toBeGreaterThan(0)
@@ -116,9 +116,7 @@ test.describe.serial('customer flow', () => {
 
     await expect(page.getByRole('heading', { name: 'תשלום מאובטח' })).toBeVisible()
     await expect(page.getByText('נועה').first()).toBeVisible()
-    await page.getByText('12 תשלומים', { exact: true }).click()
-    await expect(page.getByText(/תזכורת: 12 תשלומים של ₪\d+ בכל חודש/)).toBeVisible()
-    await expect(page.getByRole('button', { name: /× 12 תשלומים/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'השלימי רכישה' })).toBeVisible()
 
     for (const box of await page.getByRole('checkbox').all()) {
       await box.check()

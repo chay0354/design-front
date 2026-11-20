@@ -16,6 +16,7 @@ import type { ThemePackage } from '../data/themePackages'
 import {
   INSTALLMENT_COUNT,
   ROOM_PACKAGE_PRICE,
+  SHOW_PACKAGE_PRICE,
   formatRoomNames,
   installmentAmount,
   parseRoomsParam,
@@ -237,17 +238,19 @@ function ChildPackageCard({
             <Lock className="h-5 w-5" strokeWidth={1.5} />
             {purchaseLabel}
           </button>
-          <div className="flex shrink-0 flex-col items-end">
-            <div className="flex items-baseline gap-1.5">
-              {originalPrice && originalPrice > price && (
-                <span className="text-sm font-light text-[#B5B0A8] line-through">{originalPrice}₪</span>
-              )}
-              <span className="text-[30px] tracking-tight text-[#1F1C1A]">{price}₪</span>
+          {SHOW_PACKAGE_PRICE && (
+            <div className="flex shrink-0 flex-col items-end">
+              <div className="flex items-baseline gap-1.5">
+                {originalPrice && originalPrice > price && (
+                  <span className="text-sm font-light text-[#B5B0A8] line-through">{originalPrice}₪</span>
+                )}
+                <span className="text-[30px] tracking-tight text-[#1F1C1A]">{price}₪</span>
+              </div>
+              <span className="text-[11px] text-[#8B8B8B]">
+                {installmentAmount(price)} ש״ח ב-{INSTALLMENT_COUNT} תשלומים
+              </span>
             </div>
-            <span className="text-[11px] text-[#8B8B8B]">
-              {installmentAmount(price)} ש״ח ב-{INSTALLMENT_COUNT} תשלומים
-            </span>
-          </div>
+          )}
         </div>
       </div>
 
@@ -383,7 +386,7 @@ export function PackagePreviewPage() {
           ))}
         </div>
 
-        {roomCards.length > 1 && (
+        {SHOW_PACKAGE_PRICE && roomCards.length > 1 && (
           <div className="mt-16 border-t border-[#F0EBE4] pt-10 text-center">
             {roomCards.slice(1).map((card) => (
               <p key={card.name} className="mb-2 text-sm text-[#8B8B8B]">

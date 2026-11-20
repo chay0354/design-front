@@ -136,6 +136,8 @@ export function formatRoomNames(children: { name: string }[]): string {
 
 export const ROOM_PACKAGE_PRICE = 660
 export const INSTALLMENT_COUNT = 12
+/** Temporary: hide package prices on the customer site. */
+export const SHOW_PACKAGE_PRICE = false
 
 export function roomPackagePrice(basePrice: number, roomIndex: number): number {
   return roomIndex === 0 ? basePrice : Math.round(basePrice * 0.8)

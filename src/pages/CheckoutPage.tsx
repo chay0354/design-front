@@ -22,6 +22,7 @@ import {
 
   INSTALLMENT_COUNT,
   ROOM_PACKAGE_PRICE,
+  SHOW_PACKAGE_PRICE,
   installmentAmount,
   roomDesignProfile,
   roomPackagePrice,
@@ -646,6 +647,10 @@ export function CheckoutPage() {
 
                     ? 'מעבד תשלום...'
 
+                    : !SHOW_PACKAGE_PRICE
+
+                      ? 'השלימי רכישה'
+
                     : paymentOption === 'installments'
 
                       ? `שלמי ₪${monthlyPayment} × ${INSTALLMENT_COUNT} תשלומים`
@@ -694,13 +699,15 @@ export function CheckoutPage() {
 
                   <p className="text-xs text-[#8B8B8B]">{mainPkg.name}</p>
 
-                  <div className="mt-2 flex justify-between">
+                  {SHOW_PACKAGE_PRICE && (
+                    <div className="mt-2 flex justify-between">
 
-                    <span className="text-sm text-[#6B6B6B]">חבילה ראשית</span>
+                      <span className="text-sm text-[#6B6B6B]">חבילה ראשית</span>
 
-                    <span className="font-normal text-[#4A4A4A]">₪{ROOM_PACKAGE_PRICE}</span>
+                      <span className="font-normal text-[#4A4A4A]">₪{ROOM_PACKAGE_PRICE}</span>
 
-                  </div>
+                    </div>
+                  )}
 
                 </div>
 
@@ -744,13 +751,15 @@ export function CheckoutPage() {
 
                     </p>
 
-                    <div className="mt-2 flex justify-between text-sm">
+                    {SHOW_PACKAGE_PRICE && (
+                      <div className="mt-2 flex justify-between text-sm">
 
-                      <span className="text-[#7BA05B]">{searchParams.get('rooms') ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'}</span>
+                        <span className="text-[#7BA05B]">{searchParams.get('rooms') ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'}</span>
 
-                      <span className="font-normal text-[#4A4A4A]">₪{order.price}</span>
+                        <span className="font-normal text-[#4A4A4A]">₪{order.price}</span>
 
-                    </div>
+                      </div>
+                    )}
 
                   </div>
 
@@ -760,16 +769,19 @@ export function CheckoutPage() {
 
 
 
-              <div className="mb-4 flex justify-between border-t border-[#E8DED2] pt-4">
+              {SHOW_PACKAGE_PRICE && (
+                <div className="mb-4 flex justify-between border-t border-[#E8DED2] pt-4">
 
-                <span className="text-lg font-normal text-[#4A4A4A]">סה״כ</span>
+                  <span className="text-lg font-normal text-[#4A4A4A]">סה״כ</span>
 
-                <span className="text-2xl font-normal text-[#4A4A4A]">₪{total}</span>
+                  <span className="text-2xl font-normal text-[#4A4A4A]">₪{total}</span>
 
-              </div>
+                </div>
+              )}
 
 
 
+              {SHOW_PACKAGE_PRICE && (
               <div className="mb-4 space-y-2">
 
                 {(['installments', 'full'] as const).map((option) => (
@@ -851,6 +863,7 @@ export function CheckoutPage() {
                 ))}
 
               </div>
+              )}
 
 
 
