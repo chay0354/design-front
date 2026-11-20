@@ -870,16 +870,18 @@ function RoomsStep({
       <div className="space-y-4">
         {rooms.map((room, roomIndex) => (
           <div key={roomIndex} className="rounded-2xl border border-[#E7E1D8] p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="flex min-w-0 items-start gap-2 leading-snug text-[#6F6A64]">
-                <Sofa className="mt-0.5 h-4 w-4 shrink-0 -translate-x-1" strokeWidth={1.5} />
-                {roomDesignLabel(roomIndex)}
+            <div className="relative mb-3 flex items-center justify-center text-[#6F6A64]">
+              <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap leading-none">
+                <Sparkle className="h-2.5 w-2.5 shrink-0 self-center text-[#C4A574]" />
+                <Sofa className="h-4 w-4 shrink-0 self-center" strokeWidth={1.5} />
+                <Sparkle className="h-2.5 w-2.5 shrink-0 self-center text-[#C4A574]" />
+                <span className="leading-none">{roomDesignLabel(roomIndex)}</span>
               </span>
               {rooms.length > 1 && (
                 <button
                   type="button"
                   onClick={() => update((list) => list.filter((_, index) => index !== roomIndex))}
-                  className="text-xs text-[#C87C7C]"
+                  className="absolute start-0 text-xs text-[#C87C7C]"
                 >
                   הסרת חדר
                 </button>
