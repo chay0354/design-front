@@ -317,7 +317,7 @@ export function LandingPage() {
             <StartLink>בואו נמצא את העיצוב שלכם!</StartLink>
           </div>
           <img
-            src="/assets/logo-full.png?v=4"
+            src="/assets/logo-full.png?v=5"
             alt="Petite dreams, Great design for little ones"
             className="relative z-10 mx-auto mt-6 h-12 w-auto sm:h-16"
           />

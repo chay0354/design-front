@@ -872,7 +872,7 @@ function RoomsStep({
           <div key={roomIndex} className="rounded-2xl border border-[#E7E1D8] p-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="flex min-w-0 items-start gap-2 leading-snug text-[#6F6A64]">
-                <Sofa className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                <Sofa className="mt-0.5 h-4 w-4 shrink-0 -translate-x-1" strokeWidth={1.5} />
                 {roomDesignLabel(roomIndex)}
               </span>
               {rooms.length > 1 && (
