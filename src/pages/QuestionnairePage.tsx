@@ -29,7 +29,6 @@ import {
   Shell,
   Ship,
   Shirt,
-  Sofa,
   Sparkles,
   Users,
   Star,
@@ -872,10 +871,9 @@ function RoomsStep({
           <div key={roomIndex} className="rounded-2xl border border-[#E7E1D8] p-4">
             <div className="relative mb-3 flex items-center justify-center text-[#6F6A64]">
               <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap leading-none">
-                <Sparkle className="h-2.5 w-2.5 shrink-0 self-center text-[#C4A574]" />
-                <Sofa className="h-4 w-4 shrink-0 self-center" strokeWidth={1.5} />
-                <Sparkle className="h-2.5 w-2.5 shrink-0 self-center text-[#C4A574]" />
+                <Sparkle className="h-2.5 w-2.5 shrink-0 text-[#C4A574]" />
                 <span className="leading-none">{roomDesignLabel(roomIndex)}</span>
+                <Sparkle className="h-2.5 w-2.5 shrink-0 text-[#C4A574]" />
               </span>
               {rooms.length > 1 && (
                 <button
