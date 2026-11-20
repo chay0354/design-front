@@ -136,7 +136,7 @@ test.describe.serial('qa audit', () => {
     await expect(theme.locator('svg')).toHaveCount(1)
     await next(page)
 
-    await expect(page.getByRole('heading', { name: 'בחרי את סקלת הגוונים שלך' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /סקלת הגוונים לחדר של ארד/ })).toBeVisible()
     await expect(page.getByText('סגנונות מותאמים לחלומות גדולים')).toBeVisible()
     await expect(page.getByText(/כל סקלת צבעים נבחרה בקפידה/)).toBeVisible()
     await page.getByRole('heading', { level: 2 }).locator('..').getByRole('button').first().click()

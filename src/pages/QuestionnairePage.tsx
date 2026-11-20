@@ -119,7 +119,7 @@ function ThemePicker({
   value,
   onChange,
 }: {
-  title: string
+  title: ReactNode
   gender: CatalogGender
   age: number
   value: string
@@ -256,12 +256,14 @@ function ColorPicker({
   age,
   theme,
   value,
+  room,
   onChange,
 }: {
   gender: CatalogGender
   age: number
   theme: string
   value: string
+  room: QuestionnaireRoom
   onChange: (colorPreference: string) => void
 }) {
   const { colorScales } = useData()
@@ -271,10 +273,13 @@ function ColorPicker({
 
   return (
     <div className="-m-2 rounded-lg bg-[#F8F4EF] px-3 py-6 sm:-m-4 sm:px-8 sm:py-8">
-      <h2 className="mb-2 flex items-center justify-center gap-3 text-center text-[1.9rem] font-light leading-snug text-[#3C3834]">
-        <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
-        בחרי את סקלת הגוונים שלך
-        <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
+      <h2 className="mb-2 text-center text-[1.9rem] font-light leading-snug text-[#3C3834]">
+        <span className="inline-flex items-center justify-center gap-3 whitespace-nowrap">
+          <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
+          בחרי את סקלת הגוונים
+          <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
+        </span>
+        <span className="mt-1 block text-[1.35rem]">{roomPhrase(room, 'le')}</span>
       </h2>
       <p className="mb-8 text-center text-base text-[#7A726A]">סגנונות מותאמים לחלומות גדולים</p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
@@ -322,9 +327,11 @@ function ColorPicker({
 
 function WallDesignPicker({
   value,
+  room,
   onChange,
 }: {
   value: string
+  room: QuestionnaireRoom
   onChange: (wallDesignOption: string) => void
 }) {
   const options = [
@@ -347,9 +354,11 @@ function WallDesignPicker({
   return (
     <div>
       <h2 className="mb-2 text-center text-2xl font-light text-[#3C3834] sm:text-[2rem]">
-        איך תרצו לעצב את הקיר המרכזי?
+        איך תרצו לעצב את הקיר המרכזי
+        <br />
+        {roomPhrase(room, 'be')}?
       </h2>
-      <p className="mb-6 text-center text-sm text-[#6B6B6B]">בחר/י את האופציה המתאימה לחדר</p>
+      <p className="mb-6 text-center text-sm text-[#6B6B6B]">בחר/י את האופציה המתאימה {roomPhrase(room, 'le')}</p>
       <div className="grid gap-5 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = value === option.value
@@ -522,6 +531,7 @@ export function QuestionnairePage() {
 
           {current.kind === 'design-gender' && (
             <DesignGenderStep
+              room={rooms[current.roomIndex]}
               value={rooms[current.roomIndex].designGender}
               onChange={(designGender) =>
                 updateRoom(current.roomIndex, (room) => normalizeRoom({ ...room, designGender }))
@@ -556,6 +566,7 @@ export function QuestionnairePage() {
                 gender={roomDesignProfile(rooms[current.roomIndex]).gender}
                 age={roomDesignProfile(rooms[current.roomIndex]).age}
                 theme={rooms[current.roomIndex].theme}
+                room={rooms[current.roomIndex]}
                 value={rooms[current.roomIndex].colorPreference}
                 onChange={(colorPreference) =>
                   updateRoom(current.roomIndex, (room) => ({ ...room, colorPreference }))
@@ -567,6 +578,7 @@ export function QuestionnairePage() {
           {current.kind === 'wall' && (
             <RoomDesignStep room={rooms[current.roomIndex]} roomNumber={current.roomIndex + 1} roomCount={rooms.length}>
               <WallDesignPicker
+                room={rooms[current.roomIndex]}
                 value={rooms[current.roomIndex].wallDesignOption}
                 onChange={(wallDesignOption) =>
                   updateRoom(current.roomIndex, (room) => ({ ...room, wallDesignOption }))
@@ -636,9 +648,11 @@ const ageWords: Record<number, string> = {
 }
 
 function DesignGenderStep({
+  room,
   value,
   onChange,
 }: {
+  room: QuestionnaireRoom
   value: CatalogGender | ''
   onChange: (gender: CatalogGender) => void
 }) {
@@ -653,7 +667,7 @@ function DesignGenderStep({
       <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
         לפי איזה מגדר תרצו
         <br />
-        לעצב את החדר?
+        את {roomPhrase(room)}?
       </h2>
       <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
         כך נוכל להתאים לכם נושאי עיצוב, צבעים
@@ -707,7 +721,9 @@ function DesignAgeStep({
       <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
         לפי איזה גיל תרצו לבחור
         <br />
-        את נושא העיצוב?
+        את נושא העיצוב
+        <br />
+        {roomPhrase(room, 'le')}?
       </h2>
       <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
         כשאתם בגילאים שונים חולקים חדר, תוכלו
@@ -794,7 +810,32 @@ function themeTitle(room: QuestionnaireRoom) {
       room.designGender === 'girl' ? 'אוהבת' : room.designGender === 'boy' ? 'אוהב' : 'אוהב/ת'
     return `איזה נושא ${child.name} ${verb}?`
   }
-  return 'איזה נושא אחד אוהבים בחדר?'
+  return (
+    <>
+      איזה נושא אחד אוהבים
+      <br />
+      {roomPhrase(room, 'be')}?
+    </>
+  )
+}
+
+const roomOrdinals = ['הראשון', 'השני', 'השלישי', 'הרביעי', 'החמישי', 'השישי', 'השביעי', 'השמיני', 'התשיעי', 'העשירי']
+
+function roomDesignLabel(index: number) {
+  const ordinal = roomOrdinals[index] ?? `ה-${index + 1}`
+  return `החדר ${ordinal} שתרצו לעצב`
+}
+
+function roomPhrase(room: QuestionnaireRoom, prefix: 'et' | 'le' | 'be' = 'et') {
+  const label = formatRoomNames(room.children)
+  if (label === 'החדר') {
+    if (prefix === 'le') return 'לחדר'
+    if (prefix === 'be') return 'בחדר'
+    return 'החדר'
+  }
+  if (prefix === 'le') return `לחדר של ${label}`
+  if (prefix === 'be') return `בחדר של ${label}`
+  return `החדר של ${label}`
 }
 
 function RoomDesignStep({
@@ -843,9 +884,9 @@ function RoomsStep({
         {rooms.map((room, roomIndex) => (
           <div key={roomIndex} className="rounded-2xl border border-[#E7E1D8] p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-[#6F6A64]">
-                <Sofa className="h-4 w-4" strokeWidth={1.5} />
-                {roomIndex + 1} חדר
+              <span className="flex min-w-0 items-start gap-2 leading-snug text-[#6F6A64]">
+                <Sofa className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                {roomDesignLabel(roomIndex)}
               </span>
               {rooms.length > 1 && (
                 <button
@@ -917,7 +958,7 @@ function RoomsStep({
               className="mt-3 flex w-full items-center justify-center gap-1 text-sm text-[#8A847C]"
             >
               <Plus className="h-3.5 w-3.5" />
-              הוספת ילד לחדר זה
+              הוספת ילד נוסף המתגורר בחדר
             </button>
           </div>
         ))}
