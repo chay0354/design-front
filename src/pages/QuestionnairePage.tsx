@@ -12,7 +12,6 @@ import {
   Cloud,
   Compass,
   Crown,
-  Drama,
   FerrisWheel,
   Fish,
   Flower2,
@@ -92,15 +91,37 @@ function GirlIcon({ className }: { className?: string }) {
   )
 }
 
+/** Flying hero with cape — replaces the theater-masks glyph. */
+function SuperheroIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="14.5" cy="5.2" r="2.1" />
+      <path d="M13.6 7.4 9.2 13.8" />
+      <path d="M12.8 9.2 6.2 6.8" />
+      <path d="M12.2 10.4 14.2 13" />
+      <path d="M13.2 8.2c2.8.6 5 2.8 6.2 6.2-2.2-.4-4.2.4-5.8 2.2" />
+      <path d="M9.2 13.8 6.4 19.2" />
+      <path d="M9.2 13.8 12.2 18.6" />
+    </svg>
+  )
+}
+
 const themeIcons: Record<string, LucideIcon> = {
   safari: PawPrint,
   adventures: Compass,
   'sea-ships': Ship,
   transport: Car,
-  'junior-superheroes': Drama,
   dinosaurs: Bone,
   gamers: Gamepad2,
-  superheroes: Drama,
   science: Atom,
   sports: Trophy,
   'flowers-dream-garden': Flower2,
@@ -132,6 +153,9 @@ const themeIcons: Record<string, LucideIcon> = {
 }
 
 function ThemeGlyph({ themeId }: { themeId: string }) {
+  if (themeId === 'junior-superheroes' || themeId === 'superheroes') {
+    return <SuperheroIcon className="h-9 w-9 text-[#C4B39A]" />
+  }
   const Icon = themeIcons[themeId] ?? Sparkles
   return <Icon className="h-9 w-9 text-[#C4B39A]" strokeWidth={1.4} />
 }
@@ -178,7 +202,7 @@ function ThemePicker({
               onClick={() => onChange(theme.name)}
               className={`flex flex-col items-center gap-3 rounded-2xl border px-3 py-6 text-center transition-all ${
                 isSelected
-                  ? 'border-[#D5E0CC] bg-[#F4F7F0] shadow-[0_2px_10px_rgba(140,150,120,0.12)]'
+                  ? 'border-[#D2CECA] bg-[#EEECEA] shadow-[0_2px_10px_rgba(120,115,110,0.1)]'
                   : 'border-[#E7E1D8] bg-white hover:border-[#D4C4B0]'
               }`}
             >
@@ -283,7 +307,7 @@ function ColorPalettePreview({
           title={swatch.name}
         />
       ))}
-    </div>
+          </div>
   )
 }
 
@@ -308,14 +332,14 @@ function ColorPicker({
   )
 
   return (
-    <div className="-m-2 rounded-lg bg-[#F8F4EF] px-3 py-6 sm:-m-4 sm:px-8 sm:py-8">
-      <h2 className="mb-2 text-center text-[1.9rem] font-light leading-snug text-[#3C3834]">
-        <span className="inline-flex items-center justify-center gap-3 whitespace-nowrap">
-          <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
-          בחרי את סקלת הגוונים
-          <Sparkle className="h-3.5 w-3.5 text-[#D2A98F]" />
+    <div className="rounded-lg bg-[#F8F4EF] px-3 py-6 sm:px-8 sm:py-8">
+      <h2 className="mb-2 text-center text-[1.55rem] font-light leading-snug text-[#3C3834] sm:text-[1.9rem]">
+        <span className="mx-auto flex w-full max-w-full items-center justify-center gap-2">
+          <Sparkle className="h-3 w-3 shrink-0 text-[#D2A98F] sm:h-3.5 sm:w-3.5" />
+          <span className="min-w-0 text-balance">בחרי את סקלת הגוונים</span>
+          <Sparkle className="h-3 w-3 shrink-0 text-[#D2A98F] sm:h-3.5 sm:w-3.5" />
         </span>
-        <span className="mt-1 block text-[1.35rem]">{roomPhrase(room, 'le')}</span>
+        <span className="mt-1 block text-[1.2rem] sm:text-[1.35rem]">{roomPhrase(room, 'le')}</span>
       </h2>
       <p className="mb-8 text-center text-base text-[#7A726A]">סגנונות מותאמים לחלומות גדולים</p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
@@ -340,7 +364,7 @@ function ColorPicker({
                   {scaleTitle(pref.name)}
                   {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
                 </h3>
-              </div>
+            </div>
               {pref.benefit && (
                 <p className="mx-auto mt-1.5 max-w-[17rem] text-[13px] leading-6 text-[#6F6760]">{pref.benefit}</p>
               )}
@@ -388,20 +412,20 @@ function WallDesignPicker({
   ]
 
   return (
-    <div>
+            <div>
       <h2 className="mb-2 text-center text-2xl font-light text-[#3C3834] sm:text-[2rem]">
         איך תרצו לעצב את הקיר המרכזי
         <br />
         {roomPhrase(room, 'be')}?
-      </h2>
+              </h2>
       <p className="mb-6 text-center text-sm text-[#6B6B6B]">בחר/י את האופציה המתאימה {roomPhrase(room, 'le')}</p>
       <div className="grid gap-5 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = value === option.value
           return (
-            <button
-              key={option.value}
-              type="button"
+                  <button
+                    key={option.value}
+                    type="button"
               onClick={() => onChange(option.value)}
               className={`overflow-hidden rounded-md border bg-white text-right transition-all ${
                 isSelected
@@ -417,14 +441,14 @@ function WallDesignPicker({
                     {isSelected && <Sparkle className="h-3 w-3 text-[#B39A86]" />}
                   </h3>
                   <p className="text-[13px] leading-6 text-[#5A544E]">{option.text}</p>
-                </div>
+                    </div>
                 <span className="shrink-0 text-[#C2A893]">{option.icon}</span>
               </div>
-            </button>
+                  </button>
           )
         })}
-      </div>
-    </div>
+              </div>
+            </div>
   )
 }
 
@@ -581,8 +605,8 @@ export function QuestionnairePage() {
         <div className="mb-2 flex items-center justify-between text-sm text-[#8A847C] sm:mb-5">
           <span dir="ltr">
             {pad(stepNumber)} / {pad(totalSteps)}
-          </span>
-        </div>
+                    </span>
+                  </div>
         <div className="mb-3 flex gap-1.5 sm:mb-6">
           {steps.map((item, index) => (
             <span
@@ -670,31 +694,31 @@ export function QuestionnairePage() {
           )}
 
           <div className="mt-5 flex items-center justify-between sm:mt-8">
-            <button
-              type="button"
+                          <button
+                            type="button"
               onClick={handleBack}
               disabled={safeIndex === 0}
               className={`text-sm ${safeIndex === 0 ? 'cursor-not-allowed text-[#C5C5C5]' : 'text-[#8A847C]'}`}
             >
               חזרה
-            </button>
-            <button
-              type="button"
+                          </button>
+                      <button
+                        type="button"
               onClick={handleNext}
               disabled={!canProceed()}
               className={`inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm transition-colors ${
                 canProceed()
                   ? 'bg-[#C4B49A] text-white hover:bg-[#B3A288]'
-                  : 'cursor-not-allowed bg-[#E8DED2] text-[#C5C5C5]'
-              }`}
-            >
+                            : 'cursor-not-allowed bg-[#E8DED2] text-[#C5C5C5]'
+                        }`}
+                      >
               {safeIndex === steps.length - 1 ? 'סיום' : 'המשך'}
               <ArrowLeft className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+                      </button>
+                    </div>
+                  </div>
+              </div>
+            </div>
   )
 }
 
@@ -731,10 +755,10 @@ function DesignGenderStep({
   ]
 
   return (
-    <div>
+            <div>
       <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
         {roomPhrase(room)} יעוצב כ:
-      </h2>
+              </h2>
       <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
         כך נוכל להתאים לכם נושאי עיצוב, צבעים
         <br />
@@ -745,9 +769,9 @@ function DesignGenderStep({
           const selected = value === option.value
           const Icon = option.icon
           return (
-            <button
+                  <button
               key={option.value}
-              type="button"
+                    type="button"
               onClick={() => onChange(option.value)}
               className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-right transition-colors ${
                 selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
@@ -763,11 +787,11 @@ function DesignGenderStep({
                 {option.hint && <span className="block text-sm text-[#8A847C]">{option.hint}</span>}
               </span>
               <ChoiceRadio selected={selected} />
-            </button>
+                  </button>
           )
         })}
-      </div>
-    </div>
+              </div>
+            </div>
   )
 }
 
@@ -781,14 +805,14 @@ function DesignAgeStep({
   const selectedKey = room.ageChoice?.type === 'child' ? `child-${room.ageChoice.childIndex}` : ''
 
   return (
-    <div>
+            <div>
       <h2 className="mb-3 text-center text-[1.65rem] leading-tight font-light text-[#3C3834]">
         לפי איזה גיל תרצו לבחור
         <br />
         את נושא העיצוב
         <br />
         {roomPhrase(room, 'le')}?
-      </h2>
+              </h2>
       <p className="mb-6 text-center text-sm leading-6 text-[#8A847C]">
         כשאתם בגילאים שונים חולקים חדר, תוכלו
         <br />
@@ -800,9 +824,9 @@ function DesignAgeStep({
           const key = `child-${index}`
           const selected = selectedKey === key
           return (
-            <button
+                  <button
               key={key}
-              type="button"
+                    type="button"
               onClick={() => onChange({ type: 'child', childIndex: index })}
               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 transition-colors ${
                 selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
@@ -812,11 +836,11 @@ function DesignAgeStep({
                 לפי {child.name}, {childAgeLabel(child)}
               </span>
               <ChoiceRadio selected={selected} />
-            </button>
+                  </button>
           )
         })}
-      </div>
-    </div>
+              </div>
+            </div>
   )
 }
 
@@ -874,59 +898,57 @@ function RoomsStep({
   }
 
   return (
-    <div>
+            <div>
       <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">
         למי מעצבים את החדר?
-      </h2>
+              </h2>
       <p className="mb-4 text-center text-sm leading-6 text-[#8A847C] sm:mb-6">
         ספרו לנו את שמות הילדים
         <br />
         וחלקו אותם לחדרים
       </p>
 
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#E7E1D8] bg-[#FBF9F6] px-3 py-3">
-        <p className="min-w-0 flex-1 text-sm leading-5 text-[#4A4540]">
-          כמה חדרים תרצה לרכוש עבורם חבילות עיצוב?
-        </p>
-        <div className="flex shrink-0 items-center gap-2" dir="ltr">
+      <div className="mb-3 rounded-2xl border border-[#E7E1D8] bg-[#FBF9F6] px-3 py-3.5 text-center">
+        <p className="text-sm leading-5 text-[#4A4540]">כמה חדרים תרצו לעצב?</p>
+        <div className="mt-2.5 flex items-center justify-center gap-3" dir="ltr">
           <button
             type="button"
             aria-label="הורדת חדר"
             disabled={rooms.length <= 1}
             onClick={() => setRoomCount(rooms.length - 1)}
-            className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+            className={`flex h-9 w-9 items-center justify-center rounded-full border ${
               rooms.length <= 1
                 ? 'cursor-not-allowed border-[#E8DED2] text-[#C5C5C5]'
                 : 'border-[#D5CBBF] text-[#6F6A64] hover:bg-white'
             }`}
           >
-            <Minus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Minus className="h-4 w-4" strokeWidth={2} />
           </button>
-          <span className="min-w-6 text-center text-lg font-medium text-[#3C3834]">{rooms.length}</span>
+          <span className="min-w-10 text-center text-3xl font-light leading-none text-[#3C3834]">
+            {rooms.length}
+          </span>
           <button
             type="button"
             aria-label="הוספת חדר"
             disabled={rooms.length >= MAX_ROOMS}
             onClick={() => setRoomCount(rooms.length + 1)}
-            className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+            className={`flex h-9 w-9 items-center justify-center rounded-full border ${
               rooms.length >= MAX_ROOMS
                 ? 'cursor-not-allowed border-[#E8DED2] text-[#C5C5C5]'
                 : 'border-[#D5CBBF] text-[#6F6A64] hover:bg-white'
             }`}
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus className="h-4 w-4" strokeWidth={2} />
           </button>
         </div>
       </div>
 
-      <div className="mb-4 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-2.5 text-sm text-[#6F6254]">
-        <img src="/assets/gift-icon.png" alt="" className="h-10 w-10 object-contain" />
+      <div className="mb-4 flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-2.5 text-sm leading-5 text-[#6F6254]">
+        <img src="/assets/gift-icon.png" alt="" className="h-9 w-9 shrink-0 object-contain" />
         <p>
-          <span className="font-medium">מוסיפים חדר נוסף</span>
+          מעצבים יותר מחדר אחד?
           <br />
-          ונהנים מ־20% הנחה
-          <br />
-          על חבילת העיצוב הנוספת!
+          נהנים מ־20% הנחה על כל חדר נוסף!
         </p>
       </div>
 
@@ -945,18 +967,30 @@ function RoomsStep({
                 <div key={childIndex} className="flex items-center gap-2">
                   <button
                     type="button"
-                    aria-label={`הסרת ${child.name || 'ילד'}`}
+                    aria-label={
+                      room.children.length === 1 && rooms.length > 1
+                        ? `הסרת ${roomDesignLabel(roomIndex)}`
+                        : `הסרת ${child.name || 'ילד'}`
+                    }
                     onClick={() =>
-                      update((list) =>
-                        list.map((item, index) => {
+                      update((list) => {
+                        const current = list[roomIndex]
+                        const remainingChildren = current.children.filter((_, i) => i !== childIndex)
+                        // Last child in an extra room → remove the whole room (and the +/- counter updates).
+                        if (remainingChildren.length === 0 && list.length > 1) {
+                          return list.filter((_, index) => index !== roomIndex)
+                        }
+                        return list.map((item, index) => {
                           if (index !== roomIndex) return item
-                          const children = item.children.filter((_, i) => i !== childIndex)
                           return {
                             ...item,
-                            children: children.length > 0 ? children : [{ name: '', gender: '', age: 5 }],
+                            children:
+                              remainingChildren.length > 0
+                                ? remainingChildren
+                                : [{ name: '', gender: '', age: 5 }],
                           }
-                        }),
-                      )
+                        })
+                      })
                     }
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#B7A89A]"
                   >
@@ -986,8 +1020,8 @@ function RoomsStep({
                 </div>
               ))}
             </div>
-            <button
-              type="button"
+                      <button
+                        type="button"
               onClick={() =>
                 update((list) =>
                   list.map((item, index) =>
@@ -1001,12 +1035,12 @@ function RoomsStep({
             >
               <Plus className="h-3.5 w-3.5" />
               הוספת ילד נוסף המתגורר בחדר
-            </button>
+                      </button>
           </div>
-        ))}
-      </div>
-    </div>
-  )
+                    ))}
+                  </div>
+                </div>
+              )
 }
 
 function ChildStep({
@@ -1034,7 +1068,7 @@ function ChildStep({
               onClick={() => onChange({ gender: option.value })}
               className={`flex flex-col items-center gap-2 rounded-2xl border py-5 transition-all ${
                 selected
-                  ? 'border-[#B7C7A4] bg-[#E3EDD6] ring-1 ring-[#B7C7A4]'
+                  ? 'border-[#D2CECA] bg-[#EEECEA] ring-1 ring-[#D2CECA]'
                   : 'border-[#E7E1D8] bg-white hover:border-[#D4C4B0]'
               }`}
             >
@@ -1047,7 +1081,7 @@ function ChildStep({
             </button>
           )
         })}
-      </div>
+          </div>
 
       <p className="mb-2 text-center text-[#4A4540]">באיזה גיל?</p>
       <div className="mb-4 text-center">

@@ -126,7 +126,8 @@ test('buying a gift voucher shows the voucher and WhatsApp share', async ({ page
   await page.goto('/gift')
   await page.getByRole('button', { name: 'יותר' }).click()
   await page.getByRole('button', { name: 'יותר' }).click()
-  await expect(page.getByText('3 חבילות עיצוב', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('כמה חבילות עיצוב תרצו להעניק במתנה?')).toBeVisible()
+  await expect(page.getByText('3', { exact: true }).first()).toBeVisible()
 
   await page.getByPlaceholder(/שם מקבל המתנה/).fill('ליאב, ניר ואלון')
   await page.getByPlaceholder(/שם מעניק המתנה/).fill('סבא וסבתא')
@@ -136,12 +137,14 @@ test('buying a gift voucher shows the voucher and WhatsApp share', async ({ page
 
   await page.getByRole('button', { name: 'אשתף בעצמי בוואטסאפ' }).click()
   await page.getByPlaceholder(/טלפון מקבל המתנה/).fill('050-1234567')
+  await expect(page.getByText('לליאב, ניר ואלון').first()).toBeVisible()
   await expect(page.getByText('באהבה, סבא וסבתא ♡')).toBeVisible()
+  await expect(page.getByText('קיבלתם 3 חבילות עיצוב לחדרי הילדים').first()).toBeVisible()
   await page.getByRole('button', { name: 'המשך לתשלום' }).click()
 
   // Order summary before paying
   await expect(page.getByRole('heading', { name: 'שובר מתנה' })).toBeVisible()
-  await expect(page.getByText('3 חבילות עיצוב לחדרי הילדים').first()).toBeVisible()
+  await expect(page.getByText('קיבלתם 3 חבילות עיצוב לחדרי הילדים').first()).toBeVisible()
   await page.getByRole('button', { name: 'לתשלום' }).click()
   await expect(page.getByText('יש לאשר את תנאי השימוש')).toBeVisible()
   expect(body).toBeNull()
@@ -552,7 +555,13 @@ test('personal area groups several children into one room card', async ({ page }
   await expect(page.getByText('20% הנחה').first()).toBeVisible()
   await expect(page.getByRole('button', { name: /לבחירת נושאים מותאמי גיל/ }).first()).toBeVisible()
 
+  await page.route('**/api/rooms/allocation', (route) => route.fulfill({ json: { ok: true } }))
   await page.goto('/account/rooms')
+  await expect(page.getByRole('heading', { name: 'עדכון חלוקת החדרים' })).toBeVisible()
+  await expect(page.getByText('אייר בת')).toBeVisible()
+  await expect(page.getByText('ארד בן')).toBeVisible()
+  await page.getByRole('button', { name: /אישור החלוקה והמשך לבחירת עיצוב/ }).click()
+  await expect(page.getByRole('heading', { name: 'בחירת חבילת העיצוב' })).toBeVisible()
   await expect(page.getByText('איך תרצו לעצב את החדר של אייר וטל?')).toBeVisible()
   await expect(page.getByText('איך תרצו לעצב את החדר של ארד?')).toBeVisible()
   await expect(page.getByText('20% הנחה').first()).toBeVisible()

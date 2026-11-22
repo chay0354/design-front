@@ -136,7 +136,7 @@ function CodeField({
         {label}
       </p>
       {applied ? (
-        <div className="flex items-center justify-between gap-2 rounded-sm bg-[#F0F8F0] px-3 py-2 text-sm text-[#4F7A3A]">
+        <div className="flex items-center justify-between gap-2 rounded-sm bg-[#F8F3EC] px-3 py-2 text-sm text-[#6F6254]">
           <span>{applied}</span>
           <button type="button" onClick={onRemove} aria-label="הסרת הקוד" className="text-[#8B8B8B] hover:text-[#4A4A4A]">
             <X className="h-4 w-4" />
@@ -891,100 +891,62 @@ export function CheckoutPage() {
 
             <div className="sticky top-6 rounded-sm border border-[#E8DED2] bg-white p-6 shadow-sm">
 
-              <h3 className="mb-4 text-xl font-normal text-[#4A4A4A]">סיכום הזמנה</h3>
-
-
+              <h3 className="mb-4 text-xl font-normal text-[#4A4A4A]">סיכום חבילות העיצוב</h3>
 
               <div className="mb-4 space-y-4">
-
-                <div className="rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-4">
-
-                  <div className="mb-2 flex items-center gap-2">
-
-                    <span className="text-2xl">{packageEmoji(childTheme)}</span>
-
-                    <div>
-
-                      <p className="font-normal text-[#4A4A4A]">{childName}</p>
-
-                      <p className="text-xs text-[#6B6B6B]">
-
-                        {genderLabel(childGender)} • גיל {childAge} • {childTheme}
-
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <p className="text-xs text-[#8B8B8B]">{mainPkg.name}</p>
-
-                  {SHOW_PACKAGE_PRICE && (
-                    <div className="mt-2 flex justify-between">
-
-                      <span className="text-sm text-[#6B6B6B]">{lineLabel(0) || 'חבילה ראשית'}</span>
-
-                      <span className="font-normal text-[#4A4A4A]">₪{linePrice(0, ROOM_PACKAGE_PRICE)}</span>
-
-                    </div>
-                  )}
-
-                </div>
-
-
-
-                {siblingOrders.map((order, index) => (
-
+                {[
+                  {
+                    name: childName,
+                    gender: childGender,
+                    age: childAge,
+                    theme: childTheme,
+                    wallDesignOption: primary?.wallDesignOption || searchParams.get('wallDesignOption') || '',
+                    pkgName: mainPkg.name,
+                    price: linePrice(0, ROOM_PACKAGE_PRICE),
+                    label: lineLabel(0) || (rooms ? 'חבילת עיצוב לחדר' : 'חבילה ראשית'),
+                  },
+                  ...siblingOrders.map((order, index) => ({
+                    name: order.child.name,
+                    gender: order.child.gender,
+                    age: order.child.age,
+                    theme: order.child.theme,
+                    wallDesignOption: order.child.wallDesignOption,
+                    pkgName: order.pkg?.name || '',
+                    price: linePrice(index + 1, order.price),
+                    label: lineLabel(index + 1) || (rooms ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'),
+                  })),
+                ].map((card, index) => (
                   <div
-
-                    key={index}
-
-                    className="rounded-sm border border-[#D4E7D4] bg-[#F0F8F0] p-4"
-
+                    key={`${card.name}-${index}`}
+                    className="rounded-2xl border border-[#E7E1D8] bg-[#FBF8F3] p-4"
                   >
-
                     <div className="mb-2 flex items-center gap-2">
-
-                      <span className="text-2xl">{packageEmoji(order.child.theme)}</span>
-
+                      <span className="text-2xl">{packageEmoji(card.theme)}</span>
                       <div>
-
-                        <p className="font-normal text-[#4A4A4A]">{order.child.name}</p>
-
-                        <p className="text-xs text-[#6B6B6B]">
-
-                          {genderLabel(order.child.gender)} • גיל {order.child.age} •{' '}
-
-                          {order.child.theme}
-
+                        <p className="font-normal text-[#3C3834]">
+                          {rooms ? `החדר של ${card.name}` : card.name}
                         </p>
-
+                        <p className="text-xs text-[#6F6A64]">
+                          {rooms
+                            ? `${card.theme}${card.wallDesignOption ? ` · קיר: ${wallDesignLabel(card.wallDesignOption)}` : ''}`
+                            : `${genderLabel(card.gender)} • גיל ${card.age} • ${card.theme}`}
+                        </p>
                       </div>
-
                     </div>
-
-                    <p className="text-xs text-[#8B8B8B]">{order.pkg?.name}</p>
-
-                    <p className="mt-1 text-xs text-[#6B6B6B]">
-
-                      קיר: {wallDesignLabel(order.child.wallDesignOption)}
-
-                    </p>
-
+                    <p className="text-xs text-[#8A847C]">{card.pkgName}</p>
+                    {!rooms && card.wallDesignOption ? (
+                      <p className="mt-1 text-xs text-[#6F6A64]">
+                        קיר: {wallDesignLabel(card.wallDesignOption)}
+                      </p>
+                    ) : null}
                     {SHOW_PACKAGE_PRICE && (
                       <div className="mt-2 flex justify-between text-sm">
-
-                        <span className="text-[#7BA05B]">{lineLabel(index + 1)}</span>
-
-                        <span className="font-normal text-[#4A4A4A]">₪{linePrice(index + 1, order.price)}</span>
-
+                        <span className="text-[#8A6A52]">{card.label}</span>
+                        <span className="font-normal text-[#3C3834]">₪{card.price}</span>
                       </div>
                     )}
-
                   </div>
-
                 ))}
-
               </div>
 
 

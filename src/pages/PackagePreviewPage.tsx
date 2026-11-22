@@ -147,7 +147,7 @@ function ChildPackageCard({
           <h2 className="whitespace-nowrap text-[28px] font-normal leading-tight tracking-tight text-[#2F2B28] sm:text-[34px]">
             <BrushMark className="px-8">חבילת העיצוב של {childName || 'הילד/ה'}</BrushMark>
           </h2>
-          {discountLabel && <p className="mt-2 text-sm text-[#7BA05B]">{discountLabel}</p>}
+          {discountLabel && <p className="mt-2 text-sm text-[#8A6A52]">{discountLabel}</p>}
           <p className="mt-3 flex items-center justify-center gap-2.5 text-[16px] text-[#3C3834]">
             <Sparkle className="h-3 w-3 text-[#C9A991]" />
             {packageTitle} לגילאי {ageGroup.range[0]}–{ageGroup.range[1]}
@@ -395,7 +395,7 @@ export function PackagePreviewPage() {
               </p>
             ))}
             {totalSavings > 0 && (
-              <p className="mb-4 text-sm text-[#7BA05B]">
+              <p className="mb-4 text-sm text-[#8A6A52]">
                 חסכתם ₪{totalSavings} {savingsLabel}
               </p>
             )}

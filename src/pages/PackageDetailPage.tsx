@@ -77,8 +77,30 @@ export function PackageDetailPage() {
   } = useData()
   const [beforeImage, setBeforeImage] = useState<File | null>(null)
   const [afterImage, setAfterImage] = useState<File | null>(null)
+  const [beforePreview, setBeforePreview] = useState<string | null>(null)
+  const [afterPreview, setAfterPreview] = useState<string | null>(null)
   const [allowSocialShare, setAllowSocialShare] = useState(true)
   const [photosUploaded, setPhotosUploaded] = useState(false)
+
+  useEffect(() => {
+    if (!beforeImage) {
+      setBeforePreview(null)
+      return
+    }
+    const url = URL.createObjectURL(beforeImage)
+    setBeforePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [beforeImage])
+
+  useEffect(() => {
+    if (!afterImage) {
+      setAfterPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(afterImage)
+    setAfterPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [afterImage])
 
   // Archived packages open with ?item=<order item>: show the package exactly as it was bought.
   const orderItemId = searchParams.get('item')
@@ -370,9 +392,23 @@ export function PackageDetailPage() {
             <div>
               <div className="mb-4 grid grid-cols-2 gap-3">
                 {[
-                  { id: 'before-image', label: 'תמונה לפני', icon: Camera, file: beforeImage, setFile: setBeforeImage },
-                  { id: 'after-image', label: 'תמונה אחרי', icon: Sparkles, file: afterImage, setFile: setAfterImage },
-                ].map(({ id, label, icon: Icon, file, setFile }) => (
+                  {
+                    id: 'before-image',
+                    label: 'תמונה לפני',
+                    icon: Camera,
+                    file: beforeImage,
+                    preview: beforePreview,
+                    setFile: setBeforeImage,
+                  },
+                  {
+                    id: 'after-image',
+                    label: 'תמונה אחרי',
+                    icon: Sparkles,
+                    file: afterImage,
+                    preview: afterPreview,
+                    setFile: setAfterImage,
+                  },
+                ].map(({ id, label, icon: Icon, file, preview, setFile }) => (
                   <div key={id}>
                     <div className="mb-1.5 flex items-center justify-center gap-1.5 text-[13px] text-[#3B302A]">
                       {label}
@@ -380,7 +416,9 @@ export function PackageDetailPage() {
                     </div>
                     <label
                       htmlFor={id}
-                      className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#D9C6B5] bg-[#FDFAF7] px-3 py-5 text-center"
+                      className={`relative block cursor-pointer overflow-hidden rounded-2xl border border-dashed border-[#D9C6B5] bg-[#FDFAF7] text-center ${
+                        preview ? 'aspect-[3/4] sm:aspect-square' : 'flex min-h-[120px] flex-col items-center justify-center px-3 py-5'
+                      }`}
                     >
                       <input
                         type="file"
@@ -389,11 +427,19 @@ export function PackageDetailPage() {
                         id={id}
                         onChange={(e) => setFile(e.target.files?.[0] || null)}
                       />
-                      {file ? (
+                      {file && preview ? (
                         <>
-                          <Check className="mb-2 h-6 w-6 text-[#7BA05B]" />
-                          <p className="max-w-full truncate text-xs text-[#7BA05B]">{file.name}</p>
-                          <p className="mt-1 text-[11px] text-[#B5B0A8]">לחצו להחלפה</p>
+                          <img
+                            src={preview}
+                            alt={label}
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-2 pt-8 pb-2.5 text-center">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] text-[#3B302A]">
+                              <Check className="h-3 w-3 text-[#7BA05B]" />
+                              לחצו להחלפה
+                            </span>
+                          </span>
                         </>
                       ) : (
                         <>
@@ -406,6 +452,9 @@ export function PackageDetailPage() {
                   </div>
                 ))}
               </div>
+              {beforePreview && afterPreview ? (
+                <p className="mb-4 text-center text-[12px] text-[#8A847C]">לפני ואחרי זה לצד זה — כך רואים את השינוי</p>
+              ) : null}
               <label className="mb-4 flex cursor-pointer items-start gap-3 text-[12px] leading-5 text-[#4A4540]">
                 <input
                   type="checkbox"
@@ -433,7 +482,20 @@ export function PackageDetailPage() {
               </button>
             </div>
           ) : (
-            <div className="rounded-2xl bg-[#FDFAF7] py-8 text-center">
+            <div className="rounded-2xl bg-[#FDFAF7] px-3 py-6 text-center">
+              {beforePreview && afterPreview ? (
+                <div className="mb-5 grid grid-cols-2 gap-2.5">
+                  {[
+                    { src: beforePreview, label: 'לפני' },
+                    { src: afterPreview, label: 'אחרי' },
+                  ].map(({ src, label }) => (
+                    <div key={label} className="overflow-hidden rounded-2xl">
+                      <img src={src} alt={label} className="aspect-[3/4] w-full object-cover sm:aspect-square" />
+                      <p className="bg-white/80 py-1.5 text-[12px] text-[#5F554C]">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <h3 className="mb-2 text-xl font-light text-[#4A4A4A]">תודה רבה על השיתוף!</h3>
               <p className="text-sm text-[#8B8B8B]">
                 {allowSocialShare

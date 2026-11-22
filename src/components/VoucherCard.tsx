@@ -1,8 +1,33 @@
 import { Sparkle } from './BrushTitle'
 import { apiUrl } from '../utils/api'
 
+export const DEFAULT_GIFT_BLESSING = 'כי לכל ילד מגיע מקום משלו לחלום, לדמיין ולגדול בו.'
+
 export function packagesPhrase(count: number) {
   return count === 1 ? 'חבילת עיצוב אחת' : `${count} חבילות עיצוב`
+}
+
+/** Singular "קיבלת" for one recipient; "קיבלתם" for 2+ names or a family. */
+export function isPluralRecipients(names: string): boolean {
+  const n = names.trim()
+  if (!n) return true
+  if (/משפח|כולם|הילדים|הנכדים/.test(n)) return true
+  if (/[,،/&+]/.test(n)) return true
+  // "ליאב וניר" / "ליאב ו ניר"
+  if (/\S\s+ו\S/.test(n) || /\S\s+ו\s+\S/.test(n)) return true
+  return false
+}
+
+/** "למתן" / "לליאב, ניר ואלון" — ל' before the typed recipient(s). */
+export function toRecipientLabel(names: string): string {
+  const n = names.trim()
+  if (!n) return 'למקבלי המתנה'
+  return `ל${n}`
+}
+
+export function receivedPackagesLine(names: string, count: number): string {
+  const verb = isPluralRecipients(names) ? 'קיבלתם' : 'קיבלת'
+  return `${verb} ${packagesPhrase(count)} לחדרי הילדים`
 }
 
 /** The designed gift voucher. Never shows the price. */
@@ -32,11 +57,13 @@ export function VoucherCard({
         </p>
         <p className="text-sm text-[#8A847C]">מתנה קטנה, חלומות גדולים</p>
 
-        <p className="mt-5 text-lg text-[#3C3834]">{recipientNames || 'שמות מקבלי המתנה'}</p>
+        <p className="mt-5 text-lg text-[#3C3834]">{toRecipientLabel(recipientNames)}</p>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-6 whitespace-pre-line text-[#5E5852]">
-          {personalMessage || 'כי לכל ילד מגיע מקום משלו לחלום, לדמיין ולגדול בו.'}
+          {(personalMessage || '').trim() || DEFAULT_GIFT_BLESSING}
         </p>
-        <p className="mt-4 text-[15px] text-[#3C3834]">{packagesPhrase(packagesCount)} לחדרי הילדים</p>
+        <p className="mt-4 text-[15px] text-[#3C3834]">
+          {receivedPackagesLine(recipientNames, packagesCount)}
+        </p>
         {giverName && <p className="mt-1 text-sm text-[#5E5852]">באהבה, {giverName} ♡</p>}
 
         <div className="mt-5 flex flex-col items-center gap-3">

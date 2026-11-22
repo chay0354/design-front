@@ -309,19 +309,24 @@ export function LandingPage() {
         </section>
 
         <section className="mx-auto w-full max-w-3xl px-4 pt-6 pb-4">
-          <div className="flex flex-col items-center gap-5 rounded-3xl border border-[#EDE4D8] bg-[#FBF8F3] px-6 py-8 text-center sm:flex-row sm:text-right">
-            <img src="/assets/gift-icon.png" alt="" aria-hidden="true" className="h-20 w-20 shrink-0 object-contain" />
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-[#EDE4D8] bg-[#FBF8F3] px-5 py-5 text-center sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-right">
+            <img
+              src="/assets/gift-icon.png"
+              alt=""
+              aria-hidden="true"
+              className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14"
+            />
             <div className="flex-1">
-              <h2 className="text-[1.6rem] leading-tight font-bold text-[#2F2A26] sm:text-[2rem]">שובר מתנה</h2>
-              <p className="mt-1 text-[14px] font-medium text-[#A88A72]">מתנה קטנה, חלומות גדולים</p>
-              <p className="mt-2 text-[13.5px] leading-6 text-[#3C3631] sm:text-[15px]">
+              <h2 className="text-[1.35rem] leading-tight font-bold text-[#2F2A26] sm:text-[1.7rem]">שובר מתנה</h2>
+              <p className="mt-0.5 text-[13px] font-medium text-[#A88A72] sm:text-[14px]">מתנה קטנה, חלומות גדולים</p>
+              <p className="mt-1.5 text-[13px] leading-5 text-[#3C3631] sm:text-[14.5px] sm:leading-6">
                 יש מתנות שנשארות הרבה מעבר לרגע שבו מקבלים אותן. העניקו מתנה עיצוב לחדר הילדים, מקום לגדול
                 בו, לחלום בו וליצור זיכרונות יפים.
               </p>
             </div>
             <Link
               to="/gift"
-              className="shrink-0 rounded-full bg-[#3F3A36] px-6 py-3 text-sm text-white hover:bg-[#2F2B28]"
+              className="shrink-0 rounded-full bg-[#C4B49A] px-6 py-2.5 text-sm text-white hover:bg-[#B3A288]"
             >
               לרכישת שובר מתנה
             </Link>

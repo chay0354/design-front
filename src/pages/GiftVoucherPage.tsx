@@ -4,7 +4,12 @@ import { Check, Copy, Mail, MessageCircle, Minus, Plus, Send } from 'lucide-reac
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { BrushTitle } from '../components/BrushTitle'
-import { VoucherCard, packagesPhrase } from '../components/VoucherCard'
+import {
+  DEFAULT_GIFT_BLESSING,
+  VoucherCard,
+  packagesPhrase,
+  receivedPackagesLine,
+} from '../components/VoucherCard'
 import { useAuth } from '../contexts/AuthContext'
 import { apiFetch, ApiError } from '../utils/backend'
 import { SHOW_PACKAGE_PRICE } from '../utils/questionnaire'
@@ -45,14 +50,20 @@ const emptyDraft: GiftDraft = {
   recipientEmail: '',
   recipientPhone: '',
   giverName: '',
-  personalMessage: '',
+  personalMessage: DEFAULT_GIFT_BLESSING,
   deliveryMethod: 'email',
 }
 
 function loadDraft(): GiftDraft {
   try {
     const raw = sessionStorage.getItem(DRAFT_KEY)
-    return raw ? { ...emptyDraft, ...(JSON.parse(raw) as GiftDraft) } : emptyDraft
+    if (!raw) return emptyDraft
+    const parsed = JSON.parse(raw) as Partial<GiftDraft>
+    return {
+      ...emptyDraft,
+      ...parsed,
+      personalMessage: parsed.personalMessage?.trim() ? parsed.personalMessage : DEFAULT_GIFT_BLESSING,
+    }
   } catch {
     return emptyDraft
   }
@@ -110,16 +121,68 @@ export function VoucherShareActions({ voucher }: { voucher: PurchasedVoucher }) 
   )
 }
 
-export function VoucherConfirmation({ voucher, orderNumber }: { voucher: PurchasedVoucher; orderNumber?: number }) {
+type DeliveryStatus = {
+  emailed?: boolean
+  recipientEmailed?: boolean
+  buyerEmailed?: boolean
+  emailConfigured?: boolean
+  error?: string
+}
+
+export function VoucherConfirmation({
+  voucher,
+  orderNumber,
+  delivery,
+}: {
+  voucher: PurchasedVoucher
+  orderNumber?: number
+  delivery?: DeliveryStatus | null
+}) {
+  const [resending, setResending] = useState(false)
+  const [resendNote, setResendNote] = useState('')
+  const emailFailed = delivery && delivery.emailed === false
+
+  const statusText = (() => {
+    if (emailFailed) {
+      if (voucher.deliveryMethod === 'whatsapp') {
+        return 'השובר מוכן לשיתוף בוואטסאפ. שליחת המייל לא הצליחה כרגע — אפשר לנסות שוב למטה.'
+      }
+      if (voucher.deliveryMethod === 'email') {
+        return `השובר נוצר, אבל המייל אל ${voucher.recipientEmail || 'מקבל המתנה'} עדיין לא נשלח. אפשר לשתף בוואטסאפ בינתיים או לנסות שליחה מחדש.`
+      }
+      return 'השובר נוצר, אבל שליחת המייל לא הצליחה כרגע. אפשר לנסות שוב למטה.'
+    }
+    if (voucher.deliveryMethod === 'email') {
+      return `שלחנו את השובר במייל אל ${voucher.recipientEmail}, ואישור רכישה אלייך.`
+    }
+    if (voucher.deliveryMethod === 'whatsapp') {
+      return delivery?.buyerEmailed
+        ? 'עכשיו נשאר רק לשתף את השובר בוואטסאפ. שלחנו לך גם אישור רכישה במייל.'
+        : 'עכשיו נשאר רק לשתף את השובר בוואטסאפ.'
+    }
+    return delivery?.buyerEmailed || delivery?.recipientEmailed
+      ? 'שלחנו את השובר אלייך במייל — אפשר להעביר אותו בכל דרך.'
+      : 'השובר מוכן — אפשר להעביר אותו בכל דרך, או לשלוח שוב במייל למטה.'
+  })()
+
+  const resendEmail = async () => {
+    setResending(true)
+    setResendNote('')
+    try {
+      await apiFetch(`/api/vouchers/purchased/${voucher.id}/resend-email`, { method: 'POST', body: {} })
+      setResendNote('המייל נשלח מחדש. בדקי גם בספאם.')
+    } catch (err) {
+      setResendNote(err instanceof ApiError ? err.message : 'שליחה מחדש נכשלה.')
+    } finally {
+      setResending(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-xl px-4 py-10 text-center">
       <BrushTitle as="h1">השובר מוכן!</BrushTitle>
       <p className="mt-4 text-sm leading-6 text-[#6F6A64]">
-        {voucher.deliveryMethod === 'email'
-          ? `שלחנו את השובר במייל אל ${voucher.recipientEmail}, ואישור רכישה אלייך.`
-          : voucher.deliveryMethod === 'whatsapp'
-            ? 'עכשיו נשאר רק לשתף את השובר בוואטסאפ. שלחנו לך גם אישור רכישה במייל.'
-            : 'שלחנו את השובר אלייך במייל — אפשר להעביר אותו בכל דרך.'}
+        {statusText}
         {orderNumber ? ` מספר הזמנה: ${orderNumber}.` : ''}
       </p>
       <div className="mt-6">
@@ -127,6 +190,17 @@ export function VoucherConfirmation({ voucher, orderNumber }: { voucher: Purchas
       </div>
       <div className="mt-6">
         <VoucherShareActions voucher={voucher} />
+      </div>
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={resendEmail}
+          disabled={resending}
+          className="text-sm text-[#A88A72] underline hover:text-[#8A6A52] disabled:opacity-60"
+        >
+          {resending ? 'שולח מייל...' : 'שליחת השובר במייל מחדש'}
+        </button>
+        {resendNote ? <p className="mt-2 text-xs text-[#6F6A64]">{resendNote}</p> : null}
       </div>
       <p className="mt-6 text-xs text-[#8A847C]">
         החשבונית תונפק על שמך. אפשר לחזור לשובר בכל עת מהקישור:{' '}
@@ -146,7 +220,11 @@ export function GiftVoucherPage() {
   const [maxPackages, setMaxPackages] = useState(5)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ voucher: PurchasedVoucher; orderNumber: number } | null>(null)
+  const [result, setResult] = useState<{
+    voucher: PurchasedVoucher
+    orderNumber: number
+    delivery?: DeliveryStatus
+  } | null>(null)
   const [step, setStep] = useState<'form' | 'summary'>('form')
   const [acceptTerms, setAcceptTerms] = useState(false)
 
@@ -200,7 +278,11 @@ export function GiftVoucherPage() {
     setSubmitting(true)
     setError('')
     try {
-      const data = await apiFetch<{ voucher: PurchasedVoucher; orderNumber: number }>('/api/vouchers', {
+      const data = await apiFetch<{
+        voucher: PurchasedVoucher
+        orderNumber: number
+        delivery?: DeliveryStatus
+      }>('/api/vouchers', {
         body: draft,
       })
       saveDraft(null)
@@ -217,7 +299,11 @@ export function GiftVoucherPage() {
     return (
       <div className="min-h-screen bg-[#F7F4EF]">
         <Header />
-        <VoucherConfirmation voucher={result.voucher} orderNumber={result.orderNumber} />
+        <VoucherConfirmation
+          voucher={result.voucher}
+          orderNumber={result.orderNumber}
+          delivery={result.delivery}
+        />
         <Footer />
       </div>
     )
@@ -242,7 +328,9 @@ export function GiftVoucherPage() {
                   <h2 className="text-lg text-[#3C3834]">שובר מתנה</h2>
                   {SHOW_PACKAGE_PRICE && price ? <span className="text-xl text-[#3C3834]">₪{price}</span> : null}
                 </div>
-                <p className="mt-1 text-[#5E5852]">{packagesPhrase(draft.packagesCount)} לחדרי הילדים</p>
+                <p className="mt-1 text-[#5E5852]">
+                  {receivedPackagesLine(draft.recipientNames, draft.packagesCount)}
+                </p>
                 <dl className="mt-4 space-y-1 text-sm text-[#6F6A64]">
                   <div className="flex gap-2">
                     <dt className="text-[#8A847C]">למי:</dt>
@@ -337,31 +425,57 @@ export function GiftVoucherPage() {
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">
           <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-            <section>
-              <h2 className="mb-3 text-lg text-[#3C3834]">כמה חבילות עיצוב?</h2>
-              <div className="flex items-center justify-between rounded-2xl border border-[#E7E1D8] px-4 py-3">
-                <button
-                  type="button"
-                  aria-label="פחות"
-                  onClick={() => update({ packagesCount: Math.max(1, draft.packagesCount - 1) })}
-                  className="rounded-full border border-[#E2D8CC] p-2 text-[#6F6A64] disabled:opacity-40"
-                  disabled={draft.packagesCount <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <div className="text-center">
-                  <p className="text-[#3C3834]">{packagesPhrase(draft.packagesCount)}</p>
-                  {SHOW_PACKAGE_PRICE && price ? <p className="text-sm text-[#8A847C]">₪{price}</p> : null}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#E7E1D8] bg-[#FBF9F6] px-3 py-3">
+                <p className="min-w-0 flex-1 text-sm leading-5 text-[#4A4540]">
+                  כמה חבילות עיצוב תרצו להעניק במתנה?
+                </p>
+                <div className="flex shrink-0 items-center gap-2" dir="ltr">
+                  <button
+                    type="button"
+                    aria-label="פחות חבילות"
+                    onClick={() => update({ packagesCount: Math.max(1, draft.packagesCount - 1) })}
+                    disabled={draft.packagesCount <= 1}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                      draft.packagesCount <= 1
+                        ? 'cursor-not-allowed border-[#E8DED2] text-[#C5C5C5]'
+                        : 'border-[#D5CBBF] text-[#6F6A64] hover:bg-white'
+                    }`}
+                  >
+                    <Minus className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
+                  <span className="min-w-6 text-center text-lg font-medium text-[#3C3834]">
+                    {draft.packagesCount}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="יותר חבילות"
+                    onClick={() => update({ packagesCount: Math.min(maxPackages, draft.packagesCount + 1) })}
+                    disabled={draft.packagesCount >= maxPackages}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                      draft.packagesCount >= maxPackages
+                        ? 'cursor-not-allowed border-[#E8DED2] text-[#C5C5C5]'
+                        : 'border-[#D5CBBF] text-[#6F6A64] hover:bg-white'
+                    }`}
+                  >
+                    <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  aria-label="יותר"
-                  onClick={() => update({ packagesCount: Math.min(maxPackages, draft.packagesCount + 1) })}
-                  className="rounded-full border border-[#E2D8CC] p-2 text-[#6F6A64] disabled:opacity-40"
-                  disabled={draft.packagesCount >= maxPackages}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
+              </div>
+              {SHOW_PACKAGE_PRICE && price ? (
+                <p className="text-center text-sm text-[#8A847C]">
+                  {packagesPhrase(draft.packagesCount)} · ₪{price}
+                </p>
+              ) : null}
+              <div className="flex items-center gap-3 rounded-2xl bg-[#FBF6EE] px-4 py-2.5 text-sm text-[#6F6254]">
+                <img src="/assets/gift-icon.png" alt="" className="h-10 w-10 object-contain" />
+                <p>
+                  <span className="font-medium">מוסיפים חדר נוסף</span>
+                  <br />
+                  ונהנים מ־20% הנחה
+                  <br />
+                  על חבילת העיצוב הנוספת!
+                </p>
               </div>
             </section>
 
@@ -369,7 +483,7 @@ export function GiftVoucherPage() {
               <h2 className="text-lg text-[#3C3834]">למי המתנה?</h2>
               <input
                 className={inputClass}
-                placeholder="שם מקבל המתנה או שמות המקבלים, למשל: ליאב, ניר ואלון"
+                placeholder="שם מקבל המתנה או שמות המקבלים למשל: ליאב, ניר ואלון"
                 value={draft.recipientNames}
                 onChange={(e) => update({ recipientNames: e.target.value })}
                 maxLength={200}
@@ -403,13 +517,16 @@ export function GiftVoucherPage() {
                 onChange={(e) => update({ giverName: e.target.value })}
                 maxLength={120}
               />
-              <textarea
-                className={`${inputClass} min-h-24`}
-                placeholder="ברכה אישית (לא חובה)"
-                value={draft.personalMessage}
-                onChange={(e) => update({ personalMessage: e.target.value })}
-                maxLength={600}
-              />
+              <div>
+                <label className="mb-1.5 block text-sm text-[#6F6A64]">ברכה אישית</label>
+                <textarea
+                  className={`${inputClass} min-h-28`}
+                  value={draft.personalMessage}
+                  onChange={(e) => update({ personalMessage: e.target.value })}
+                  maxLength={600}
+                />
+                <p className="mt-1.5 text-xs text-[#8A847C]">אפשר לערוך את הברכה או להשאיר כמו שהיא.</p>
+              </div>
             </section>
 
             <section>
