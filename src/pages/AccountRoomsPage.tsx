@@ -88,7 +88,7 @@ function SelectField({
   )
 }
 
-function roomIntro(room: AccountRoom, kids: RoomKid[]) {
+function roomIntro(kids: RoomKid[]) {
   if (kids.length === 1) {
     const kid = kids[0]
     const age = kid.age
@@ -465,7 +465,7 @@ export function AccountRoomsPage() {
             <div className="space-y-8">
               {roomsForDesign.map((room, index) => {
                 const choice = choices[room.key]
-                const intro = roomIntro(room, room.kids)
+                const intro = roomIntro(room.kids)
                 const restoreOptions = room.archived
                 return (
                   <section key={room.key} className={index > 0 ? 'border-t border-[#E6DACE] pt-7' : ''}>
