@@ -46,6 +46,9 @@ as $$
   );
 $$;
 
+revoke all on function public.is_petite_admin() from public, anon;
+grant execute on function public.is_petite_admin() to authenticated;
+
 alter table public.app_packages enable row level security;
 alter table public.app_color_scales enable row level security;
 
