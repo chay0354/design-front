@@ -277,7 +277,7 @@ test('checkout: coupon errors, coupon applied, and the order goes to the server'
   await expect(page.getByText('קוד MAYA15 הוחל — 15% הנחה')).toBeVisible()
 
   for (const box of await page.getByRole('checkbox').all()) await box.check()
-  await page.getByRole('button', { name: 'השלימי רכישה' }).click()
+  await page.getByRole('button', { name: /^שלמי ₪/ }).click()
 
   await expect.poll(() => order).not.toBeNull()
   expect(order).toMatchObject({
@@ -483,4 +483,20 @@ test('application guides edited in admin open as their own page', async ({ page 
   await expect(page).toHaveURL(/\/guides\/checklist$/)
   await expect(page.getByRole('heading', { name: 'צ׳ק ליסט לביצוע' })).toBeVisible()
   await expect(page.getByRole('listitem').filter({ hasText: 'למדוד את הקיר' })).toBeVisible()
+})
+
+test('package preview after the questionnaire matches the new design', async ({ page }) => {
+  await page.route('**/api/checkout/quote', (route) => route.fulfill({ json: { total: 540 } }))
+  await page.addInitScript(() => localStorage.setItem('pd_cookie_consent', 'accepted'))
+  const rooms = [
+    { children: [{ name: 'ארד', gender: 'boy', age: 5 }], designGender: 'boy', ageChoice: null, theme: "גיבורי על ג'וניור", colorPreference: 'אפור', wallDesignOption: 'paint' },
+  ]
+  await page.goto(`/preview/recommended?rooms=${encodeURIComponent(JSON.stringify(rooms))}`)
+  await expect(page.getByRole('heading', { name: 'חבילת העיצוב של ארד' })).toBeVisible()
+  await expect(page.getByText("חבילת גיבורי על ג'וניור לגיל 5")).toBeVisible()
+  await expect(page.getByText('הצצה לסגנון החבילה שלכם')).toBeVisible()
+  await expect(page.getByText('90 ש״ח בלבד')).toBeVisible()
+  await expect(page.getByText('או 540 ש״ח בתשלום אחד')).toBeVisible()
+  await page.getByRole('button', { name: /^הבא/ }).click()
+  await expect(page).toHaveURL(/\/login$/)
 })
