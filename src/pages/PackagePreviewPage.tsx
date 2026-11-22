@@ -174,16 +174,6 @@ const FEATURES = [
   { icon: Ticket, label: <>סטיילינג בלבד</> },
 ]
 
-function PriceRays({ side }: { side: 'start' | 'end' }) {
-  return (
-    <span aria-hidden="true" className={`flex flex-col gap-1.5 ${side === 'start' ? 'items-start' : 'items-end'}`}>
-      <span className={`block h-0.5 w-5 rounded bg-white/70 ${side === 'start' ? '-rotate-[25deg]' : 'rotate-[25deg]'}`} />
-      <span className="block h-0.5 w-6 rounded bg-white/70" />
-      <span className={`block h-0.5 w-5 rounded bg-white/70 ${side === 'start' ? 'rotate-[25deg]' : '-rotate-[25deg]'}`} />
-    </span>
-  )
-}
-
 export function PackagePreviewPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -380,14 +370,12 @@ export function PackagePreviewPage() {
               {roomCards.length > 1 ? `לפתיחת ${roomCards.length} החבילות שלכם` : 'לפתיחת החבילה שלכם'}
             </span>
             <span className="mt-1 flex items-center justify-center gap-2 sm:gap-3">
-              <PriceRays side="end" />
               <span className="text-[24px] leading-none font-bold whitespace-nowrap sm:text-[30px]">{monthly} ש״ח בלבד</span>
               <span className="h-7 w-px bg-white/50" aria-hidden="true" />
               <span className="flex gap-1.5 text-[15px] whitespace-nowrap sm:text-[17px]" dir="ltr">
                 <span>{INSTALLMENT_COUNT} X</span>
                 <span>חודשים</span>
               </span>
-              <PriceRays side="start" />
             </span>
             <span className="mx-auto mt-2 block w-fit rounded-full bg-[#FDF8F3] px-6 py-1 text-[15px] font-semibold text-[#3C3530]">
               או {total} ש״ח בתשלום אחד
