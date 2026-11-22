@@ -242,6 +242,8 @@ create table if not exists public.order_items (
   wall_design_option text not null default '',
   -- snapshot of the room children at purchase time
   children jsonb not null default '[]'::jsonb,
+  -- the package exactly as it was bought (images, shopping list), shown from the archive
+  package_snapshot jsonb,
   list_price numeric(10,2) not null default 0,
   -- 'sibling' (extra room), 'coupon', 'voucher' or ''
   discount_type text not null default '',
@@ -389,7 +391,7 @@ create table if not exists public.app_settings (
 alter table public.app_settings enable row level security;
 drop policy if exists "app_settings_read" on public.app_settings;
 create policy "app_settings_read" on public.app_settings
-  for select to anon, authenticated using (key in ('gift_voucher_prices', 'guide_videos'));
+  for select to anon, authenticated using (key in ('gift_voucher_prices', 'guide_videos', 'application_guides'));
 grant select on public.app_settings to anon, authenticated;
 
 -- ---------------------------------------------------------------------------

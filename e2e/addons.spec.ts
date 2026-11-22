@@ -139,6 +139,15 @@ test('buying a gift voucher shows the voucher and WhatsApp share', async ({ page
   await expect(page.getByText('באהבה, סבא וסבתא ♡')).toBeVisible()
   await page.getByRole('button', { name: 'המשך לתשלום' }).click()
 
+  // Order summary before paying
+  await expect(page.getByRole('heading', { name: 'שובר מתנה' })).toBeVisible()
+  await expect(page.getByText('3 חבילות עיצוב לחדרי הילדים').first()).toBeVisible()
+  await page.getByRole('button', { name: 'לתשלום' }).click()
+  await expect(page.getByText('יש לאשר את תנאי השימוש')).toBeVisible()
+  expect(body).toBeNull()
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button', { name: 'לתשלום' }).click()
+
   await expect(page.getByRole('heading', { name: 'השובר מוכן!' })).toBeVisible()
   await expect(page.getByText('PD-7KQ4M9XA').first()).toBeVisible()
   expect(body).toMatchObject({ packagesCount: 3, deliveryMethod: 'whatsapp', giverName: 'סבא וסבתא' })
@@ -294,7 +303,7 @@ test('personal area: replaced packages move to the archive', async ({ page }) =>
   await signIn(page, {
     purchased_packages: ['flowers-dream-garden-girl-0-2-warm-natural', 'fairies-magic-forest-girl-3-5-warm-natural'],
     children: [
-      { name: 'נועה', age: 2, packageId: 'flowers-dream-garden-girl-0-2-warm-natural', purchaseDate: '2025-01-10T10:00:00Z', gender: 'girl', theme: 'פרחים וגן חלומי', roomId, archivedAt: '2026-11-01T10:00:00Z', roomChildren: [{ name: 'נועה', age: 2, gender: 'girl' }] },
+      { name: 'נועה', age: 2, packageId: 'flowers-dream-garden-girl-0-2-warm-natural', purchaseDate: '2025-01-10T10:00:00Z', gender: 'girl', theme: 'פרחים וגן חלומי', roomId, orderItemId: 'item-old', archivedAt: '2026-11-01T10:00:00Z', roomChildren: [{ name: 'נועה', age: 2, gender: 'girl' }] },
       { name: 'נועה', age: 3, packageId: 'fairies-magic-forest-girl-3-5-warm-natural', purchaseDate: '2026-11-01T10:00:00Z', gender: 'girl', theme: 'פיות ויער קסום', roomId, roomChildren: [{ name: 'נועה', age: 3, gender: 'girl' }] },
     ],
   })
@@ -306,6 +315,23 @@ test('personal area: replaced packages move to the archive', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'ארכיון החבילות' })).toBeVisible()
   await expect(page.getByText('חבילת פרחים וגן חלומי')).toBeVisible()
   await expect(page.getByText(/הועברה לארכיון ב/)).toBeVisible()
+
+  // The archived package opens with the content exactly as it was bought.
+  await page.route('https://mock.supabase.co/rest/v1/order_items**', (route) =>
+    route.fulfill({
+      json: {
+        package_snapshot: {
+          name: 'חבילת פרחים — כפי שנרכשה',
+          shoppingCategories: [
+            { category: 'טקסטיל', items: [{ name: 'כרית מקורית מהרכישה', link: 'https://he.aliexpress.com/item/1.html', image: '' }] },
+          ],
+        },
+      },
+    }),
+  )
+  await page.getByRole('button', { name: 'לצפייה' }).click()
+  await expect(page).toHaveURL(/\?item=item-old/)
+  await expect(page.getByText('כרית מקורית מהרכישה')).toBeVisible()
 })
 
 test('admin: dashboard, influencers, vouchers and links tabs load', async ({ page }) => {
@@ -396,4 +422,65 @@ test('admin: dashboard, influencers, vouchers and links tabs load', async ({ pag
   await expect(page.getByText('שטיח')).toHaveCount(0)
   await page.getByRole('button', { name: 'החלפת קישור' }).click()
   await expect(page.getByPlaceholder('https://...')).toBeVisible()
+})
+
+async function openRoomRedesign(page: Page, ages: [number, number]) {
+  const roomId = '33333333-3333-4333-8333-333333333333'
+  await signIn(page, {
+    purchased_packages: ['flowers-dream-garden-girl-0-2-warm-natural'],
+    children: [
+      {
+        name: 'נועה ואייר',
+        age: ages[0],
+        packageId: 'flowers-dream-garden-girl-0-2-warm-natural',
+        purchaseDate: new Date().toISOString(),
+        gender: 'unisex',
+        roomId,
+        roomChildren: [
+          { name: 'נועה', age: ages[0], gender: 'girl' },
+          { name: 'אייר', age: ages[1], gender: 'boy' },
+        ],
+      },
+    ],
+  })
+  await page.route('**/api/events', (route) => route.fulfill({ json: { ok: true } }))
+  await page.goto(`/questionnaire?roomId=${roomId}`)
+  await expect(page.getByText(/עיצוב חדש לחדר של נועה ואייר/)).toBeVisible()
+}
+
+test('shared room, neighbouring ages: family picks whose age the design follows', async ({ page }) => {
+  await openRoomRedesign(page, [2, 4])
+  // rooms, 2 children, design gender, design age, theme, color, wall
+  await expect(page.getByText('01 / 08')).toBeVisible()
+})
+
+test('shared room, ages far apart: goes straight to cross-age themes', async ({ page }) => {
+  await openRoomRedesign(page, [2, 7])
+  // rooms, 2 children, design gender, theme, color, wall — no "whose age" step
+  await expect(page.getByText('01 / 07')).toBeVisible()
+  for (let i = 0; i < 3; i += 1) await page.getByRole('button', { name: 'המשך' }).click()
+  await page.getByRole('button', { name: /חדר ניטרלי/ }).click()
+  await page.getByRole('button', { name: 'המשך' }).click()
+  await expect(page.getByRole('heading', { name: 'נושאים חוצי גילאים לחדר של נועה ואייר' })).toBeVisible()
+  await expect(page.getByText(/בסוף תתקבל חבילת עיצוב אחת לחדר המשותף/)).toBeVisible()
+})
+
+test('application guides edited in admin open as their own page', async ({ page }) => {
+  await signIn(page, {})
+  await page.route('https://mock.supabase.co/rest/v1/app_settings**', (route) => {
+    if (!route.request().url().includes('application_guides')) return route.fulfill({ json: null })
+    return route.fulfill({
+      json: {
+        value: [
+          { id: 'checklist', title: 'צ׳ק ליסט לביצוע', subtitle: 'לפני שמתחילים', summary: 'תקציר', body: 'פסקה ראשונה.\n\n- למדוד את הקיר\n- לקנות צבע' },
+          { id: 'corners', title: 'פינות', subtitle: '', summary: '', body: '' },
+        ],
+      },
+    })
+  })
+  await page.goto('/account')
+  await page.getByRole('button', { name: 'לקריאת המדריך' }).first().click()
+  await expect(page).toHaveURL(/\/guides\/checklist$/)
+  await expect(page.getByRole('heading', { name: 'צ׳ק ליסט לביצוע' })).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'למדוד את הקיר' })).toBeVisible()
 })

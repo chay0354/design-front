@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase'
+import { visibleShoppingCategories, type ThemePackage } from '../data/themePackages'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
@@ -70,7 +72,32 @@ export function PackageDetailPage() {
   const [photosUploaded, setPhotosUploaded] = useState(false)
   const [selectedChildIndex, setSelectedChildIndex] = useState(0)
 
-  const pkg = packageId ? getPackageById(packageId) : undefined
+  // Archived packages open with ?item=<order item>: show the package exactly as it was bought.
+  const orderItemId = searchParams.get('item')
+  const [snapshot, setSnapshot] = useState<ThemePackage | null>(null)
+  const [snapshotLoading, setSnapshotLoading] = useState(Boolean(orderItemId))
+  useEffect(() => {
+    if (!orderItemId) return
+    let cancelled = false
+    supabase
+      .from('order_items')
+      .select('package_snapshot')
+      .eq('id', orderItemId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSnapshot((data?.package_snapshot as ThemePackage | null) ?? null)
+      })
+      .then(
+        () => !cancelled && setSnapshotLoading(false),
+        () => !cancelled && setSnapshotLoading(false),
+      )
+    return () => {
+      cancelled = true
+    }
+  }, [orderItemId])
+
+  const currentPkg = packageId ? getPackageById(packageId) : undefined
+  const pkg = snapshot && currentPkg ? { ...currentPkg, ...snapshot, id: currentPkg.id } : currentPkg
   const isPurchased = pkg ? hasPurchased(user, pkg.id) : false
   const justPurchased = searchParams.get('purchased') === 'true'
   const childName = searchParams.get('childName') || ''
@@ -80,7 +107,16 @@ export function PackageDetailPage() {
   const selectedChild = allChildren[selectedChildIndex]
   const displayName = selectedChild?.name || childName
   const displayColors = selectedChild?.colorPreference || childColorPreference
-  const content = pkg ? getPackageContent(pkg.id) : null
+  const liveContent = pkg ? getPackageContent(pkg.id) : null
+  const content =
+    liveContent && snapshot
+      ? {
+          ...liveContent,
+          heroImage: snapshot.heroImage || liveContent.heroImage,
+          galleryImages: snapshot.galleryImages?.length ? snapshot.galleryImages : liveContent.galleryImages,
+          shoppingCategories: visibleShoppingCategories(snapshot.shoppingCategories || []),
+        }
+      : liveContent
   const colorScale = getColorScaleForPreference(displayColors)
   const { checked, toggle } = usePurchasedItems(
     `petite-purchased-items:${user?.id ?? ''}:${packageId ?? ''}:${displayName}`,
@@ -90,7 +126,7 @@ export function PackageDetailPage() {
     setSelectedChildIndex(0)
   }, [packageId])
 
-  if (loading || dataLoading) {
+  if (loading || dataLoading || snapshotLoading) {
     return <PageLoading />
   }
 

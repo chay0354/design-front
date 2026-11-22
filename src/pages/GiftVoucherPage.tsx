@@ -147,6 +147,8 @@ export function GiftVoucherPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ voucher: PurchasedVoucher; orderNumber: number } | null>(null)
+  const [step, setStep] = useState<'form' | 'summary'>('form')
+  const [acceptTerms, setAcceptTerms] = useState(false)
 
   useEffect(() => {
     document.title = 'שובר מתנה | PETITE DREAMS'
@@ -174,7 +176,7 @@ export function GiftVoucherPage() {
     return ''
   }, [draft])
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     if (validation) {
       setError(validation)
@@ -183,6 +185,16 @@ export function GiftVoucherPage() {
     if (!user) {
       sessionStorage.setItem('intended_path', '/gift')
       navigate('/login')
+      return
+    }
+    setError('')
+    setStep('summary')
+    window.scrollTo(0, 0)
+  }
+
+  const handlePay = async () => {
+    if (!acceptTerms) {
+      setError('יש לאשר את תנאי השימוש')
       return
     }
     setSubmitting(true)
@@ -206,6 +218,102 @@ export function GiftVoucherPage() {
       <div className="min-h-screen bg-[#F7F4EF]">
         <Header />
         <VoucherConfirmation voucher={result.voucher} orderNumber={result.orderNumber} />
+        <Footer />
+      </div>
+    )
+  }
+
+  const deliveryLabel: Record<Delivery, string> = {
+    email: `במייל אל ${draft.recipientEmail}`,
+    whatsapp: 'שיתוף בוואטסאפ על ידך',
+    self: 'למייל שלך, להעברה עצמית',
+  }
+
+  if (step === 'summary') {
+    return (
+      <div className="min-h-screen bg-[#F7F4EF]">
+        <Header />
+        <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+          <BrushTitle as="h1">סיכום הזמנה</BrushTitle>
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+            <section className="space-y-5 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+              <div className="rounded-2xl border border-[#E7E1D8] bg-[#FBF8F3] p-5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="text-lg text-[#3C3834]">שובר מתנה</h2>
+                  {SHOW_PACKAGE_PRICE && price ? <span className="text-xl text-[#3C3834]">₪{price}</span> : null}
+                </div>
+                <p className="mt-1 text-[#5E5852]">{packagesPhrase(draft.packagesCount)} לחדרי הילדים</p>
+                <dl className="mt-4 space-y-1 text-sm text-[#6F6A64]">
+                  <div className="flex gap-2">
+                    <dt className="text-[#8A847C]">למי:</dt>
+                    <dd>{draft.recipientNames}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="text-[#8A847C]">ממי:</dt>
+                    <dd>{draft.giverName}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="text-[#8A847C]">מסירה:</dt>
+                    <dd>{deliveryLabel[draft.deliveryMethod]}</dd>
+                  </div>
+                </dl>
+                {SHOW_PACKAGE_PRICE && price ? (
+                  <div className="mt-4 flex justify-between border-t border-[#E7E1D8] pt-3 text-[#3C3834]">
+                    <span>סה״כ לתשלום</span>
+                    <span>₪{price}</span>
+                  </div>
+                ) : null}
+              </div>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E7E1D8] p-4 text-sm text-[#4A4A4A]">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-[#C8B6A6]"
+                />
+                <span>
+                  אני מסכים/ה ל
+                  <Link to="/terms" className="text-[#A88A72] underline">
+                    תנאי השימוש
+                  </Link>{' '}
+                  ול
+                  <Link to="/privacy" className="text-[#A88A72] underline">
+                    מדיניות הפרטיות
+                  </Link>
+                  . השובר נוצר ונשלח רק אחרי אישור התשלום, והחשבונית תונפק על שמי.
+                </span>
+              </label>
+
+              {error && <p className="text-sm text-[#A05A5A]">{error}</p>}
+
+              <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
+                <button
+                  type="button"
+                  onClick={handlePay}
+                  disabled={submitting}
+                  className="rounded-full bg-[#C4B49A] px-8 py-3.5 text-white hover:bg-[#B3A288] disabled:opacity-60"
+                >
+                  {submitting ? 'מעבד תשלום...' : 'לתשלום'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('form')
+                    setError('')
+                  }}
+                  className="text-sm text-[#8A847C] hover:underline"
+                >
+                  חזרה לעריכת השובר
+                </button>
+              </div>
+            </section>
+            <aside className="lg:sticky lg:top-6 lg:self-start">
+              <p className="mb-3 text-center text-sm text-[#8A847C]">כך ייראה השובר</p>
+              <VoucherCard {...draft} />
+            </aside>
+          </div>
+        </main>
         <Footer />
       </div>
     )
@@ -334,10 +442,9 @@ export function GiftVoucherPage() {
 
             <button
               type="submit"
-              disabled={submitting}
               className="w-full rounded-full bg-[#C4B49A] py-3.5 text-white hover:bg-[#B3A288] disabled:opacity-60"
             >
-              {submitting ? 'מעבד תשלום...' : user ? 'המשך לתשלום' : 'התחברות והמשך לתשלום'}
+              {user ? 'המשך לתשלום' : 'התחברות והמשך לתשלום'}
             </button>
             <p className="text-center text-xs text-[#8A847C]">
               התשלום מתבצע במערכת התשלום של האתר. השובר נוצר ונשלח רק אחרי אישור התשלום, והחשבונית תונפק על

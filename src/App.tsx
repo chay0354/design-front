@@ -22,6 +22,7 @@ import { ConsentBanner } from './components/ConsentBanner'
 import { GiftVoucherPage } from './pages/GiftVoucherPage'
 import { GiftVoucherViewPage } from './pages/GiftVoucherViewPage'
 import { GiftRedeemPage } from './pages/GiftRedeemPage'
+import { GuidePage } from './pages/GuidePage'
 import { captureReferralFromUrl } from './utils/tracking'
 
 captureReferralFromUrl()
@@ -180,6 +181,14 @@ export default function App() {
                 <BlockAdmin>
                   <GiftRedeemPage />
                 </BlockAdmin>
+              }
+            />
+            <Route
+              path="/guides/:guideId"
+              element={
+                <RequireUser>
+                  <GuidePage />
+                </RequireUser>
               }
             />
             <Route path="*" element={<Navigate to="/" replace />} />

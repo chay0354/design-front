@@ -23,7 +23,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import type { ThemePackage } from '../data/themePackages'
 import type { PackageContent } from '../contexts/DataContext'
-import { useGuideVideos, videoEmbed } from '../utils/guideVideos'
+import { DEFAULT_APPLICATION_GUIDES, useApplicationGuides, useGuideVideos, videoEmbed } from '../utils/guideVideos'
 import {
   getChildForPackage,
   getChildPackageEntries,
@@ -349,6 +349,7 @@ function PurchasedPackageRow({
 }
 
 const LESSON_ICONS = [Bed, Archive, Home]
+const GUIDE_ICONS = ['/assets/icons/checklist.png', '/assets/icons/designed-corners.png', '/assets/icons/center-wall.png']
 
 function mergeGuideVideos<T extends { id: string; icon: typeof Bed; image: string; title: string; description: string }>(
   defaults: T[],
@@ -411,7 +412,7 @@ function ArchiveView({
   entries: { child: ChildInfo; pkg: ThemePackage }[]
   scaleNameFor: (child?: ChildInfo) => string | undefined
   imageFor: (pkg: ThemePackage) => string
-  onOpen: (pkg: ThemePackage) => void
+  onOpen: (pkg: ThemePackage, child: ChildInfo) => void
   onBack: () => void
 }) {
   const rooms = new Map<string, { child: ChildInfo; pkg: ThemePackage }[]>()
@@ -458,7 +459,7 @@ function ArchiveView({
                   </div>
                   <button
                     type="button"
-                    onClick={() => onOpen(pkg)}
+                    onClick={() => onOpen(pkg, child)}
                     className="shrink-0 rounded-full border border-[#E2D8CC] px-4 py-2 text-sm text-[#5A544E] hover:bg-[#F8F4EF]"
                   >
                     לצפייה
@@ -480,6 +481,7 @@ export function AccountPage() {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
   const [showArchive, setShowArchive] = useState(false)
   const guideVideos = useGuideVideos()
+  const applicationGuides = useApplicationGuides()
 
   if (loading) {
     return <PageLoading />
@@ -561,7 +563,9 @@ export function AccountPage() {
               entries={archivedEntries}
               scaleNameFor={scaleNameFor}
               imageFor={(pkg) => packagePreviewImage(getPackageContent(pkg.id))}
-              onOpen={(pkg) => navigate(`/package/${pkg.id}`)}
+              onOpen={(pkg, child) =>
+                navigate(`/package/${pkg.id}${child.orderItemId ? `?item=${encodeURIComponent(child.orderItemId)}` : ''}`)
+              }
               onBack={() => setShowArchive(false)}
             />
           ) : (
@@ -668,26 +672,14 @@ export function AccountPage() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
-            {[
-              {
-                icon: '/assets/icons/checklist.png',
-                title: 'צ׳ק ליסט לביצוע מדויק',
-                subtitle: 'כל מה שכדאי להכין לפני שמתחילים',
-                text: 'שלבים וטיפים ליישום נקי ומדויק של צבע או חיפוי קיר דקורטיבי, בהתאם לחבילה שבחרתם.',
-              },
-              {
-                icon: '/assets/icons/designed-corners.png',
-                title: 'יוצרים פינות מעוצבות',
-                subtitle: 'מתאימים את העיצוב לחלל שלכם',
-                text: 'איך למקם ולשלב את האלמנטים בחדר ליצירת פינות הרמוניות ונעימות.',
-              },
-              {
-                icon: '/assets/icons/center-wall.png',
-                title: 'הקיר המרכזי',
-                subtitle: 'בוחרים את מוקד העיצוב בחדר',
-                text: 'איך לבחור את הקיר הנכון לצבע, חיפוי ותמונות וליצור מוקד עיצובי בחדר.',
-              },
-            ].map((guide) => (
+            {(applicationGuides ?? DEFAULT_APPLICATION_GUIDES).map((entry, index) => ({
+              id: entry.id,
+              title: entry.title,
+              subtitle: entry.subtitle,
+              text: entry.summary,
+              hasBody: Boolean(entry.body?.trim()),
+              icon: GUIDE_ICONS[index % GUIDE_ICONS.length],
+            })).map((guide) => (
               <article
                 key={guide.title}
                 className="flex flex-col rounded-lg border border-[#E3D6C9] bg-white px-6 py-7 text-center"
@@ -698,7 +690,7 @@ export function AccountPage() {
                 <p className="text-[13px] leading-6 text-[#3C3834]">{guide.text}</p>
                 <button
                   type="button"
-                  onClick={() => navigate('/tips')}
+                  onClick={() => navigate(guide.hasBody ? `/guides/${guide.id}` : '/tips')}
                   className="mx-auto mt-6 inline-flex items-center gap-1 text-sm text-[#A27A5C] hover:text-[#6B4F3A]"
                 >
                   לקריאת המדריך
@@ -742,7 +734,7 @@ export function AccountPage() {
                 title: 'משחקים או למידה?',
                 description: 'פינה אחת שאפשר לשחק בה וגם להכין בה שיעורים.',
               },
-            ], guideVideos).map(({ id, icon: Icon, image, title, description, videoUrl }) => (
+            ], guideVideos ?? null).map(({ id, icon: Icon, image, title, description, videoUrl }) => (
               <article
                 key={id}
                 className="flex flex-col overflow-hidden rounded-md border border-[#ECE5DD] bg-white text-center shadow-[0_4px_14px_rgba(90,70,40,0.05)]"

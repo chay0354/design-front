@@ -51,7 +51,6 @@ import { useData } from '../contexts/DataContext'
 import { getQuestionnaireOptionsForScales } from '../data/colorScales'
 import { filterColorScalesForChild } from '../data/themeColorScales'
 import {
-  bridgeAgeGroups,
   buildQuestionnaireSteps,
   emptyRoom,
   formatRoomNames,
@@ -60,6 +59,7 @@ import {
   normalizeRoom,
   roomDesignProfile,
   roomOrderMeta,
+  isCrossAgeRoom,
   type AgeChoice,
   type CatalogGender,
   type QuestionnaireRoom,
@@ -142,12 +142,14 @@ function ThemePicker({
   age,
   value,
   onChange,
+  crossAge,
 }: {
   title: ReactNode
   gender: CatalogGender
   age: number
   value: string
   onChange: (theme: string) => void
+  crossAge?: boolean
 }) {
   const themes = getQuestionnaireThemesForChild(gender, age)
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
@@ -155,7 +157,17 @@ function ThemePicker({
   return (
     <div>
       <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">{title}</h2>
-      <p className="mb-6 text-center text-[#8A847C]">נושאים מותאמים ל{ageGroup.label.toLowerCase()}</p>
+      {crossAge ? (
+        <div className="mb-6 flex items-start gap-2 rounded-2xl bg-[#F8F4EF] px-4 py-3 text-sm leading-6 text-[#6F6A64]">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B39A]" strokeWidth={1.6} />
+          <p>
+            הילדים בחדר בגילאים שונים, ולכן ריכזנו נושאים חוצי גילאים — נושאים שמתאימים לחדר משותף, כך שהחדר לא ירגיש
+            קטן מדי לגדול/ה ולא גדול מדי לקטן/ה. בסוף תתקבל חבילת עיצוב אחת לחדר המשותף.
+          </p>
+        </div>
+      ) : (
+        <p className="mb-6 text-center text-[#8A847C]">נושאים מותאמים ל{ageGroup.label.toLowerCase()}</p>
+      )}
       <div className="grid grid-cols-2 gap-3">
         {themes.map((theme) => {
           const isSelected = value === theme.name
@@ -443,7 +455,7 @@ export function QuestionnairePage() {
     if (!redesignEntry?.roomChildren?.length) return [emptyRoom()]
     const years = Math.floor(getYearsSincePurchase(redesignEntry.purchaseDate))
     return [
-      {
+      normalizeRoom({
         ...emptyRoom(),
         roomId: redesignEntry.roomId,
         children: redesignEntry.roomChildren.map((child) => ({
@@ -451,7 +463,7 @@ export function QuestionnairePage() {
           gender: (['boy', 'girl', 'unisex'].includes(child.gender) ? child.gender : '') as RoomChild['gender'],
           age: Math.min(18, child.age + years),
         })),
-      },
+      }),
     ]
   })
 
@@ -623,6 +635,7 @@ export function QuestionnairePage() {
           {current.kind === 'theme' && (
             <ThemePicker
               title={themeTitle(rooms[current.roomIndex])}
+              crossAge={isCrossAgeRoom(rooms[current.roomIndex])}
               gender={roomDesignProfile(rooms[current.roomIndex]).gender}
               age={roomDesignProfile(rooms[current.roomIndex]).age}
               value={rooms[current.roomIndex].theme}
@@ -699,20 +712,6 @@ function childAgeLabel(child: RoomChild) {
   return `${who} ${child.age}`
 }
 
-const ageWords: Record<number, string> = {
-  0: 'אפס',
-  1: 'שנה',
-  2: 'שנתיים',
-  3: 'שלוש',
-  4: 'ארבע',
-  5: 'חמש',
-  6: 'שש',
-  7: 'שבע',
-  8: 'שמונה',
-  9: 'תשע',
-  10: 'עשר',
-}
-
 function DesignGenderStep({
   room,
   value,
@@ -776,13 +775,7 @@ function DesignAgeStep({
   room: QuestionnaireRoom
   onChange: (choice: AgeChoice) => void
 }) {
-  const bridges = bridgeAgeGroups(room.children)
-  const selectedKey =
-    room.ageChoice?.type === 'child'
-      ? `child-${room.ageChoice.childIndex}`
-      : room.ageChoice?.type === 'bridge'
-        ? `bridge-${room.ageChoice.ageGroupId}`
-        : ''
+  const selectedKey = room.ageChoice?.type === 'child' ? `child-${room.ageChoice.childIndex}` : ''
 
   return (
     <div>
@@ -797,14 +790,7 @@ function DesignAgeStep({
         כשאתם בגילאים שונים חולקים חדר, תוכלו
         <br />
         לבחור את נושא העיצוב לפי גילו של אחד מהם
-        {bridges.length > 0 && (
-          <>
-            , או לפי
-            <br />
-            נושאים שמתאימים לטווח הגילאים שביניהם.
-          </>
-        )}
-        {bridges.length === 0 && '.'}
+        .
       </p>
       <div className="flex flex-col gap-3">
         {room.children.map((child, index) => {
@@ -826,52 +812,14 @@ function DesignAgeStep({
             </button>
           )
         })}
-        {bridges.map((ageGroupId) => {
-          const group = getAgeGroup(ageGroupId)
-          const key = `bridge-${ageGroupId}`
-          const selected = selectedKey === key
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange({ type: 'bridge', ageGroupId })}
-              className={`order-first flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-right transition-colors ${
-                selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
-              }`}
-            >
-              <span>
-                <span className="block text-[#3C3834]">לפי גילאי {group.range[0]}-{group.range[1]}</span>
-                <span className="block text-sm text-[#8A847C]">נושאים חוצי גילאים · מומלץ לחדר משותף בגילאים רחוקים</span>
-              </span>
-              <ChoiceRadio selected={selected} />
-            </button>
-          )
-        })}
       </div>
-      {bridges.map((ageGroupId) => {
-        const group = getAgeGroup(ageGroupId)
-        const oldest = room.children.reduce((lead, child) => (child.age > lead.age ? child : lead))
-        const youngest = room.children.reduce((lead, child) => (child.age < lead.age ? child : lead))
-        const forOlder = oldest.gender === 'girl' ? 'עבורה' : 'עבורו'
-        const forYounger = youngest.gender === 'girl' ? 'עבורה' : 'עבורו'
-        const from = ageWords[group.range[0]] ?? String(group.range[0])
-        const to = ageWords[group.range[1]] ?? String(group.range[1])
-        return (
-          <div key={ageGroupId} className="mt-4 flex items-start gap-2 rounded-2xl bg-[#F8F4EF] px-4 py-3 text-sm leading-6 text-[#6F6A64]">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B39A]" strokeWidth={1.6} />
-            <p>
-              נושאים חוצי גילאים הם נושאים שמתאימים לטווח שבין גיל {from} ל{to}, כך שזה לא מרגיש
-              קטן מדי {forOlder} ולא גדול מדי {forYounger}.
-            </p>
-          </div>
-        )
-      })}
     </div>
   )
 }
 
 function themeTitle(room: QuestionnaireRoom) {
   const named = room.children.filter((child) => child.name.trim())
+  if (isCrossAgeRoom(room)) return `נושאים חוצי גילאים לחדר של ${formatRoomNames(named)}`
   if (named.length === 1) {
     const child = named[0]
     const verb =

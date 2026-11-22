@@ -72,13 +72,25 @@ export function bridgeAgeGroups(children: { age: number }[]): PackageAgeGroupId[
   return PACKAGE_AGE_GROUPS.slice(min + 1, max).map((group) => group.id)
 }
 
+/**
+ * Shared rooms:
+ * - Same or neighbouring age groups: the family picks whose age the design follows.
+ * - Ages far apart (e.g. 2 and 6): the room goes straight to the cross-age themes,
+ *   which suit the whole range between them.
+ */
+export function isCrossAgeRoom(room: QuestionnaireRoom): boolean {
+  return bridgeAgeGroups(room.children).length > 0
+}
+
 export function normalizeRoom(room: QuestionnaireRoom): QuestionnaireRoom {
   let ageChoice = room.ageChoice
+  const bridges = bridgeAgeGroups(room.children)
   if (ageChoice?.type === 'child' && !room.children[ageChoice.childIndex]) ageChoice = null
-  if (
-    ageChoice?.type === 'bridge' &&
-    !bridgeAgeGroups(room.children).includes(ageChoice.ageGroupId)
-  ) {
+  if (bridges.length > 0) {
+    if (ageChoice?.type !== 'bridge' || !bridges.includes(ageChoice.ageGroupId)) {
+      ageChoice = { type: 'bridge', ageGroupId: bridges[0] }
+    }
+  } else if (ageChoice?.type === 'bridge') {
     ageChoice = null
   }
   const next = { ...room, ageChoice }
@@ -95,7 +107,7 @@ export function buildQuestionnaireSteps(rooms: QuestionnaireRoom[]): Questionnai
   })
   rooms.forEach((room, roomIndex) => {
     steps.push({ kind: 'design-gender', roomIndex })
-    if (room.children.length > 1) steps.push({ kind: 'design-age', roomIndex })
+    if (room.children.length > 1 && !isCrossAgeRoom(room)) steps.push({ kind: 'design-age', roomIndex })
     steps.push({ kind: 'theme', roomIndex })
     steps.push({ kind: 'color', roomIndex })
     steps.push({ kind: 'wall', roomIndex })

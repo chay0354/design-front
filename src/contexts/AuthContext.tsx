@@ -34,6 +34,7 @@ export interface OrderRoomRequest {
   theme: string
   colorPreference: string
   wallDesignOption: string
+  packageSnapshot?: unknown
 }
 
 export interface OrderRequest {

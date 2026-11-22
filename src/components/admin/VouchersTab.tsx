@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, Mail, X } from 'lucide-react'
-import { apiFetch } from '../../utils/backend'
+import { Download, ExternalLink, Mail, X } from 'lucide-react'
+import { apiFetch, downloadFile } from '../../utils/backend'
 import { VoucherCard } from '../VoucherCard'
+import { DEFAULT_APPLICATION_GUIDES, type ApplicationGuide } from '../../utils/guideVideos'
 import {
   Badge,
   LoadingState,
@@ -52,6 +53,7 @@ interface Settings {
   giftVoucherPrices: Record<string, number>
   giftVoucherEmail: Record<string, string>
   guideVideos: GuideVideo[]
+  applicationGuides: ApplicationGuide[]
   emailConfigured: boolean
   paymentProvider: string
 }
@@ -85,7 +87,13 @@ export function SettingsPanel() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    if (data) setDraft({ ...data, guideVideos: data.guideVideos?.length ? data.guideVideos : DEFAULT_GUIDE_VIDEOS })
+    if (data) {
+      setDraft({
+        ...data,
+        guideVideos: data.guideVideos?.length ? data.guideVideos : DEFAULT_GUIDE_VIDEOS,
+        applicationGuides: data.applicationGuides?.length ? data.applicationGuides : DEFAULT_APPLICATION_GUIDES,
+      })
+    }
   }, [data])
 
   const save = async () => {
@@ -99,6 +107,7 @@ export function SettingsPanel() {
           giftVoucherPrices: draft.giftVoucherPrices,
           giftVoucherEmail: draft.giftVoucherEmail,
           guideVideos: draft.guideVideos,
+          applicationGuides: draft.applicationGuides,
         },
       })
       setSaved(true)
@@ -170,7 +179,7 @@ export function SettingsPanel() {
           </div>
 
           <div className={cardClass}>
-            <h3 className="mb-1 text-lg font-normal text-[#4A4A4A]">סרטוני הדרכה באזור האישי</h3>
+            <h3 className="mb-1 text-lg font-normal text-[#4A4A4A]">סרטוני הדרכה באזור האישי (Masterclass)</h3>
             <p className="mb-3 text-xs text-[#8B8B8B]">קישור YouTube, Vimeo או קובץ וידאו (https). בלי קישור יוצג "בקרוב".</p>
             <div className="space-y-4">
               {draft.guideVideos.map((video, index) => {
@@ -185,6 +194,38 @@ export function SettingsPanel() {
                     <input className={inputClass} dir="ltr" placeholder="https://youtube.com/..." value={video.videoUrl} onChange={(e) => set({ videoUrl: e.target.value })} />
                     <input className={inputClass} placeholder="תיאור" value={video.description} onChange={(e) => set({ description: e.target.value })} />
                     <input className={inputClass} dir="ltr" placeholder="תמונה" value={video.image} onChange={(e) => set({ image: e.target.value })} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className={cardClass}>
+            <h3 className="mb-1 text-lg font-normal text-[#4A4A4A]">מדריכי יישום (ארגז הכלים באזור האישי)</h3>
+            <p className="mb-3 text-xs text-[#8B8B8B]">
+              טקסט המדריך המלא: שורה ריקה מפרידה בין פסקאות, ושורות שמתחילות ב־"- " יוצגו כרשימה. בלי טקסט מלא הכפתור מוביל
+              לעמוד הטיפים.
+            </p>
+            <div className="space-y-4">
+              {draft.applicationGuides.map((guide, index) => {
+                const set = (partial: Partial<ApplicationGuide>) => {
+                  const next = [...draft.applicationGuides]
+                  next[index] = { ...guide, ...partial }
+                  setDraft({ ...draft, applicationGuides: next })
+                }
+                return (
+                  <div key={guide.id} className="space-y-2 rounded-sm bg-[#F9F7F4] p-3">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <input className={inputClass} placeholder="כותרת" value={guide.title} onChange={(e) => set({ title: e.target.value })} />
+                      <input className={inputClass} placeholder="כותרת משנה" value={guide.subtitle} onChange={(e) => set({ subtitle: e.target.value })} />
+                    </div>
+                    <input className={inputClass} placeholder="תקציר לכרטיס" value={guide.summary} onChange={(e) => set({ summary: e.target.value })} />
+                    <textarea
+                      className={`${inputClass} min-h-32`}
+                      placeholder="טקסט המדריך המלא"
+                      value={guide.body}
+                      onChange={(e) => set({ body: e.target.value })}
+                    />
                   </div>
                 )
               })}
@@ -275,6 +316,13 @@ export function VouchersTab() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" className={secondaryButton} onClick={() => setViewing(v)}>
                     צפייה בשובר
+                  </button>
+                  <button
+                    type="button"
+                    className={secondaryButton}
+                    onClick={() => downloadFile(`/api/admin/vouchers/${v.id}/download`, `voucher-${v.code}.html`).catch((e) => alert(e.message))}
+                  >
+                    <Download className="h-3.5 w-3.5" /> הורדת השובר
                   </button>
                   <a className={secondaryButton} href={v.redeemUrl} target="_blank" rel="noreferrer">
                     <ExternalLink className="h-3.5 w-3.5" /> עמוד המימוש
