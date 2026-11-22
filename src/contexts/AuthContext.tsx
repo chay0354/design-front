@@ -168,13 +168,17 @@ function authErrorMessage(error: { message: string; code?: string }): string {
   if (message.includes('invalid login credentials')) {
     return 'אימייל או סיסמה שגויים'
   }
-  if (message.includes('user already registered')) {
+  if (message.includes('user already registered') || message.includes('already been registered')) {
     return 'כתובת האימייל כבר רשומה — נסי להתחבר'
   }
-  if (message.includes('password')) {
+  if (message.includes('password should be') || message.includes('password is too short')) {
     return 'הסיסמה חייבת להכיל לפחות 6 תווים'
   }
-  if (message.includes('email')) {
+  if (
+    message.includes('invalid email') ||
+    message.includes('unable to validate email') ||
+    message.includes('email address is invalid')
+  ) {
     return 'כתובת אימייל לא תקינה'
   }
   return error.message
@@ -288,58 +292,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
       const normalizedEmail = email.trim().toLowerCase()
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/account` },
-      })
-      if (error) {
-        return { error: authErrorMessage(error), user: null }
-      }
-
       try {
-        // When Auth requires email confirmation and mail is not delivered, unlock the account via the server.
-        if (data.user?.id && data.user.email && !data.session) {
-          try {
-            await apiFetch('/api/auth/confirm-signup', {
-              body: { email: normalizedEmail, userId: data.user.id },
-              auth: false,
-            })
-          } catch {
-            // Fall through to a normal sign-in attempt (or a clear error below).
-          }
-        }
-
-        if (data.session?.access_token && data.user?.email) {
-          const profile = await loadProfileWithToken(
-            data.session.access_token,
-            data.user.id,
-            data.user.email,
-          )
-          setUser(profile)
-          return { error: null, user: profile }
-        }
-
-        if (data.user?.email) {
-          const result = await signIn(normalizedEmail, password)
-          if (!result.error) {
-            return result
-          }
-          return {
-            error: result.error.includes('שגויים')
-              ? 'החשבון נוצר, אבל ההתחברות נכשלה. נסי להתחבר בעוד כמה שניות'
-              : result.error,
-            user: null,
-          }
-        }
-      } catch (profileError) {
+        // Server-side signup confirms the email immediately and skips Auth's confirmation-mail rate limit.
+        await apiFetch('/api/auth/signup', {
+          body: { email: normalizedEmail, password },
+          auth: false,
+        })
+        return await signIn(normalizedEmail, password)
+      } catch (error) {
         return {
-          error: authErrorMessage(profileError as { message: string; code?: string }),
+          error: authErrorMessage(error as { message: string; code?: string }),
           user: null,
         }
       }
-
-      return { error: 'לא הצלחנו להשלים את ההרשמה. נסי שוב.', user: null }
     },
     [signIn],
   )
