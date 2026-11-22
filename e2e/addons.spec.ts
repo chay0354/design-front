@@ -308,8 +308,9 @@ test('personal area: replaced packages move to the archive', async ({ page }) =>
     ],
   })
   await page.goto('/account')
-  await expect(page.getByRole('heading', { name: 'חבילת פיות ויער קסום' })).toBeVisible()
-  await expect(page.getByText('חבילת פרחים וגן חלומי')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'החדר של נועה' })).toBeVisible()
+  await expect(page.getByText('פיות ויער קסום')).toBeVisible()
+  await expect(page.getByText('פרחים וגן חלומי')).toHaveCount(0)
 
   await page.getByRole('button', { name: /ארכיון חבילות \(1\)/ }).click()
   await expect(page.getByRole('heading', { name: 'ארכיון החבילות' })).toBeVisible()
@@ -446,6 +447,7 @@ async function openRoomRedesign(page: Page, ages: [number, number]) {
   await page.route('**/api/events', (route) => route.fulfill({ json: { ok: true } }))
   await page.goto(`/questionnaire?roomId=${roomId}`)
   await expect(page.getByText(/עיצוב חדש לחדר של נועה ואייר/)).toBeVisible()
+  await expect(page.getByText(/20% הנחה על כל חדר/)).toBeVisible()
 }
 
 test('shared room, neighbouring ages: family picks whose age the design follows', async ({ page }) => {
@@ -479,8 +481,84 @@ test('application guides edited in admin open as their own page', async ({ page 
     })
   })
   await page.goto('/account')
-  await page.getByRole('button', { name: 'לקריאת המדריך' }).first().click()
+  await page.getByRole('button', { name: /צ׳ק ליסט לביצוע/ }).click()
   await expect(page).toHaveURL(/\/guides\/checklist$/)
   await expect(page.getByRole('heading', { name: 'צ׳ק ליסט לביצוע' })).toBeVisible()
   await expect(page.getByRole('listitem').filter({ hasText: 'למדוד את הקיר' })).toBeVisible()
+})
+
+test('personal area groups several children into one room card', async ({ page }) => {
+  const roomA = '44444444-4444-4444-8444-444444444444'
+  const roomB = '55555555-5555-4555-8555-555555555555'
+  await signIn(page, {
+    purchased_packages: [
+      'flowers-dream-garden-girl-0-2-warm-natural',
+      'fairies-magic-forest-girl-3-5-warm-natural',
+    ],
+    children: [
+      {
+        name: 'אייר וטל',
+        age: 4,
+        packageId: 'flowers-dream-garden-girl-0-2-warm-natural',
+        purchaseDate: '2026-01-10T10:00:00Z',
+        gender: 'unisex',
+        theme: 'פרחים וגן חלומי',
+        roomId: roomA,
+        orderItemId: 'item-shared',
+        roomChildren: [
+          { name: 'אייר', age: 4, gender: 'girl' },
+          { name: 'טל', age: 6, gender: 'boy' },
+        ],
+      },
+      {
+        name: 'ארד',
+        age: 4,
+        packageId: 'fairies-magic-forest-girl-3-5-warm-natural',
+        purchaseDate: '2026-02-10T10:00:00Z',
+        gender: 'boy',
+        theme: 'יער קסום',
+        roomId: roomB,
+        orderItemId: 'item-solo',
+        roomChildren: [{ name: 'ארד', age: 4, gender: 'boy' }],
+      },
+    ],
+  })
+
+  await page.goto('/account')
+  await expect(page.getByRole('heading', { name: 'החדרים שלי' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'החדר של אייר וטל' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'החדר של ארד' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'עדכון חלוקת החדרים' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /המקום שלי כשאגדל/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /מעצבים חדר נוסף/ })).toBeVisible()
+  await expect(page.getByText('20% הנחה על חדר נוסף')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'ארגז הכלים לביצוע מושלם' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'יסודות החדר' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'הפתקים שלי' })).toBeVisible()
+
+  await page.getByRole('button', { name: /כניסה לחבילה/ }).first().click()
+  await expect(page).toHaveURL(/\/package\//)
+  await expect(page.getByRole('heading', { name: /החדר של/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'הקונספט העיצובי' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'רשימת הקניות שלכם' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'עד הפעם הבאה.' })).toBeVisible()
+  await page.getByRole('button', { name: /חזרה לחדרים שלי/ }).click()
+  await expect(page).toHaveURL(/\/account$/)
+
+  await page.getByRole('button', { name: /המקום שלי כשאגדל/ }).click()
+  await expect(page).toHaveURL(/\/account\/grow$/)
+  await expect(page.getByRole('heading', { name: 'המקום שלי כשאגדל' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'החדר של אייר וטל' })).toBeVisible()
+  await expect(page.getByText('20% הנחה').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /לבחירת נושאים מותאמי גיל/ }).first()).toBeVisible()
+
+  await page.goto('/account/rooms')
+  await expect(page.getByText('איך תרצו לעצב את החדר של אייר וטל?')).toBeVisible()
+  await expect(page.getByText('איך תרצו לעצב את החדר של ארד?')).toBeVisible()
+  await expect(page.getByText('20% הנחה').first()).toBeVisible()
+  await page.getByRole('radio', { name: /בחירת חבילת עיצוב חדשה/ }).first().click()
+  await page.getByRole('radio', { name: /להשאיר את/ }).nth(1).click()
+  await page.getByRole('button', { name: /עדכן את הבחירות שלי/ }).click()
+  await expect(page).toHaveURL(new RegExp(`/questionnaire\\?roomId=${roomA}`))
+  await expect(page.getByText(/עיצוב חדש לחדר של אייר וטל/)).toBeVisible()
 })

@@ -45,7 +45,12 @@ interface Order {
 
 const statusTone = { paid: 'ok', cancelled: 'bad', refunded: 'warn', pending: 'neutral' } as const
 const statusLabel = { paid: 'שולם', cancelled: 'בוטל', refunded: 'הוחזר', pending: 'ממתין' }
-const discountLabel: Record<string, string> = { sibling: 'הנחת חדר נוסף', coupon: 'קופון', voucher: 'שובר מתנה' }
+const discountLabel: Record<string, string> = {
+  sibling: 'הנחת חדר נוסף',
+  upgrade: 'הנחת עיצוב מחדש',
+  coupon: 'קופון',
+  voucher: 'שובר מתנה',
+}
 
 export function OrdersTab({ filter, onClearFilter }: { filter: OrdersFilter; onClearFilter: () => void }) {
   const [from, setFrom] = useState(filter.from || toDateInput(new Date(Date.now() - 90 * 86400000)))

@@ -444,27 +444,28 @@ export function QuestionnairePage() {
   const [searchParams] = useSearchParams()
   const [stepIndex, setStepIndex] = useState(0)
 
-  // "New design for this room": start from the room's children (ages updated since purchase).
-  const redesignRoomId = searchParams.get('roomId')
-  const redesignEntry = redesignRoomId
-    ? [...(user?.children || [])]
-        .filter((child) => child.roomId === redesignRoomId && !child.archivedAt)
-        .sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate))[0]
-    : undefined
+  // "New design for these rooms": start from each room's children (ages updated since purchase).
+  const redesignRoomIds = (searchParams.get('roomId') || '').split(',').filter(Boolean)
+  const redesignEntries = redesignRoomIds.flatMap((roomId) => {
+    const entry = [...(user?.children || [])]
+      .filter((child) => child.roomId === roomId && !child.archivedAt && child.roomChildren?.length)
+      .sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate))[0]
+    return entry ? [entry] : []
+  })
   const [rooms, setRooms] = useState<QuestionnaireRoom[]>(() => {
-    if (!redesignEntry?.roomChildren?.length) return [emptyRoom()]
-    const years = Math.floor(getYearsSincePurchase(redesignEntry.purchaseDate))
-    return [
-      normalizeRoom({
+    if (redesignEntries.length === 0) return [emptyRoom()]
+    return redesignEntries.map((entry) => {
+      const years = Math.floor(getYearsSincePurchase(entry.purchaseDate))
+      return normalizeRoom({
         ...emptyRoom(),
-        roomId: redesignEntry.roomId,
-        children: redesignEntry.roomChildren.map((child) => ({
+        roomId: entry.roomId,
+        children: (entry.roomChildren ?? []).map((child) => ({
           name: child.name,
           gender: (['boy', 'girl', 'unisex'].includes(child.gender) ? child.gender : '') as RoomChild['gender'],
           age: Math.min(18, child.age + years),
         })),
-      }),
-    ]
+      })
+    })
   })
 
   const trackedStart = useRef(false)
@@ -591,10 +592,12 @@ export function QuestionnairePage() {
           ))}
         </div>
 
-        {redesignEntry && rooms[0]?.roomId && current.kind === 'rooms' && (
+        {redesignEntries.length > 0 && rooms.some((room) => room.roomId) && current.kind === 'rooms' && (
           <p className="mb-3 rounded-2xl bg-[#F8F3EC] px-4 py-3 text-center text-sm leading-6 text-[#6F6A64]">
-            עיצוב חדש לחדר של {redesignEntry.name}. אחרי הרכישה החבילה הנוכחית תעבור לארכיון באזור האישי, וכל התוכן
-            שלה יישאר זמין לצפייה.
+            עיצוב חדש{' '}
+            {redesignEntries.length === 1 ? 'לחדר' : 'לחדרים'} של{' '}
+            {redesignEntries.map((entry) => formatRoomNames(entry.roomChildren ?? [])).join(' ושל ')}, עם 20% הנחה על
+            כל חדר. אחרי הרכישה החבילה הנוכחית תעבור לארכיון באזור האישי, וכל התוכן שלה יישאר זמין לצפייה.
           </p>
         )}
 

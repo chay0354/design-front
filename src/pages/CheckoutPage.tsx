@@ -302,6 +302,7 @@ export function CheckoutPage() {
   const [quote, setQuote] = useState<CheckoutQuote | null>(null)
   const [quoteLoading, setQuoteLoading] = useState(false)
   const roomCount = 1 + additionalChildren.length
+  const roomIdsKey = (rooms ?? []).map((room) => room.roomId ?? '').join(',')
 
   useEffect(() => {
     trackQuestionnaire('cart')
@@ -311,8 +312,12 @@ export function CheckoutPage() {
     let cancelled = false
     setQuoteLoading(true)
     apiFetch<CheckoutQuote>('/api/checkout/quote', {
-      body: { roomCount, couponCode: couponCode || undefined, voucherCode: voucherCode || undefined },
-      auth: false,
+      body: {
+        roomCount,
+        roomIds: roomIdsKey ? roomIdsKey.split(',') : undefined,
+        couponCode: couponCode || undefined,
+        voucherCode: voucherCode || undefined,
+      },
     })
       .then((result) => {
         if (!cancelled) setQuote(result)
@@ -326,7 +331,7 @@ export function CheckoutPage() {
     return () => {
       cancelled = true
     }
-  }, [roomCount, couponCode, voucherCode])
+  }, [roomCount, roomIdsKey, couponCode, voucherCode])
 
   const couponError = couponCode ? quote?.couponError?.message : undefined
   const voucherError = voucherCode ? quote?.voucherError?.message : undefined
@@ -397,6 +402,7 @@ export function CheckoutPage() {
     if (type === 'voucher') return 'שובר מתנה'
     if (type === 'coupon') return `קופון ${quote?.coupon?.code ?? ''}`
     if (type === 'sibling') return searchParams.get('rooms') ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'
+    if (type === 'upgrade') return 'עיצוב מחדש לחדר קיים 20%'
     return ''
   }
 

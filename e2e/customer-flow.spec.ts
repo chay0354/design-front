@@ -126,19 +126,20 @@ test.describe.serial('customer flow', () => {
 
     await expect(page).toHaveURL(/\/account$/, { timeout: 20_000 })
     await expect(page.getByRole('button', { name: 'התנתק' })).toBeVisible()
-    await expect(page.getByText(/מושלם עבור נועה/)).toBeVisible()
-    await expect(page.getByText(/מושלם עבור אייר/)).toBeVisible()
-    await expect(page.getByText('המקום שלי כשאגדל').first()).toBeVisible()
-    await page.getByRole('button', { name: 'הצגת חבילה מלאה' }).first().click()
-    await expect(page.getByText('בחרי חבילה')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'עד הפעם הבאה!' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'החדרים שלי' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'החדר של נועה' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'החדר של אייר' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /המקום שלי כשאגדל/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /מעצבים חדר נוסף/ })).toBeVisible()
+    await expect(page.getByText('20% הנחה על חדר נוסף')).toBeVisible()
+    await page.getByRole('button', { name: /כניסה לחבילה/ }).first().click()
+    await expect(page.getByRole('heading', { name: /החדר של/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'רשימת הקניות שלכם' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'עד הפעם הבאה.' })).toBeVisible()
     await page.goBack()
     for (const heading of await page.locator('h2, h3').allTextContents()) {
       expect(heading).not.toContain('—')
     }
-
-    await expect(page.getByRole('heading', { name: 'הנחה לאחים' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'הוספת חבילה נוספת' })).toBeVisible()
 
     await expect(page.getByRole('heading', { name: 'ארגז הכלים לביצוע מושלם' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'צ׳ק ליסט לביצוע מדויק' })).toBeVisible()
@@ -149,21 +150,22 @@ test.describe.serial('customer flow', () => {
       await expect(icon).toBeVisible()
       expect(await icon.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true)
     }
-    await page.getByRole('button', { name: 'לקריאת המדריך' }).first().click()
+    await page.getByRole('button', { name: /צ׳ק ליסט/ }).click()
     await expect(page).toHaveURL(/\/tips$/)
     await page.goBack()
 
-    await expect(page.getByRole('heading', { name: 'Furniture Masterclass | יסודות החדר' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'יסודות החדר' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'הפינה המושלמת' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'אחסון חכם' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'משחקים או למידה?' })).toBeVisible()
-    await page.getByRole('button', { name: 'צפייה בשיעור' }).first().click()
+    await page.getByRole('button', { name: /צפייה בשיעור הפינה המושלמת/ }).click()
     await expect(page.getByText(/וידאו: הפינה המושלמת/)).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: 'הפתקים שלי לחדר' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'הפתקים שלי' })).toBeVisible()
     await page.getByPlaceholder('רוחב הקיר...').fill('240')
     await expect(page.getByPlaceholder('רוחב הקיר...')).toHaveValue('240')
-    await page.getByRole('button', { name: 'הוסף משימה' }).click()
+    await page.getByRole('button', { name: 'לרשימה המלאה' }).nth(1).click()
+    await page.getByRole('button', { name: 'הוספת שורה' }).click()
     await expect(page.getByPlaceholder('משימה חדשה...')).toBeVisible()
   })
 

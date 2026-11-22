@@ -5,6 +5,8 @@ import { DataProvider } from './contexts/DataContext'
 import { AboutPage } from './pages/AboutPage'
 import { FaqPage } from './pages/FaqPage'
 import { AccountPage } from './pages/AccountPage'
+import { AccountGrowPage } from './pages/AccountGrowPage'
+import { AccountRoomsPage } from './pages/AccountRoomsPage'
 import { AdminCollagePage } from './pages/AdminCollagePage'
 import { CollageViewPage } from './pages/CollageViewPage'
 import { AdminPage } from './pages/AdminPage'
@@ -96,6 +98,22 @@ export default function App() {
               element={
                 <RequireUser>
                   <AccountPage />
+                </RequireUser>
+              }
+            />
+            <Route
+              path="/account/grow"
+              element={
+                <RequireUser>
+                  <AccountGrowPage />
+                </RequireUser>
+              }
+            />
+            <Route
+              path="/account/rooms"
+              element={
+                <RequireUser>
+                  <AccountRoomsPage />
                 </RequireUser>
               }
             />

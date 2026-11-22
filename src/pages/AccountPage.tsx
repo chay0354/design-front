@@ -1,38 +1,39 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
   Archive,
-  Bed,
+  ArrowLeft,
+  CalendarDays,
   Check,
   ChevronLeft,
-  CircleCheck,
-  Gift,
+  ChevronRight,
+  DoorOpen,
   Heart,
-  Home,
   Lock,
   Pencil,
   Play,
   Plus,
   Ruler,
   Sparkles,
+  Sprout,
 } from 'lucide-react'
-import { BrushTitle, Sparkle } from '../components/BrushTitle'
+import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { PageLoading } from '../components/PageLoading'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import type { ThemePackage } from '../data/themePackages'
-import type { PackageContent } from '../contexts/DataContext'
 import { DEFAULT_APPLICATION_GUIDES, useApplicationGuides, useGuideVideos, videoEmbed } from '../utils/guideVideos'
+import { getChildPackageEntries, getPackageStatusForChild, hasPurchased, type ChildInfo } from '../utils/auth'
 import {
-  getChildForPackage,
-  getChildPackageEntries,
-  getPackageStatusForChild,
-  hasPurchased,
-  type ChildInfo,
-} from '../utils/auth'
-
-const FALLBACK_ROOM = '/assets/hero-background.jpg'
+  getAccountRooms,
+  packagePath,
+  packagePreviewImage,
+  packageThemeName,
+  roomKids,
+  type AccountRoom,
+} from '../utils/rooms'
+import { formatRoomNames } from '../utils/questionnaire'
 
 type NoteTask = { id: string; text: string; done: boolean }
 type RoomNotesState = {
@@ -51,12 +52,61 @@ const EMPTY_NOTES: RoomNotesState = {
   measures: ['', '', ''],
 }
 
-const SELF_PLACEHOLDERS = ['לזכור ש...', 'רעיון לפינה...', 'לבדוק...']
-const TASK_PLACEHOLDERS = ['לתלות את המדפים...', 'לצבוע את הקיר...', 'למקם את התמונות...']
-const MEASURE_PLACEHOLDERS = ['רוחב הקיר...', 'גובה החלון...', 'מידת השידה...']
+const SELF_PLACEHOLDERS = ['לבדוק מידות הקיר...', 'להשוות גוונים...', 'לתאם הזמנות...']
+const TASK_PLACEHOLDERS = ['לתלות את המדפים...', 'לצבוע את הקיר...', 'להכין את התאורה...']
+const MEASURE_PLACEHOLDERS = ['רוחב הקיר...', 'גובה התקרה...', 'מידות המיטה...']
+const COLLAPSED_LINES = 3
+
+const CARD = 'rounded-[26px] border border-[#EFE6DC] bg-white shadow-[0_6px_24px_rgba(120,95,70,0.07)]'
+const BROWN = '#9C8068'
+
+function NoteCard({
+  title,
+  icon,
+  expanded,
+  onToggle,
+  onAdd,
+  children,
+}: {
+  title: string
+  icon: ReactNode
+  expanded: boolean
+  onToggle: () => void
+  onAdd: () => void
+  children: ReactNode
+}) {
+  return (
+    <article className="flex flex-col rounded-2xl border border-[#EFE6DC] bg-[#FDFAF7] p-4">
+      <h3 className="mb-3 flex items-center justify-center gap-2 text-[15px] font-medium text-[#3B302A]">
+        {icon}
+        {title}
+      </h3>
+      <div className="flex-1 space-y-1">{children}</div>
+      {expanded && (
+        <button
+          type="button"
+          onClick={onAdd}
+          className="mt-2 flex w-full items-center justify-center gap-1 py-1.5 text-[13px] text-[#A89888]"
+        >
+          הוספת שורה
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="mt-3 flex items-center justify-center gap-1 border-t border-[#F0E8DF] pt-3 text-[13px] text-[#8A7360] hover:text-[#5F4B3B]"
+      >
+        {expanded ? 'הצגת פחות' : 'לרשימה המלאה'}
+        <ArrowLeft className="h-3.5 w-3.5" />
+      </button>
+    </article>
+  )
+}
 
 function RoomNotes({ userId }: { userId: string }) {
   const storageKey = `petite-room-notes:${userId}`
+  const [expanded, setExpanded] = useState<'self' | 'tasks' | 'measures' | null>(null)
   const [notes, setNotes] = useState<RoomNotesState>(() => {
     try {
       const raw = localStorage.getItem(storageKey)
@@ -80,288 +130,234 @@ function RoomNotes({ userId }: { userId: string }) {
       return { ...current, [key]: next }
     })
   }
+  const addLine = (key: 'self' | 'measures') =>
+    setNotes((current) => ({ ...current, [key]: [...current[key], ''] }))
+  const toggleList = (key: 'self' | 'tasks' | 'measures') => setExpanded((open) => (open === key ? null : key))
+  const visible = <T,>(key: 'self' | 'tasks' | 'measures', lines: T[]) =>
+    expanded === key ? lines : lines.slice(0, COLLAPSED_LINES)
+
+  const lineInput = 'w-full border-b border-[#F0E8DF] bg-transparent py-2 text-[13px] text-[#4A4540] outline-none placeholder:text-[#B9AEA3]'
 
   return (
-    <section className="bg-[#A39789] px-4 py-14 text-[#3F3A36] sm:px-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 text-center text-[#F7F3EE]">
-          <h2 className="mb-2 flex items-center justify-center gap-2 text-2xl font-medium">
-            <Sparkles className="h-4 w-4" strokeWidth={1.5} />
-            הפתקים שלי לחדר
-          </h2>
-          <p className="text-sm text-[#F3EDE6]/80">
-            כל הדברים הקטנים שעוזרים להפוך את התמונה למציאות
-          </p>
-        </div>
+    <section className={`${CARD} px-4 py-7 sm:px-7`}>
+      <div className="mb-6 text-center">
+        <h2 className="mb-1 flex items-center justify-center gap-2 text-2xl font-medium text-[#3B302A]">
+          הפתקים שלי
+          <CalendarDays className="h-6 w-6 text-[#A08670]" strokeWidth={1.4} />
+        </h2>
+        <p className="text-sm text-[#6F655C]">רשימות קצרות, רעיונות וטיפים שימושיים מהנסיון שלי.</p>
+      </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <article className="rounded-2xl border border-[#E7E0D6] bg-[#FBF8F4] p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-medium">פתק לעצמי</h3>
-                <p className="mt-1 text-xs leading-5 text-[#A39890]">
-                  רעיונות, מחשבות וכל דבר שכדאי להשאיר.
-                </p>
-              </div>
-              <Pencil className="h-5 w-5 shrink-0 text-[#C4B8A8]" strokeWidth={1.4} />
-            </div>
-            <div className="rounded-xl border border-[#E7E0D6] bg-white px-4">
-              {notes.self.map((line, index) => (
-                <input
-                  key={SELF_PLACEHOLDERS[index]}
-                  value={line}
-                  onChange={(event) => updateLine('self', index, event.target.value)}
-                  placeholder={SELF_PLACEHOLDERS[index]}
-                  className="w-full border-b border-[#F0EBE4] bg-transparent py-3 text-sm text-[#4A4A4A] outline-none placeholder:text-[#C4BBB2] last:border-b-0"
-                />
-              ))}
-            </div>
-          </article>
+      <div className="grid gap-4 md:grid-cols-3">
+        <NoteCard
+          title="מדדתי ושמרתי"
+          icon={<Ruler className="h-5 w-5 text-[#A08670]" strokeWidth={1.4} />}
+          expanded={expanded === 'measures'}
+          onToggle={() => toggleList('measures')}
+          onAdd={() => addLine('measures')}
+        >
+          {visible('measures', notes.measures).map((line, index) => (
+            <input
+              key={`measure-${index}`}
+              value={line}
+              onChange={(event) => updateLine('measures', index, event.target.value)}
+              placeholder={MEASURE_PLACEHOLDERS[index] ?? 'מידה נוספת...'}
+              className={lineInput}
+            />
+          ))}
+        </NoteCard>
 
-          <article className="rounded-2xl border border-[#E7E0D6] bg-[#FBF8F4] p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-medium">עוד רגע קורה</h3>
-                <p className="mt-1 text-xs leading-5 text-[#A39890]">
-                  דברים שרצים לעשות, לסדר ולהשלים בחדר.
-                </p>
-              </div>
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#C4B8A8] text-[#C4B8A8]">
-                <Check className="h-3.5 w-3.5" strokeWidth={2} />
-              </span>
-            </div>
-            <div className="rounded-xl border border-[#E7E0D6] bg-white px-4 py-1">
-              {notes.tasks.map((task, index) => (
-                <label key={task.id} className="flex items-center gap-3 border-b border-[#F0EBE4] py-2.5 last:border-b-0">
-                  <button
-                    type="button"
-                    aria-label={task.done ? 'סימון המשימה כלא הושלמה' : 'סימון המשימה כהושלמה'}
-                    onClick={() =>
-                      setNotes((current) => ({
-                        ...current,
-                        tasks: current.tasks.map((item) =>
-                          item.id === task.id ? { ...item, done: !item.done } : item,
-                        ),
-                      }))
-                    }
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                      task.done ? 'border-[#C4B8A8] bg-[#C4B8A8] text-white' : 'border-[#E4D9CC]'
-                    }`}
-                  >
-                    {task.done && <Check className="h-3 w-3" />}
-                  </button>
-                  <input
-                    value={task.text}
-                    onChange={(event) =>
-                      setNotes((current) => ({
-                        ...current,
-                        tasks: current.tasks.map((item) =>
-                          item.id === task.id ? { ...item, text: event.target.value } : item,
-                        ),
-                      }))
-                    }
-                    placeholder={TASK_PLACEHOLDERS[index] ?? 'משימה חדשה...'}
-                    className={`w-full bg-transparent text-sm outline-none placeholder:text-[#C4BBB2] ${
-                      task.done ? 'text-[#B5A99A] line-through' : 'text-[#4A4A4A]'
-                    }`}
-                  />
-                </label>
-              ))}
+        <NoteCard
+          title="עוד רגע קורה"
+          icon={<Heart className="h-5 w-5 text-[#A08670]" strokeWidth={1.4} />}
+          expanded={expanded === 'tasks'}
+          onToggle={() => toggleList('tasks')}
+          onAdd={() =>
+            setNotes((current) => ({
+              ...current,
+              tasks: [...current.tasks, { id: crypto.randomUUID(), text: '', done: false }],
+            }))
+          }
+        >
+          {visible('tasks', notes.tasks).map((task, index) => (
+            <label key={task.id} className="flex items-center gap-2 border-b border-[#F0E8DF] py-1.5">
               <button
                 type="button"
+                aria-label={task.done ? 'סימון המשימה כלא הושלמה' : 'סימון המשימה כהושלמה'}
                 onClick={() =>
                   setNotes((current) => ({
                     ...current,
-                    tasks: [...current.tasks, { id: crypto.randomUUID(), text: '', done: false }],
+                    tasks: current.tasks.map((item) => (item.id === task.id ? { ...item, done: !item.done } : item)),
                   }))
                 }
-                className="flex w-full items-center justify-center gap-1 py-2.5 text-sm text-[#A89888]"
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${
+                  task.done ? 'border-[#A08670] bg-[#A08670] text-white' : 'border-[#CDBFB1] bg-white'
+                }`}
               >
-                הוסף משימה
-                <Plus className="h-3.5 w-3.5" />
+                {task.done && <Check className="h-3 w-3" />}
               </button>
-            </div>
-          </article>
+              <input
+                value={task.text}
+                onChange={(event) =>
+                  setNotes((current) => ({
+                    ...current,
+                    tasks: current.tasks.map((item) =>
+                      item.id === task.id ? { ...item, text: event.target.value } : item,
+                    ),
+                  }))
+                }
+                placeholder={TASK_PLACEHOLDERS[index] ?? 'משימה חדשה...'}
+                className={`w-full bg-transparent text-[13px] outline-none placeholder:text-[#B9AEA3] ${
+                  task.done ? 'text-[#B5A99A] line-through' : 'text-[#4A4540]'
+                }`}
+              />
+            </label>
+          ))}
+        </NoteCard>
 
-          <article className="rounded-2xl border border-[#E7E0D6] bg-[#FBF8F4] p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-medium">מדדתי ושמרתי</h3>
-                <p className="mt-1 text-xs leading-5 text-[#A39890]">
-                  מקום למידות ולפרטים שחשוב לזכור.
-                </p>
-              </div>
-              <Ruler className="h-6 w-6 shrink-0 text-[#A89888]" strokeWidth={1.3} />
-            </div>
-            <div className="rounded-xl border border-[#E7E0D6] bg-white px-4">
-              {notes.measures.map((line, index) => (
-                <input
-                  key={MEASURE_PLACEHOLDERS[index]}
-                  value={line}
-                  onChange={(event) => updateLine('measures', index, event.target.value)}
-                  placeholder={MEASURE_PLACEHOLDERS[index]}
-                  className="w-full border-b border-[#F0EBE4] bg-transparent py-3 text-sm text-[#4A4A4A] outline-none placeholder:text-[#C4BBB2] last:border-b-0"
-                />
-              ))}
-            </div>
-          </article>
-        </div>
-
-        <p className="mt-8 flex items-center justify-center gap-2 text-xs text-[#F3EDE6]/75">
-          <Lock className="h-3.5 w-3.5" />
-          נשמר אוטומטית באזור האישי שלכם
-        </p>
+        <NoteCard
+          title="פתק לעצמי"
+          icon={<Pencil className="h-5 w-5 text-[#A08670]" strokeWidth={1.4} />}
+          expanded={expanded === 'self'}
+          onToggle={() => toggleList('self')}
+          onAdd={() => addLine('self')}
+        >
+          {visible('self', notes.self).map((line, index) => (
+            <input
+              key={`self-${index}`}
+              value={line}
+              onChange={(event) => updateLine('self', index, event.target.value)}
+              placeholder={SELF_PLACEHOLDERS[index] ?? 'עוד משהו לזכור...'}
+              className={lineInput}
+            />
+          ))}
+        </NoteCard>
       </div>
+
+      <p className="mt-5 flex items-center justify-center gap-2 text-xs text-[#A39587]">
+        <Lock className="h-3.5 w-3.5" />
+        נשמר אוטומטית באזור האישי שלכם
+      </p>
     </section>
   )
 }
 
-function packagePreviewImage(content: PackageContent | null): string {
-  if (!content) return ''
-  if (content.heroImage) return content.heroImage
-  return content.galleryImages.find(Boolean) ?? ''
-}
-
-const GENDER_LABELS: Record<string, string> = { boy: 'בנים', girl: 'בנות', unisex: 'יוניסקס' }
-
-function GrowCard({ onGrow }: { onGrow?: () => void }) {
-  return (
-    <aside className="flex flex-col items-center justify-center rounded-xl border border-[#EDE6DE] bg-[#F8F5F1] px-6 py-8 text-center">
-      <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_0_18px_rgba(201,169,145,0.35)]">
-        <Sparkle className="h-8 w-8 text-[#C9A991]" />
-      </span>
-      <h3 className="text-lg font-normal text-[#2F2B28]">המקום שלי כשאגדל</h3>
-      <div className="my-3 flex items-center gap-2" aria-hidden="true">
-        <span className="h-px w-8 bg-[#D9CBBE]" />
-        <Sparkle className="h-2.5 w-2.5 text-[#C9A991]" />
-        <span className="h-px w-8 bg-[#D9CBBE]" />
-      </div>
-      <p className="text-[13px] leading-7 text-[#4A4540]">
-        החדר גדל יחד איתם.
-        <br />
-        כשהגיע הזמן לשלב הבא,
-        <br />
-        יחכו כאן רעיונות וחבילות חדשות
-        <br />
-        שמתאימים לגיל החדש.
-      </p>
-      {onGrow ? (
-        <button type="button" onClick={onGrow} className="mt-5 text-sm italic text-[#B39A86] hover:underline">
-          נתראה בשלב הבא ♡
-        </button>
-      ) : (
-        <p className="mt-5 text-sm italic text-[#B39A86]">נתראה בשלב הבא ♡</p>
-      )}
-    </aside>
-  )
-}
-
-function PurchasedPackageRow({
-  pkg,
-  child,
-  statusMessage,
+function RoomCard({
+  title,
+  theme,
   imageUrl,
   colors,
-  scaleName,
-  showGrowCard,
+  note,
   onOpen,
-  onGrow,
 }: {
-  pkg: ThemePackage
-  child?: ChildInfo
-  statusMessage?: string
+  title: string
+  theme: string
   imageUrl: string
   colors: string[]
-  scaleName?: string
-  showGrowCard: boolean
+  note?: string
   onOpen: () => void
-  onGrow?: () => void
 }) {
-  const accent = colors[2] || '#B39A86'
-  const subtitle = [child?.gender ? GENDER_LABELS[child.gender] : '', scaleName].filter(Boolean)
-
   return (
-    <div className={`grid gap-4 ${showGrowCard ? 'lg:grid-cols-[minmax(0,1fr)_210px]' : ''}`}>
-      <article className="grid items-center gap-6 rounded-xl border border-[#EDE6DE] bg-white p-3 shadow-[0_4px_18px_rgba(120,100,80,0.05)] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
-        <div className="px-3 py-2 sm:px-5">
-          <span className="mb-4 inline-flex items-center gap-1.5 rounded-md bg-[#F3EEE8] px-2.5 py-1 text-[11px] text-[#4A4540]">
-            <CircleCheck className="h-3.5 w-3.5 text-[#A89888]" strokeWidth={1.5} />
-            {child
-              ? `מושלם עבור ${child.name}${child.age ? ` (גיל ${child.age})` : ''}`
-              : statusMessage || 'חבילה פעילה'}
-          </span>
-          <h3 className="mb-1 text-2xl font-normal text-[#2F2B28] sm:text-[1.7rem]">
-            {child?.theme ? `חבילת ${child.theme}` : pkg.name}
-          </h3>
-          {subtitle.length > 0 && (
-            <p
-              className="mb-4 flex items-center gap-1.5 text-base"
-              style={{ color: `color-mix(in srgb, ${accent} 75%, #6B4F3A)` }}
-            >
-              {subtitle.map((part, index) => (
-                <span key={part} className="flex items-center gap-1.5">
-                  {index > 0 && <Sparkle className="h-2.5 w-2.5" />}
-                  {part}
-                </span>
-              ))}
-            </p>
-          )}
-          <p className="mb-6 text-[13px] leading-7 text-[#4A4540]">{pkg.description}</p>
-          <div className="mb-5 flex flex-wrap gap-3">
-            {colors.slice(0, 5).map((color) => (
-              <div
-                key={color}
-                className="h-8 w-8 rounded-full border border-[#EDE8E1]"
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={onOpen}
-            className="mb-3 w-full rounded-md py-2.5 text-sm text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: `color-mix(in srgb, ${accent} 80%, #8A7360)` }}
-          >
-            הצגת חבילה מלאה
-          </button>
-          <button
-            type="button"
-            onClick={onOpen}
-            className="mx-auto flex items-center gap-1 text-[13px] text-[#A27A5C] hover:text-[#6B4F3A]"
-          >
-            מה כוללת החבילה?
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        <div className="overflow-hidden rounded-md bg-[#F7F4F0]">
-          <img
-            src={imageUrl || FALLBACK_ROOM}
-            alt={`תצוגת ${pkg.name}`}
-            className="aspect-[6/5] w-full object-cover"
+    <article className={`${CARD} flex flex-col p-3 text-center`}>
+      <button type="button" onClick={onOpen} className="block overflow-hidden rounded-[20px]" aria-label={title}>
+        <img src={imageUrl} alt="" className="aspect-[4/3] w-full object-cover transition-transform hover:scale-[1.02]" />
+      </button>
+      <h3 className="mt-3 text-xl font-medium text-[#3B302A]">{title}</h3>
+      <p className="text-[15px] text-[#5F554C]">{theme}</p>
+      <div className="my-3 flex justify-center gap-1.5">
+        {colors.slice(0, 4).map((color) => (
+          <span
+            key={color}
+            className="h-4 w-4 rounded-full border border-[#EDE6DE]"
+            style={{ backgroundColor: color }}
           />
-        </div>
-      </article>
-
-      {showGrowCard && <GrowCard onGrow={onGrow} />}
-    </div>
+        ))}
+      </div>
+      {note && <p className="mb-2 text-xs text-[#A0806A]">{note}</p>}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm text-white transition-opacity hover:opacity-90"
+        style={{ backgroundColor: BROWN }}
+      >
+        כניסה לחבילה
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+    </article>
   )
 }
 
-const LESSON_ICONS = [Bed, Archive, Home]
+function ActionCard({
+  title,
+  text,
+  icon,
+  badge,
+  onClick,
+}: {
+  title: string
+  text: string
+  icon: ReactNode
+  badge?: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${CARD} flex w-full items-center gap-4 px-4 py-5 text-right transition-colors hover:bg-[#FDFAF7] sm:px-6`}
+    >
+      <span className="flex w-16 shrink-0 justify-center text-[#9C7E66] sm:w-20">{icon}</span>
+      <span className="h-14 w-px shrink-0 bg-[#E6DACE]" aria-hidden="true" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-xl font-medium text-[#3B302A] sm:text-2xl">{title}</span>
+        <span className="mt-1 block text-[13px] leading-6 text-[#5F554C] sm:text-sm">{text}</span>
+        {badge && (
+          <span className="mt-2 inline-block rounded-full bg-[#EFE4D9] px-4 py-1 text-[13px] text-[#7A6150]">
+            {badge}
+          </span>
+        )}
+      </span>
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
+        style={{ backgroundColor: '#B49A84' }}
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </span>
+    </button>
+  )
+}
+
 const GUIDE_ICONS = ['/assets/icons/checklist.png', '/assets/icons/designed-corners.png', '/assets/icons/center-wall.png']
 
-function mergeGuideVideos<T extends { id: string; icon: typeof Bed; image: string; title: string; description: string }>(
-  defaults: T[],
+const DEFAULT_LESSONS = [
+  {
+    id: 'corner',
+    image: '/assets/masterclass-corner.png',
+    title: 'הפינה המושלמת',
+    description: 'איך לבחור מיטה ושידה שלא תופסות את כל החדר.',
+  },
+  {
+    id: 'cabinet',
+    image: '/assets/masterclass-storage.png',
+    title: 'אחסון חכם',
+    description: 'איך לתכנן ארונות ומדפים שנשארים מסודרים גם כשהילד גדל.',
+  },
+  {
+    id: 'play',
+    image: '/assets/masterclass-play.png',
+    title: 'משחקים או למידה?',
+    description: 'פינה אחת שאפשר לשחק בה וגם להכין בה שיעורים.',
+  },
+]
+
+function mergeGuideVideos(
   edited: { id: string; title: string; description: string; image: string; videoUrl: string }[] | null,
 ) {
-  if (!edited) return defaults.map((lesson) => ({ ...lesson, videoUrl: '' }))
+  if (!edited) return DEFAULT_LESSONS.map((lesson) => ({ ...lesson, videoUrl: '' }))
   return edited.map((lesson, index) => {
-    const base = defaults.find((d) => d.id === lesson.id) || defaults[index % defaults.length]
+    const base = DEFAULT_LESSONS.find((d) => d.id === lesson.id) || DEFAULT_LESSONS[index % DEFAULT_LESSONS.length]
     return {
-      ...base,
       id: lesson.id,
-      icon: base?.icon ?? LESSON_ICONS[index % LESSON_ICONS.length],
       title: lesson.title || base.title,
       description: lesson.description || base.description,
       image: lesson.image || base.image,
@@ -374,9 +370,9 @@ function GuideVideoPlayer({ title, url }: { title: string; url: string }) {
   const embed = videoEmbed(url)
   if (!embed) {
     return (
-      <div className="flex aspect-[2.3/1] w-full items-center justify-center bg-[#3F3A36]/80">
-        <div className="p-6 text-center text-white">
-          <p className="mb-2 text-sm">וידאו: {title}</p>
+      <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-[#3F3A36]/80">
+        <div className="p-4 text-center text-white">
+          <p className="mb-1 text-sm">וידאו: {title}</p>
           <p className="text-xs opacity-75">השיעור יעלה בקרוב</p>
         </div>
       </div>
@@ -386,31 +382,105 @@ function GuideVideoPlayer({ title, url }: { title: string; url: string }) {
     <iframe
       src={`${embed.src}?autoplay=1`}
       title={title}
-      className="aspect-video w-full"
+      className="aspect-video w-full rounded-2xl"
       allow="autoplay; encrypted-media; picture-in-picture"
       allowFullScreen
     />
   ) : (
-    <video src={embed.src} controls autoPlay className="aspect-video w-full bg-black" />
+    <video src={embed.src} controls autoPlay className="aspect-video w-full rounded-2xl bg-black" />
   )
 }
 
-/** "New design for this room": the questionnaire starts with this room's children. */
-function redesignPath(child: ChildInfo) {
-  return child.roomId ? `/questionnaire?roomId=${encodeURIComponent(child.roomId)}` : '/questionnaire'
+function RoomBasics() {
+  const guideVideos = useGuideVideos()
+  const [playing, setPlaying] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const track = useRef<HTMLDivElement>(null)
+  const lessons = mergeGuideVideos(guideVideos ?? null)
+
+  const scrollBy = (direction: 1 | -1) => {
+    const el = track.current
+    if (!el) return
+    el.scrollBy({ left: -direction * el.clientWidth * 0.8, behavior: 'smooth' })
+  }
+
+  return (
+    <section className={`${CARD} px-4 py-7 sm:px-7`}>
+      <div className="mb-5 text-center">
+        <h2 className="mb-1 text-2xl font-medium text-[#3B302A]">יסודות החדר</h2>
+        <p className="text-sm text-[#6F655C]">סדרת וידאו קצרה עם כל מה שצריך לדעת לעיצוב חדר ילדים מוצלח.</p>
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => scrollBy(-1)}
+          aria-label="השיעור הקודם"
+          className="absolute top-[38%] -right-2 z-10 hidden h-9 w-9 items-center justify-center rounded-full bg-white text-[#6F655C] shadow sm:flex"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+        <div
+          ref={track}
+          onScroll={(event) => {
+            const el = event.currentTarget
+            setPage(Math.round(Math.abs(el.scrollLeft) / Math.max(1, el.clientWidth * 0.8)))
+          }}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none]"
+        >
+          {lessons.map(({ id, image, title, description, videoUrl }) => (
+            <article key={id} className="w-[78%] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)]">
+              {playing === id ? (
+                <GuideVideoPlayer title={title} url={videoUrl} />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPlaying(id)}
+                  className="relative block w-full overflow-hidden rounded-2xl"
+                  aria-label={`צפייה בשיעור ${title}`}
+                >
+                  <img src={image} alt="" className="aspect-video w-full object-cover" />
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow">
+                      <Play className="h-5 w-5 fill-[#3C3834] text-[#3C3834]" />
+                    </span>
+                  </span>
+                </button>
+              )}
+              <h3 className="mt-2 text-center text-[15px] text-[#3B302A]">{title}</h3>
+              <p className="text-center text-xs leading-5 text-[#8A7F75]">{description}</p>
+            </article>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => scrollBy(1)}
+          aria-label="השיעור הבא"
+          className="absolute top-[38%] -left-2 z-10 hidden h-9 w-9 items-center justify-center rounded-full bg-white text-[#6F655C] shadow sm:flex"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+      </div>
+      <div className={`mt-3 flex justify-center gap-1.5 ${lessons.length > 3 ? '' : 'sm:hidden'}`} aria-hidden="true">
+        {lessons.map((lesson, index) => (
+          <span
+            key={lesson.id}
+            className={`h-1.5 w-1.5 rounded-full ${index === Math.min(page, lessons.length - 1) ? 'bg-[#A08670]' : 'bg-[#E3D8CC]'}`}
+          />
+        ))}
+      </div>
+    </section>
+  )
 }
 
 const formatDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('he-IL') : '')
 
 function ArchiveView({
   entries,
-  scaleNameFor,
   imageFor,
   onOpen,
   onBack,
 }: {
   entries: { child: ChildInfo; pkg: ThemePackage }[]
-  scaleNameFor: (child?: ChildInfo) => string | undefined
   imageFor: (pkg: ThemePackage) => string
   onOpen: (pkg: ThemePackage, child: ChildInfo) => void
   onBack: () => void
@@ -423,10 +493,10 @@ function ArchiveView({
   }
 
   return (
-    <div>
-      <div className="mb-8 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-2xl font-light text-[#2F2B28]">
-          <Archive className="h-5 w-5 text-[#B39A86]" strokeWidth={1.5} />
+    <section className={`${CARD} px-4 py-7 sm:px-7`}>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-2xl font-medium text-[#3B302A]">
+          <Archive className="h-5 w-5 text-[#A08670]" strokeWidth={1.5} />
           ארכיון החבילות
         </h2>
         <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-[#8A7A6B] hover:underline">
@@ -434,25 +504,22 @@ function ArchiveView({
           <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
-      <p className="mb-8 text-sm text-[#8B8B8B]">
+      <p className="mb-6 text-sm text-[#7A7068]">
         כאן נשמרות חבילות קודמות שהוחלפו בעיצוב חדש לאותו חדר. כל התוכן המקורי נשאר זמין לצפייה.
       </p>
-      <div className="space-y-10">
+      <div className="space-y-8">
         {[...rooms.entries()].map(([roomKey, roomEntries]) => (
-          <section key={roomKey}>
-            <h3 className="mb-3 text-lg text-[#4A4540]">החדר של {roomEntries[0].child.name}</h3>
+          <div key={roomKey}>
+            <h3 className="mb-3 text-lg text-[#4A4540]">החדר של {formatRoomNames(roomKids(roomEntries[0].child))}</h3>
             <div className="space-y-3">
               {roomEntries.map(({ child, pkg }) => (
                 <article
                   key={`${child.packageId}-${child.purchaseDate}`}
-                  className="flex items-center gap-4 rounded-xl border border-[#EDE6DE] bg-white p-3"
+                  className="flex items-center gap-4 rounded-2xl border border-[#EFE6DC] bg-[#FDFAF7] p-3"
                 >
-                  <img src={imageFor(pkg) || FALLBACK_ROOM} alt="" className="h-20 w-24 shrink-0 rounded-md object-cover" />
+                  <img src={imageFor(pkg)} alt="" className="h-20 w-24 shrink-0 rounded-xl object-cover" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[#2F2B28]">{child.theme ? `חבילת ${child.theme}` : pkg.name}</p>
-                    <p className="text-sm text-[#8A847C]">
-                      {[child.name, scaleNameFor(child)].filter(Boolean).join(' · ')}
-                    </p>
+                    <p className="text-[#3B302A]">{child.theme ? `חבילת ${child.theme}` : pkg.name}</p>
                     <p className="text-xs text-[#A39A8F]">
                       נרכשה ב־{formatDate(child.purchaseDate)} · הועברה לארכיון ב־{formatDate(child.archivedAt)}
                     </p>
@@ -460,17 +527,17 @@ function ArchiveView({
                   <button
                     type="button"
                     onClick={() => onOpen(pkg, child)}
-                    className="shrink-0 rounded-full border border-[#E2D8CC] px-4 py-2 text-sm text-[#5A544E] hover:bg-[#F8F4EF]"
+                    className="shrink-0 rounded-full border border-[#E2D8CC] bg-white px-4 py-2 text-sm text-[#5A544E] hover:bg-[#F8F4EF]"
                   >
                     לצפייה
                   </button>
                 </article>
               ))}
             </div>
-          </section>
+          </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -478,9 +545,7 @@ export function AccountPage() {
   const navigate = useNavigate()
   const { user, loading } = useAuth()
   const { packages, getPackageById, getPackageContent, getColorScaleForPreference } = useData()
-  const [playingVideo, setPlayingVideo] = useState<string | null>(null)
   const [showArchive, setShowArchive] = useState(false)
-  const guideVideos = useGuideVideos()
   const applicationGuides = useApplicationGuides()
 
   if (loading) {
@@ -491,296 +556,162 @@ export function AccountPage() {
     return <Navigate to="/login" replace />
   }
 
-  const purchasedPackages = packages.filter((pkg) => hasPurchased(user, pkg.id))
-  const allChildEntries = getChildPackageEntries(user, packages, getPackageById)
-  const childPackageEntries = allChildEntries.filter((entry) => !entry.child.archivedAt)
-  const archivedEntries = allChildEntries.filter((entry) => entry.child.archivedAt)
-
-  const getPackageStatus = (pkg: ThemePackage, child?: ChildInfo) => {
-    if (child) return getPackageStatusForChild(pkg, child)
-    const childInfo = getChildForPackage(user, pkg.id)
-    if (!childInfo) return { status: 'active' as const, message: '' }
-    return getPackageStatusForChild(pkg, childInfo)
-  }
+  const allEntries = getChildPackageEntries(user, packages, getPackageById)
+  const archivedEntries = allEntries.filter((entry) => entry.child.archivedAt)
+  const rooms = getAccountRooms(user, packages, getPackageById)
+  // Packages bought before children were recorded.
+  const orphanPackages = packages.filter(
+    (pkg) => hasPurchased(user, pkg.id) && !allEntries.some((entry) => entry.pkg.id === pkg.id),
+  )
+  const hasAnything = rooms.length > 0 || orphanPackages.length > 0
 
   const colorsFor = (pkg: ThemePackage, child?: ChildInfo) => {
-    const scale = getColorScaleForPreference(child?.colorPreference || '')
-    const fromScale = scale.colors.map((c) => c.hex)
+    const fromScale = getColorScaleForPreference(child?.colorPreference || '').colors.map((c) => c.hex)
     return fromScale.length > 0 ? fromScale : pkg.colorPalette
   }
+  const imageFor = (pkg: ThemePackage) => packagePreviewImage(getPackageContent(pkg.id))
+  const roomNote = (room: AccountRoom) =>
+    getPackageStatusForChild(room.pkg, room.entry).status === 'active' ? undefined : 'הגיע הזמן לשלב הבא ✦'
 
-  const scaleNameFor = (child?: ChildInfo) =>
-    child?.colorPreference ? getColorScaleForPreference(child.colorPreference).name : undefined
-
-  const packagesByChild = new Map<string, typeof childPackageEntries>()
-  childPackageEntries.forEach((entry) => {
-    if (!packagesByChild.has(entry.child.name)) {
-      packagesByChild.set(entry.child.name, [])
-    }
-    packagesByChild.get(entry.child.name)!.push(entry)
-  })
-
-  const uniqueChildren = [...new Set(user.children.map((c) => c.name))].map(
-    (name) => user.children.find((c) => c.name === name)!,
-  )
-
-  // Packages bought before children were recorded. Archived packages belong to the archive, not here.
-  const orphanPackages = purchasedPackages.filter(
-    (pkg) => !allChildEntries.some((entry) => entry.pkg.id === pkg.id),
-  )
-
-  const scrollToMasterclass = () => {
-    setTimeout(() => {
-      document.querySelectorAll('h2').forEach((h2) => {
-        if (h2.textContent?.includes('Furniture Masterclass')) {
-          h2.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      })
-    }, 100)
-  }
+  const guides = (applicationGuides ?? DEFAULT_APPLICATION_GUIDES).map((entry, index) => ({
+    ...entry,
+    icon: GUIDE_ICONS[index % GUIDE_ICONS.length],
+    hasBody: Boolean(entry.body?.trim()),
+  }))
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FAF5F0]">
       <Header />
 
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <section className="mb-16">
-          {childPackageEntries.length === 0 && purchasedPackages.length === 0 ? (
-            <div className="py-16 text-center">
-              <Sparkles className="mx-auto mb-5 h-8 w-8 text-[#C4B8A8]" strokeWidth={1.25} />
-              <h3 className="mb-2 text-2xl font-light text-[#4A4A4A]">עדיין אין חבילות</h3>
-              <p className="mb-8 text-sm text-[#8B8B8B]">התחילו ליצור את חדר החלומות של הילד.</p>
-              <button
-                type="button"
-                onClick={() => navigate('/questionnaire')}
-                className="rounded-full bg-[#3F3A36] px-7 py-2.5 text-sm text-white hover:bg-[#2F2B28]"
-              >
-                יצירת החבילה הראשונה
-              </button>
-            </div>
-          ) : showArchive ? (
-            <ArchiveView
-              entries={archivedEntries}
-              scaleNameFor={scaleNameFor}
-              imageFor={(pkg) => packagePreviewImage(getPackageContent(pkg.id))}
-              onOpen={(pkg, child) =>
-                navigate(`/package/${pkg.id}${child.orderItemId ? `?item=${encodeURIComponent(child.orderItemId)}` : ''}`)
-              }
-              onBack={() => setShowArchive(false)}
-            />
-          ) : (
-            <>
-              {archivedEntries.length > 0 && (
-                <div className="mb-4 flex justify-end">
+      <main className="mx-auto max-w-5xl space-y-5 px-4 py-8 sm:px-6">
+        {showArchive ? (
+          <ArchiveView
+            entries={archivedEntries}
+            imageFor={imageFor}
+            onOpen={(pkg, child) =>
+              navigate(`/package/${pkg.id}${child.orderItemId ? `?item=${encodeURIComponent(child.orderItemId)}` : ''}`)
+            }
+            onBack={() => setShowArchive(false)}
+          />
+        ) : (
+          <>
+            <section className="relative text-center">
+              <h1 className="text-[2rem] font-medium leading-tight text-[#3B302A] sm:text-4xl">החדרים שלי</h1>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#5F554C] sm:text-base">
+                כל חבילות העיצוב שרכשתם במקום אחד, כולל טיפים וכל מה שצריך כדי ליישם אותן.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:absolute sm:top-1 sm:left-0 sm:mt-0 sm:flex-col sm:items-end">
+                {rooms.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/account/rooms')}
+                    className="inline-flex items-center gap-1.5 border-b border-[#3B302A] pb-0.5 text-[13px] text-[#3B302A] hover:text-[#8A7360]"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    עדכון חלוקת החדרים
+                  </button>
+                )}
+                {archivedEntries.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowArchive(true)}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#EDE6DE] bg-[#F8F5F1] px-4 py-2 text-sm text-[#5A544E] hover:bg-[#F1EBE3]"
+                    className="inline-flex items-center gap-1.5 text-[13px] text-[#8A7360] hover:underline"
                   >
-                    <Archive className="h-4 w-4 text-[#B39A86]" strokeWidth={1.5} />
+                    <Archive className="h-3.5 w-3.5" strokeWidth={1.5} />
                     ארכיון חבילות ({archivedEntries.length})
                   </button>
-                </div>
-              )}
-              {orphanPackages.length > 0 && (
-                <div className="mb-4 space-y-4">
-                  {orphanPackages.map((pkg) => (
-                    <PurchasedPackageRow
-                      key={pkg.id}
-                      pkg={pkg}
-                      statusMessage={getPackageStatus(pkg).message || 'חבילה פעילה'}
-                      imageUrl={packagePreviewImage(getPackageContent(pkg.id))}
-                      colors={colorsFor(pkg)}
-                      showGrowCard
-                      onOpen={() => navigate(`/package/${pkg.id}`)}
-                    />
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
+            </section>
 
-              {uniqueChildren.map((child) => {
-                const childEntries = packagesByChild.get(child.name) || []
-                const activeEntries = childEntries.filter((entry) => !entry.child.archivedAt)
-
-                if (activeEntries.length === 0) return null
-
-                return (
-                  <div key={child.name} className="mb-4 space-y-4">
-                    {activeEntries.map((entry) => {
-                      const { pkg, child: entryChild } = entry
-                      const status = getPackageStatus(pkg, entryChild)
-
-                      return (
-                        <div key={`${entryChild.name}-${entryChild.packageId}-${entryChild.purchaseDate}`}>
-                          <PurchasedPackageRow
-                            pkg={pkg}
-                            child={entryChild}
-                            statusMessage={status.message}
-                            imageUrl={packagePreviewImage(getPackageContent(pkg.id))}
-                            colors={colorsFor(pkg, entryChild)}
-                            scaleName={scaleNameFor(entryChild)}
-                            showGrowCard
-                            onOpen={() => navigate(`/package/${pkg.id}`)}
-                            onGrow={
-                              status.status !== 'active'
-                                ? () => navigate(redesignPath(entryChild))
-                                : undefined
-                            }
-                          />
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-
-              <p className="flex items-center justify-center gap-3 rounded-lg border border-[#EDE6DE] bg-[#F8F5F1] px-4 py-3 text-center text-sm text-[#3C3834]">
-                <Heart className="h-5 w-5 shrink-0 text-[#C9A991]" strokeWidth={1.3} />
-                כל חבילה כוללת פריטים שנבחרו בקפידה, קישורים לרכישה והנחיות לעיצוב שמתאימים לכם.
-              </p>
-
-            </>
-          )}
-        </section>
-
-        <p className="mb-2 text-base text-[#5A544E]">הצעות מיוחדות</p>
-        <section className="mb-16 rounded-md bg-gradient-to-b from-[#BCAA98] to-[#B09C88] px-6 py-8 sm:px-10">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row md:items-end">
-            <div className="text-center text-white md:text-right">
-              <Gift className="mx-auto mb-2 h-8 w-8 md:mx-0" strokeWidth={1.25} />
-              <h3 className="text-lg font-normal">הנחה לאחים</h3>
-              <p className="mt-1 text-sm text-white/90">
-                רוצה לעצב חדר לילד נוסף? קבלי 20% הנחה על החבילה הבאה
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/questionnaire')}
-              className="rounded-sm bg-white px-6 py-2 text-[13px] text-[#8A7A6B] hover:bg-[#F7F3EE]"
-            >
-              הוספת חבילה נוספת
-            </button>
-          </div>
-        </section>
-
-        <section className="mb-20">
-          <div className="mb-8 text-center">
-            <BrushTitle sparkles={false} className="mb-2 text-xl sm:text-2xl">
-              ארגז הכלים לביצוע מושלם
-            </BrushTitle>
-            <p className="text-base text-[#5A544E] sm:text-lg">כל מה שצריך כדי ליישם את העיצוב נכון בחדר שלכם</p>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            {(applicationGuides ?? DEFAULT_APPLICATION_GUIDES).map((entry, index) => ({
-              id: entry.id,
-              title: entry.title,
-              subtitle: entry.subtitle,
-              text: entry.summary,
-              hasBody: Boolean(entry.body?.trim()),
-              icon: GUIDE_ICONS[index % GUIDE_ICONS.length],
-            })).map((guide) => (
-              <article
-                key={guide.title}
-                className="flex flex-col rounded-lg border border-[#E3D6C9] bg-white px-6 py-7 text-center"
-              >
-                <h3 className="text-lg font-medium text-[#2F2B28]">{guide.title}</h3>
-                <p className="mt-1 text-[13px] text-[#4A4540]">{guide.subtitle}</p>
-                <img src={guide.icon} alt="" className="mx-auto my-6 h-24 w-auto object-contain" />
-                <p className="text-[13px] leading-6 text-[#3C3834]">{guide.text}</p>
+            {!hasAnything ? (
+              <section className={`${CARD} px-6 py-14 text-center`}>
+                <Sparkles className="mx-auto mb-5 h-8 w-8 text-[#C4B8A8]" strokeWidth={1.25} />
+                <h2 className="mb-2 text-2xl font-light text-[#4A4A4A]">עדיין אין חבילות</h2>
+                <p className="mb-8 text-sm text-[#8B8B8B]">התחילו ליצור את חדר החלומות של הילדים.</p>
                 <button
                   type="button"
-                  onClick={() => navigate(guide.hasBody ? `/guides/${guide.id}` : '/tips')}
-                  className="mx-auto mt-6 inline-flex items-center gap-1 text-sm text-[#A27A5C] hover:text-[#6B4F3A]"
+                  onClick={() => navigate('/questionnaire')}
+                  className="rounded-full px-7 py-2.5 text-sm text-white"
+                  style={{ backgroundColor: BROWN }}
                 >
-                  לקריאת המדריך
-                  <ChevronLeft className="h-4 w-4" />
+                  יצירת החבילה הראשונה
                 </button>
-              </article>
-            ))}
-          </div>
-        </section>
+              </section>
+            ) : (
+              <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {rooms.map((room) => (
+                  <RoomCard
+                    key={room.key}
+                    title={`החדר של ${room.names}`}
+                    theme={packageThemeName(room)}
+                    imageUrl={imageFor(room.pkg)}
+                    colors={colorsFor(room.pkg, room.entry)}
+                    note={roomNote(room)}
+                    onOpen={() => navigate(packagePath(room))}
+                  />
+                ))}
+                {orphanPackages.map((pkg) => (
+                  <RoomCard
+                    key={pkg.id}
+                    title={pkg.name}
+                    theme="חבילה פעילה"
+                    imageUrl={imageFor(pkg)}
+                    colors={colorsFor(pkg)}
+                    onOpen={() => navigate(`/package/${pkg.id}`)}
+                  />
+                ))}
+              </section>
+            )}
 
-        <section className="mb-20">
-          <div className="mb-8 text-center">
-            <BrushTitle sparkles={false} className="mb-2 text-xl sm:text-2xl">
-              Furniture Masterclass | יסודות החדר
-            </BrushTitle>
-            <p className="text-base text-[#5A544E] sm:text-lg">
-              טיפים מקצועיים לבחירת הרהיטים הגדולים שילוו אתכם שנים
+            {rooms.length > 0 && (
+              <ActionCard
+                title="המקום שלי כשאגדל"
+                text="הילדים גדלים והצרכים משתנים. בחרו חבילת עיצוב חדשה שמתאימה לגילם ולחלומות שלהם."
+                icon={<Sprout className="h-12 w-12" strokeWidth={1.1} />}
+                onClick={() => navigate('/account/grow')}
+              />
+            )}
+            <ActionCard
+              title="מעצבים חדר נוסף"
+              text="גם לילד נוסף מגיע חדר מלא קסם. בחרו חבילת עיצוב שמתאימה בדיוק לו."
+              icon={<DoorOpen className="h-12 w-12" strokeWidth={1.1} />}
+              badge={hasAnything ? '20% הנחה על חדר נוסף' : undefined}
+              onClick={() => navigate('/questionnaire')}
+            />
+
+            <section id="toolbox" className={`${CARD} scroll-mt-24 px-4 py-7 sm:px-7`}>
+              <div className="mb-5 text-center">
+                <h2 className="mb-1 text-2xl font-medium text-[#3B302A]">ארגז הכלים לביצוע מושלם</h2>
+                <p className="text-sm text-[#6F655C]">כל מה שיעזור לכם לתכנן, ליישם ולהשלים את העיצוב.</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                {guides.map((guide) => (
+                  <button
+                    key={guide.id}
+                    type="button"
+                    onClick={() => navigate(guide.hasBody ? `/guides/${guide.id}` : '/tips')}
+                    className="flex flex-col items-center rounded-2xl border border-[#EFE6DC] bg-[#FDFAF7] px-2 py-4 text-center transition-colors hover:bg-[#F7F0E8] sm:px-4 sm:py-6"
+                  >
+                    <img src={guide.icon} alt="" className="mb-3 h-12 w-auto object-contain sm:h-16" />
+                    <h3 className="text-[13px] font-medium leading-5 text-[#3B302A] sm:text-base">{guide.title}</h3>
+                    <p className="mt-1 text-[11px] leading-5 text-[#6F655C] sm:text-[13px]">{guide.subtitle}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <RoomBasics />
+
+            <RoomNotes userId={user.id} />
+
+            <p className="flex items-center justify-center gap-2 pt-2 text-center text-xs text-[#A39587]">
+              <Sparkle className="h-2.5 w-2.5 text-[#C9A991]" />
+              כל חבילה כוללת פריטים שנבחרו בקפידה, קישורים לרכישה והנחיות לעיצוב שמתאימים לכם.
             </p>
-          </div>
-
-          <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
-            {mergeGuideVideos([
-              {
-                id: 'corner',
-                icon: Bed,
-                image: '/assets/masterclass-corner.png',
-                title: 'הפינה המושלמת',
-                description: 'איך לבחור מיטה ושידה שלא תופסות את כל החדר.',
-              },
-              {
-                id: 'cabinet',
-                icon: Archive,
-                image: '/assets/masterclass-storage.png',
-                title: 'אחסון חכם',
-                description: 'איך לתכנן ארונות ומדפים שנשארים מסודרים גם כשהילד גדל.',
-              },
-              {
-                id: 'play',
-                icon: Home,
-                image: '/assets/masterclass-play.png',
-                title: 'משחקים או למידה?',
-                description: 'פינה אחת שאפשר לשחק בה וגם להכין בה שיעורים.',
-              },
-            ], guideVideos ?? null).map(({ id, icon: Icon, image, title, description, videoUrl }) => (
-              <article
-                key={id}
-                className="flex flex-col overflow-hidden rounded-md border border-[#ECE5DD] bg-white text-center shadow-[0_4px_14px_rgba(90,70,40,0.05)]"
-              >
-                {playingVideo !== id ? (
-                  <button
-                    type="button"
-                    className="relative block w-full overflow-hidden"
-                    onClick={() => setPlayingVideo(id)}
-                  >
-                    <img src={image} alt="" className="aspect-[2.3/1] w-full object-cover" />
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 shadow">
-                        <Play className="h-5 w-5 fill-[#3C3834] text-[#3C3834]" />
-                      </span>
-                    </span>
-                  </button>
-                ) : (
-                  <GuideVideoPlayer title={title} url={videoUrl} />
-                )}
-
-                <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
-                  <div className="mb-1 flex items-center justify-center gap-2">
-                    <h3 className="text-base font-normal text-[#2F2B28]">{title}</h3>
-                    <Icon className="h-5 w-5 text-[#C4A890]" strokeWidth={1.3} />
-                  </div>
-                  <p className="mb-4 text-[13px] leading-6 text-[#3C3834]">{description}</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPlayingVideo(playingVideo === id ? null : id)
-                      scrollToMasterclass()
-                    }}
-                    className="mx-auto mt-auto rounded-sm border border-[#D9C6B5] px-9 py-1.5 text-[13px] text-[#A27A5C] hover:bg-[#F7F3EE]"
-                  >
-                    {playingVideo === id ? 'סגור וידאו' : 'צפייה בשיעור'}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-      </div>
-
-      <RoomNotes userId={user.id} />
+          </>
+        )}
+      </main>
     </div>
   )
 }

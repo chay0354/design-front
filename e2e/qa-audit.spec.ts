@@ -249,20 +249,19 @@ test.describe.serial('qa audit', () => {
     await page.getByRole('button', { name: 'הירשמי' }).click()
 
     await expect(page.getByRole('heading', { name: 'תשלום מאובטח' })).toBeVisible()
-    await page.getByRole('button', { name: /שלמי/ }).click()
-    await expect(page.getByRole('heading', { name: 'תשלום מאובטח' })).toBeVisible()
     for (const box of await page.getByRole('checkbox').all()) await box.check()
-    await page.getByRole('button', { name: /שלמי/ }).click()
+    await page.getByRole('button', { name: 'מאשרת' }).click()
+    await page.getByRole('button', { name: 'השלימי רכישה' }).click()
 
     await expect(page).toHaveURL(/\/(account|package\/)/, { timeout: 20_000 })
     if (!page.url().includes('/package/')) {
-      await page.getByRole('button', { name: 'הצגת חבילה מלאה' }).click()
+      await page.getByRole('button', { name: /כניסה לחבילה/ }).first().click()
     }
     await expect(page).toHaveURL(/\/package\//)
-    await expect(page.getByText('בחרי חבילה')).toBeVisible()
-    await expect(page.getByText('כך הכל מתחבר יחד')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /החדר של/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'הקונספט העיצובי' })).toBeVisible()
     await expect(page.getByText('שיתוף התוצאות שלכם')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'עד הפעם הבאה!' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'עד הפעם הבאה.' })).toBeVisible()
     const item = page.getByRole('checkbox', { name: /סימון/ }).first()
     if ((await item.count()) > 0) {
       await item.check()
@@ -272,10 +271,10 @@ test.describe.serial('qa audit', () => {
     problems.push(...(await layoutProblems(page, '/package')))
 
     await page.goto('/account')
-    await expect(page.getByText(/מושלם עבור נועה/)).toBeVisible()
-    await expect(page.getByText('המקום שלי כשאגדל')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /החדר של נועה/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /המקום שלי כשאגדל/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'ארגז הכלים לביצוע מושלם' })).toBeVisible()
-    await expect(page.getByText('הצעות מיוחדות')).toBeVisible()
+    await expect(page.getByRole('button', { name: /מעצבים חדר נוסף/ })).toBeVisible()
     await page.getByPlaceholder('רוחב הקיר...').fill('240')
     await page.reload()
     await expect(page.getByPlaceholder('רוחב הקיר...')).toHaveValue('240')
