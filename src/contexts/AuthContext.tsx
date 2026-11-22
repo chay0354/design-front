@@ -154,13 +154,19 @@ async function loadProfileWithToken(
   return mapProfile(created)
 }
 
-function authErrorMessage(error: { message: string; code?: string }): string {
+function authErrorMessage(error: { message: string; code?: string; status?: number }): string {
   const message = error.message.toLowerCase()
   if (error.code === 'PGRST205' || message.includes('petite_profiles')) {
     return 'שגיאת שרת — נסי שוב בעוד רגע'
   }
-  if (message.includes('over_email_send_rate_limit') || message.includes('only request this after')) {
-    return 'ניסית להירשם כמה פעמים ברצף — המתיני כדקה ונסי שוב'
+  if (
+    error.status === 429 ||
+    message.includes('429') ||
+    message.includes('rate limit') ||
+    message.includes('over_email_send_rate_limit') ||
+    message.includes('only request this after')
+  ) {
+    return 'ניסית להירשם כמה פעמים ברצף — המתיני כדקה, רענני את העמוד (Ctrl+Shift+R) ונסי שוב'
   }
   if (message.includes('email not confirmed')) {
     return 'החשבון נוצר, אבל עדיין לא אושר. נסי שוב בעוד רגע, או התחברי אחרי כמה שניות'
