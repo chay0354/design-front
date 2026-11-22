@@ -159,6 +159,12 @@ function authErrorMessage(error: { message: string; code?: string }): string {
   if (error.code === 'PGRST205' || message.includes('petite_profiles')) {
     return 'שגיאת שרת — נסי שוב בעוד רגע'
   }
+  if (message.includes('over_email_send_rate_limit') || message.includes('only request this after')) {
+    return 'ניסית להירשם כמה פעמים ברצף — המתיני כדקה ונסי שוב'
+  }
+  if (message.includes('email not confirmed')) {
+    return 'החשבון נוצר, אבל עדיין לא אושר. נסי שוב בעוד רגע, או התחברי אחרי כמה שניות'
+  }
   if (message.includes('invalid login credentials')) {
     return 'אימייל או סיסמה שגויים'
   }
@@ -282,12 +288,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
       const normalizedEmail = email.trim().toLowerCase()
-      const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password })
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/account` },
+      })
       if (error) {
         return { error: authErrorMessage(error), user: null }
       }
 
       try {
+        // When Auth requires email confirmation and mail is not delivered, unlock the account via the server.
+        if (data.user?.id && data.user.email && !data.session) {
+          try {
+            await apiFetch('/api/auth/confirm-signup', {
+              body: { email: normalizedEmail, userId: data.user.id },
+              auth: false,
+            })
+          } catch {
+            // Fall through to a normal sign-in attempt (or a clear error below).
+          }
+        }
+
         if (data.session?.access_token && data.user?.email) {
           const profile = await loadProfileWithToken(
             data.session.access_token,
@@ -298,12 +320,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: null, user: profile }
         }
 
-        if (data.user?.email && !data.session) {
+        if (data.user?.email) {
           const result = await signIn(normalizedEmail, password)
           if (!result.error) {
             return result
           }
-          return { error: 'נרשמת בהצלחה! בדקי את האימייל לאישור, ואז התחברי.', user: null }
+          return {
+            error: result.error.includes('שגויים')
+              ? 'החשבון נוצר, אבל ההתחברות נכשלה. נסי להתחבר בעוד כמה שניות'
+              : result.error,
+            user: null,
+          }
         }
       } catch (profileError) {
         return {
