@@ -79,7 +79,7 @@ grant update (name, updated_at) on public.petite_profiles to authenticated;
 -- Two children sharing a room are two children but one room.
 -- ---------------------------------------------------------------------------
 
-create table if not exists public.rooms (
+create table if not exists public.petite_rooms (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   label text not null default '',
@@ -96,7 +96,7 @@ create table if not exists public.rooms (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists rooms_user_idx on public.rooms (user_id);
+create index if not exists petite_rooms_user_idx on public.petite_rooms (user_id);
 
 -- ---------------------------------------------------------------------------
 -- Influencers and coupons
@@ -232,7 +232,7 @@ create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
   user_id uuid references auth.users(id) on delete set null,
-  room_id uuid references public.rooms(id) on delete set null,
+  room_id uuid references public.petite_rooms(id) on delete set null,
   package_id text not null,
   package_name text not null default '',
   theme text not null default '',
@@ -398,7 +398,7 @@ grant select on public.app_settings to anon, authenticated;
 -- RLS: backend-only tables
 -- ---------------------------------------------------------------------------
 
-alter table public.rooms enable row level security;
+alter table public.petite_rooms enable row level security;
 alter table public.influencers enable row level security;
 alter table public.coupons enable row level security;
 alter table public.referral_visits enable row level security;
@@ -412,8 +412,8 @@ alter table public.questionnaire_events enable row level security;
 alter table public.questionnaire_submissions enable row level security;
 
 -- Customers may read their own rooms and orders (used by the personal area).
-drop policy if exists "rooms_select_own" on public.rooms;
-create policy "rooms_select_own" on public.rooms
+drop policy if exists "petite_rooms_select_own" on public.petite_rooms;
+create policy "petite_rooms_select_own" on public.petite_rooms
   for select to authenticated using (auth.uid() = user_id);
 
 drop policy if exists "orders_select_own" on public.orders;
@@ -424,4 +424,4 @@ drop policy if exists "order_items_select_own" on public.order_items;
 create policy "order_items_select_own" on public.order_items
   for select to authenticated using (auth.uid() = user_id);
 
-grant select on public.rooms, public.orders, public.order_items to authenticated;
+grant select on public.petite_rooms, public.orders, public.order_items to authenticated;

@@ -121,7 +121,8 @@ test.describe.serial('customer flow', () => {
     for (const box of await page.getByRole('checkbox').all()) {
       await box.check()
     }
-    await page.getByRole('button', { name: /שלמי/ }).click()
+    await page.getByRole('button', { name: 'מאשרת' }).click()
+    await page.getByRole('button', { name: 'השלימי רכישה' }).click()
 
     await expect(page).toHaveURL(/\/account$/, { timeout: 20_000 })
     await expect(page.getByRole('button', { name: 'התנתק' })).toBeVisible()
