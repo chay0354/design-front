@@ -1,15 +1,6 @@
 import { isBasePackageId, parseVariantId } from './packageVariants'
 import type { ThemePackage } from '../data/themePackages'
 
-export interface PurchaseOrder {
-  packageId: string
-  childName: string
-  childAge: number
-  gender?: string
-  theme?: string
-  colorPreference?: string
-}
-
 export interface ChildInfo {
   name: string
   age: number
@@ -18,6 +9,13 @@ export interface ChildInfo {
   gender?: string
   theme?: string
   colorPreference?: string
+  /** The room this package was bought for (orders since the room model). */
+  roomId?: string
+  orderItemId?: string
+  /** Every child in the room, as entered in the questionnaire. */
+  roomChildren?: { name: string; age: number; gender: string }[]
+  /** Set when a newer package replaced this one for the same room. */
+  archivedAt?: string
 }
 
 export interface User {

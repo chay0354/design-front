@@ -1,5 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { getYearsSincePurchase } from '../utils/auth'
+import { trackQuestionnaire } from '../utils/tracking'
 import {
   ArrowLeft,
   Atom,
@@ -56,6 +59,7 @@ import {
   getAgeGroupIdForAge,
   normalizeRoom,
   roomDesignProfile,
+  roomOrderMeta,
   type AgeChoice,
   type CatalogGender,
   type QuestionnaireRoom,
@@ -424,8 +428,39 @@ function PanelIcon() {
 export function QuestionnairePage() {
   const navigate = useNavigate()
   const { colorScales } = useData()
+  const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const [stepIndex, setStepIndex] = useState(0)
-  const [rooms, setRooms] = useState<QuestionnaireRoom[]>([emptyRoom()])
+
+  // "New design for this room": start from the room's children (ages updated since purchase).
+  const redesignRoomId = searchParams.get('roomId')
+  const redesignEntry = redesignRoomId
+    ? [...(user?.children || [])]
+        .filter((child) => child.roomId === redesignRoomId && !child.archivedAt)
+        .sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate))[0]
+    : undefined
+  const [rooms, setRooms] = useState<QuestionnaireRoom[]>(() => {
+    if (!redesignEntry?.roomChildren?.length) return [emptyRoom()]
+    const years = Math.floor(getYearsSincePurchase(redesignEntry.purchaseDate))
+    return [
+      {
+        ...emptyRoom(),
+        roomId: redesignEntry.roomId,
+        children: redesignEntry.roomChildren.map((child) => ({
+          name: child.name,
+          gender: (['boy', 'girl', 'unisex'].includes(child.gender) ? child.gender : '') as RoomChild['gender'],
+          age: Math.min(18, child.age + years),
+        })),
+      },
+    ]
+  })
+
+  const trackedStart = useRef(false)
+  useEffect(() => {
+    if (trackedStart.current) return
+    trackedStart.current = true
+    trackQuestionnaire('start')
+  }, [])
 
   useEffect(() => {
     const previousTitle = document.title
@@ -438,6 +473,10 @@ export function QuestionnairePage() {
   const steps = buildQuestionnaireSteps(rooms)
   const safeIndex = Math.min(stepIndex, steps.length - 1)
   const current = steps[safeIndex]
+
+  useEffect(() => {
+    if (safeIndex > 0) trackQuestionnaire('step', { stepKind: current.kind, stepIndex: safeIndex })
+  }, [safeIndex, current.kind])
   const stepNumber = safeIndex + 1
   const totalSteps = steps.length
 
@@ -498,6 +537,14 @@ export function QuestionnairePage() {
       window.scrollTo(0, 0)
       return
     }
+    trackQuestionnaire('complete', {
+      rooms: rooms.map((room) => ({
+        theme: room.theme,
+        colorPreference: room.colorPreference,
+        ...roomOrderMeta(room),
+        children: room.children.map((child) => ({ age: child.age, gender: child.gender })),
+      })),
+    })
     const queryParams = new URLSearchParams({ rooms: JSON.stringify(rooms) })
     window.scrollTo(0, 0)
     navigate(`/preview/recommended?${queryParams.toString()}`)
@@ -531,6 +578,13 @@ export function QuestionnairePage() {
             />
           ))}
         </div>
+
+        {redesignEntry && rooms[0]?.roomId && current.kind === 'rooms' && (
+          <p className="mb-3 rounded-2xl bg-[#F8F3EC] px-4 py-3 text-center text-sm leading-6 text-[#6F6A64]">
+            עיצוב חדש לחדר של {redesignEntry.name}. אחרי הרכישה החבילה הנוכחית תעבור לארכיון באזור האישי, וכל התוכן
+            שלה יישאר זמין לצפייה.
+          </p>
+        )}
 
         <div className="rounded-[28px] border border-[#EAE3DB] bg-white p-4 shadow-[0_8px_30px_rgba(120,100,80,0.05)] sm:p-8">
           {current.kind === 'rooms' && (
@@ -752,7 +806,7 @@ function DesignAgeStep({
         )}
         {bridges.length === 0 && '.'}
       </p>
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {room.children.map((child, index) => {
           const key = `child-${index}`
           const selected = selectedKey === key
@@ -781,13 +835,13 @@ function DesignAgeStep({
               key={key}
               type="button"
               onClick={() => onChange({ type: 'bridge', ageGroupId })}
-              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-right transition-colors ${
+              className={`order-first flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-right transition-colors ${
                 selected ? 'border-[#E7D9C8] bg-[#F8F3EC]' : 'border-[#E7E1D8] bg-white'
               }`}
             >
               <span>
                 <span className="block text-[#3C3834]">לפי גילאי {group.range[0]}-{group.range[1]}</span>
-                <span className="block text-sm text-[#8A847C]">נושאים חוצי גילאים</span>
+                <span className="block text-sm text-[#8A847C]">נושאים חוצי גילאים · מומלץ לחדר משותף בגילאים רחוקים</span>
               </span>
               <ChoiceRadio selected={selected} />
             </button>

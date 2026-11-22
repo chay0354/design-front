@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, ImageIcon, Loader2, Plus, Save, Trash2, Upload, X } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  ImageIcon,
+  Loader2,
+  Plus,
+  Save,
+  Send,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react'
+import { visibleShoppingCategories } from '../data/themePackages'
+import { DashboardTab } from '../components/admin/DashboardTab'
+import { OrdersTab, type OrdersFilter } from '../components/admin/OrdersTab'
+import { InfluencersTab } from '../components/admin/InfluencersTab'
+import { VouchersTab, SettingsPanel } from '../components/admin/VouchersTab'
+import { LinksTab } from '../components/admin/LinksTab'
 import { Header } from '../components/Header'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -484,6 +506,9 @@ function PackageEditor({
   setDraft,
   isNew,
   onSave,
+  onSaveDraft,
+  onDiscardDraft,
+  draftSavedAt,
   onDelete,
   onUploadPackageImage,
   onUploadProductImage,
@@ -493,6 +518,9 @@ function PackageEditor({
   setDraft: (pkg: ThemePackage) => void
   isNew: boolean
   onSave: () => void
+  onSaveDraft: () => void
+  onDiscardDraft: () => void
+  draftSavedAt: string | null
   onDelete: () => void
   onUploadPackageImage: (file: File) => Promise<string>
   onUploadProductImage: (file: File) => Promise<string>
@@ -500,6 +528,23 @@ function PackageEditor({
 }) {
   const update = (partial: Partial<ThemePackage>) => setDraft({ ...draft, ...partial })
   const [fetchingProductImages, setFetchingProductImages] = useState(false)
+  const [previewing, setPreviewing] = useState(false)
+
+  const moveInList = <T,>(list: T[], from: number, to: number): T[] => {
+    if (to < 0 || to >= list.length) return list
+    const next = [...list]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    return next
+  }
+
+  const moveItemToCategory = (fromCat: number, itemIndex: number, toCat: number) => {
+    if (fromCat === toCat) return
+    const next = draft.shoppingCategories.map((c) => ({ ...c, items: [...c.items] }))
+    const [item] = next[fromCat].items.splice(itemIndex, 1)
+    next[toCat].items.push(item)
+    update({ shoppingCategories: next })
+  }
 
   const handleFetchAllProductImages = async () => {
     setFetchingProductImages(true)
@@ -730,11 +775,30 @@ function PackageEditor({
                 />
                 <button
                   type="button"
-                  onClick={() =>
+                  aria-label="הזזת הקטגוריה למעלה"
+                  disabled={catIndex === 0}
+                  onClick={() => update({ shoppingCategories: moveInList(draft.shoppingCategories, catIndex, catIndex - 1) })}
+                  className="flex-shrink-0 text-[#B5A99A] hover:text-[#4A4A4A] disabled:opacity-30"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="הזזת הקטגוריה למטה"
+                  disabled={catIndex === draft.shoppingCategories.length - 1}
+                  onClick={() => update({ shoppingCategories: moveInList(draft.shoppingCategories, catIndex, catIndex + 1) })}
+                  className="flex-shrink-0 text-[#B5A99A] hover:text-[#4A4A4A] disabled:opacity-30"
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (category.items.length > 0 && !confirm(`למחוק את הקטגוריה "${category.category}" ואת ${category.items.length} הפריטים בה?`)) return
                     update({
                       shoppingCategories: draft.shoppingCategories.filter((_, i) => i !== catIndex),
                     })
-                  }
+                  }}
                   className="flex-shrink-0 text-[#B5A99A] hover:text-[#A05A5A]"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -751,7 +815,57 @@ function PackageEditor({
                     update({ shoppingCategories: next })
                   }
                   return (
-                    <div key={itemIndex} className="rounded-sm bg-[#F9F7F4] p-3">
+                    <div key={itemIndex} className={`rounded-sm p-3 ${item.hidden ? 'bg-[#F1EEEA] opacity-70' : 'bg-[#F9F7F4]'}`}>
+                      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#6B6B6B]">
+                        <button
+                          type="button"
+                          onClick={() => updateItem({ hidden: !item.hidden })}
+                          className="inline-flex items-center gap-1 rounded-full border border-[#E8DED2] bg-white px-2 py-0.5 hover:bg-[#F3EEE8]"
+                        >
+                          {item.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          {item.hidden ? 'מוסתר מהלקוחות' : 'מוצג'}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="הזזת הפריט למעלה"
+                          disabled={itemIndex === 0}
+                          onClick={() => {
+                            const next = [...draft.shoppingCategories]
+                            next[catIndex] = { ...category, items: moveInList(category.items, itemIndex, itemIndex - 1) }
+                            update({ shoppingCategories: next })
+                          }}
+                          className="disabled:opacity-30"
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="הזזת הפריט למטה"
+                          disabled={itemIndex === category.items.length - 1}
+                          onClick={() => {
+                            const next = [...draft.shoppingCategories]
+                            next[catIndex] = { ...category, items: moveInList(category.items, itemIndex, itemIndex + 1) }
+                            update({ shoppingCategories: next })
+                          }}
+                          className="disabled:opacity-30"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                        {draft.shoppingCategories.length > 1 && (
+                          <select
+                            value={catIndex}
+                            onChange={(e) => moveItemToCategory(catIndex, itemIndex, Number(e.target.value))}
+                            className="rounded-sm border border-[#E8DED2] bg-white px-1 py-0.5"
+                            aria-label="העברה לקטגוריה"
+                          >
+                            {draft.shoppingCategories.map((c, i) => (
+                              <option key={i} value={i}>
+                                {i === catIndex ? `בקטגוריה: ${c.category}` : `העברה ל: ${c.category}`}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
                       <div className="mb-2 flex items-start gap-2">
                         <div className="flex-1 space-y-2">
                           <input
@@ -827,15 +941,44 @@ function PackageEditor({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      {draftSavedAt && (
+        <p className="rounded-sm border border-[#F0DFC0] bg-[#FBF3E3] px-4 py-2 text-sm text-[#8B6A2B]">
+          יש טיוטה שלא פורסמה (נשמרה ב־{new Date(draftSavedAt).toLocaleString('he-IL')}). הלקוחות עדיין רואים את הגרסה
+          המפורסמת.
+          <button type="button" onClick={onDiscardDraft} className="ms-2 underline">
+            ביטול הטיוטה
+          </button>
+        </p>
+      )}
+
+      {previewing && <PackagePreviewModal pkg={draft} onClose={() => setPreviewing(false)} />}
+
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={onSave}
           disabled={saving || !draft.id || !draft.name}
           className="flex items-center gap-2 rounded-sm bg-[#C8B6A6] px-6 py-2.5 text-white transition-colors hover:bg-[#B5A99A] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          שמירה
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          פרסום לאתר
+        </button>
+        <button
+          type="button"
+          onClick={onSaveDraft}
+          disabled={saving || !draft.id || !draft.name}
+          className="flex items-center gap-2 rounded-sm border border-[#C8B6A6] px-6 py-2.5 text-[#8B7340] transition-colors hover:bg-[#F9F7F4] disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" />
+          שמירת טיוטה
+        </button>
+        <button
+          type="button"
+          onClick={() => setPreviewing(true)}
+          className="flex items-center gap-2 rounded-sm border border-[#E8DED2] px-6 py-2.5 text-[#4A4A4A] transition-colors hover:bg-[#F9F7F4]"
+        >
+          <Eye className="h-4 w-4" />
+          תצוגה מקדימה
         </button>
         {!isNew && (
           <button
@@ -847,6 +990,51 @@ function PackageEditor({
             מחיקה
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+/** How the package looks to a customer: hidden items and empty categories are left out. */
+function PackagePreviewModal({ pkg, onClose }: { pkg: ThemePackage; onClose: () => void }) {
+  const categories = visibleShoppingCategories(pkg.shoppingCategories)
+  const images = [pkg.heroImage, ...pkg.galleryImages].filter(Boolean)
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-3xl rounded-lg bg-white p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-[#8B8B8B]">תצוגה מקדימה — כך הלקוחות יראו את החבילה</p>
+            <h2 className="text-2xl font-light text-[#3C3834]">{pkg.name}</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label="סגירה" className="text-[#8B8B8B]">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {pkg.description && <p className="mb-4 text-sm text-[#6B6B6B]">{pkg.description}</p>}
+        {images.length > 0 && (
+          <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {images.slice(0, 6).map((src, i) => (
+              <img key={i} src={src} alt="" className="aspect-[4/3] w-full rounded-sm object-cover" />
+            ))}
+          </div>
+        )}
+        {categories.map((category, i) => (
+          <section key={i} className="mb-5">
+            <h3 className="mb-2 text-lg text-[#4A4A4A]">{category.category}</h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {category.items.map((item, j) => (
+                <div key={j} className="flex items-center gap-3 rounded-sm border border-[#F1ECE5] p-2">
+                  <img src={productImagePreviewSrc(item.image)} alt="" className="h-12 w-12 rounded-sm object-cover" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-[#3C3834]">{item.name || 'פריט ללא שם'}</p>
+                    {item.notes && <p className="truncate text-xs text-[#8B8B8B]">{item.notes}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   )
@@ -1003,6 +1191,19 @@ function ColorScaleEditor({
   )
 }
 
+type AdminTab = 'dashboard' | 'orders' | 'influencers' | 'vouchers' | 'links' | 'packages' | 'colors' | 'settings'
+
+const TABS: { id: AdminTab; label: string }[] = [
+  { id: 'dashboard', label: 'דאשבורד' },
+  { id: 'orders', label: 'הזמנות' },
+  { id: 'influencers', label: 'משפיעניות וקופונים' },
+  { id: 'vouchers', label: 'שוברי מתנה' },
+  { id: 'links', label: 'קישורים שבורים' },
+  { id: 'packages', label: 'חבילות ותוכן' },
+  { id: 'colors', label: 'סקלות צבעים' },
+  { id: 'settings', label: 'הגדרות' },
+]
+
 export function AdminPage() {
   const { user } = useAuth()
   const {
@@ -1011,6 +1212,9 @@ export function AdminPage() {
     loading,
     persisted,
     savePackage,
+    savePackageDraft,
+    discardPackageDraft,
+    loadPackageDrafts,
     deletePackage,
     saveColorScale,
     deleteColorScale,
@@ -1018,7 +1222,19 @@ export function AdminPage() {
     uploadImage,
   } = useData()
 
-  const [tab, setTab] = useState<'packages' | 'colors'>('packages')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = (TABS.some((t) => t.id === searchParams.get('tab')) ? searchParams.get('tab') : 'dashboard') as AdminTab
+  const setTab = (next: AdminTab) => setSearchParams({ tab: next }, { replace: true })
+  const [ordersFilter, setOrdersFilter] = useState<OrdersFilter>({})
+  const showOrders = (filter: OrdersFilter) => {
+    setOrdersFilter(filter)
+    setTab('orders')
+  }
+  const [drafts, setDrafts] = useState<Record<string, { draft: ThemePackage; updatedAt: string }>>({})
+
+  useEffect(() => {
+    if (user?.isAdmin) void loadPackageDrafts().then(setDrafts)
+  }, [user, loadPackageDrafts])
   const [packageDraft, setPackageDraft] = useState<ThemePackage | null>(null)
   const [scaleDraft, setScaleDraft] = useState<ColorScale | null>(null)
   const [isNew, setIsNew] = useState(false)
@@ -1060,9 +1276,11 @@ export function AdminPage() {
       alert('כבר קיימת חבילה עם המזהה הזה')
       return
     }
+    if (!confirm('לפרסם את השינויים? הם יופיעו מיד באתר.')) return
     setSaving(true)
     try {
       await savePackage(packageDraft)
+      setDrafts(await loadPackageDrafts())
       setPackageDraft(null)
       setIsNew(false)
     } catch {
@@ -1070,6 +1288,28 @@ export function AdminPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleSaveDraft = async () => {
+    if (!packageDraft) return
+    setSaving(true)
+    try {
+      await savePackageDraft(packageDraft)
+      setDrafts(await loadPackageDrafts())
+      setIsNew(false)
+    } catch {
+      alert('שמירת הטיוטה נכשלה')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDiscardDraft = async () => {
+    if (!packageDraft || !confirm('לבטל את הטיוטה ולחזור לגרסה המפורסמת?')) return
+    await discardPackageDraft(packageDraft.id)
+    setDrafts(await loadPackageDrafts())
+    const published = packages.find((p) => p.id === packageDraft.id)
+    setPackageDraft(published ? sanitizePackageImages(structuredClone(published)) : null)
   }
 
   const handleDeletePackage = async () => {
@@ -1126,7 +1366,7 @@ export function AdminPage() {
         <div className="mb-8">
           <h1 className="mb-1 text-3xl font-light text-[#4A4A4A]">לוח ניהול</h1>
           <p className="text-[#6B6B6B]">
-            ניהול חבילות, נושאים, צבעים, קישורים ותמונות. השינויים נשמרים ומשפיעים על האתר מיד.
+            ניהול מכירות, משפיעניות, שוברים, חבילות, צבעים, קישורים ותמונות. שינויים בחבילות נשמרים כטיוטה עד שמפרסמים.
           </p>
           {seeding && (
             <p className="mt-2 flex items-center gap-2 text-sm text-[#8B7340]">
@@ -1135,39 +1375,38 @@ export function AdminPage() {
           )}
         </div>
 
-        <div className="mb-6 flex gap-2 border-b border-[#E8DED2]">
-          <button
-            type="button"
-            onClick={() => {
-              setTab('packages')
-              setScaleDraft(null)
-            }}
-            className={`px-4 py-2 text-sm transition-colors ${
-              tab === 'packages'
-                ? 'border-b-2 border-[#C8B6A6] text-[#4A4A4A]'
-                : 'text-[#8B8B8B] hover:text-[#4A4A4A]'
-            }`}
-          >
-            חבילות (
-            {packages.filter((p) => parseCatalogVariantId(p.id) || parseVariantId(p.id)).length ||
-              packages.length}
-            )
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab('colors')
-              setPackageDraft(null)
-            }}
-            className={`px-4 py-2 text-sm transition-colors ${
-              tab === 'colors'
-                ? 'border-b-2 border-[#C8B6A6] text-[#4A4A4A]'
-                : 'text-[#8B8B8B] hover:text-[#4A4A4A]'
-            }`}
-          >
-            סקלות צבעים ({colorScales.length})
-          </button>
+        <div className="mb-6 flex gap-1 overflow-x-auto border-b border-[#E8DED2]">
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setTab(item.id)
+                setPackageDraft(null)
+                setScaleDraft(null)
+                if (item.id !== 'orders') setOrdersFilter({})
+              }}
+              className={`shrink-0 px-4 py-2 text-sm whitespace-nowrap transition-colors ${
+                tab === item.id
+                  ? 'border-b-2 border-[#C8B6A6] text-[#4A4A4A]'
+                  : 'text-[#8B8B8B] hover:text-[#4A4A4A]'
+              }`}
+            >
+              {item.id === 'packages'
+                ? `${item.label} (${packages.filter((p) => parseCatalogVariantId(p.id) || parseVariantId(p.id)).length || packages.length})`
+                : item.id === 'colors'
+                  ? `${item.label} (${colorScales.length})`
+                  : item.label}
+            </button>
+          ))}
         </div>
+
+        {tab === 'dashboard' && <DashboardTab onShowOrders={showOrders} />}
+        {tab === 'orders' && <OrdersTab filter={ordersFilter} onClearFilter={() => setOrdersFilter({})} />}
+        {tab === 'influencers' && <InfluencersTab onShowOrders={showOrders} />}
+        {tab === 'vouchers' && <VouchersTab />}
+        {tab === 'links' && <LinksTab />}
+        {tab === 'settings' && <SettingsPanel />}
 
         {tab === 'packages' && (
           <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
@@ -1181,7 +1420,7 @@ export function AdminPage() {
                 colorScales={colorScales}
                 selectedId={packageDraft?.id ?? null}
                 onSelect={(pkg) => {
-                  setPackageDraft(sanitizePackageImages(structuredClone(pkg)))
+                  setPackageDraft(sanitizePackageImages(structuredClone(drafts[pkg.id]?.draft ?? pkg)))
                   setIsNew(!packages.some((p) => p.id === pkg.id))
                 }}
               />
@@ -1194,6 +1433,9 @@ export function AdminPage() {
                   setDraft={setPackageDraft}
                   isNew={isNew}
                   onSave={handleSavePackage}
+                  onSaveDraft={handleSaveDraft}
+                  onDiscardDraft={handleDiscardDraft}
+                  draftSavedAt={drafts[packageDraft.id]?.updatedAt ?? null}
                   onDelete={handleDeletePackage}
                   onUploadPackageImage={(file) => uploadImage(file, 'package-gallery')}
                   onUploadProductImage={(file) => uploadImage(file, 'product')}

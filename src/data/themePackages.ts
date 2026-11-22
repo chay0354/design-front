@@ -7,6 +7,8 @@ export interface ThemeShoppingItem {
   notes?: string
   room?: string
   image: string
+  /** Hidden from customers without deleting it. */
+  hidden?: boolean
 }
 
 export interface ThemeShoppingCategory {
@@ -29,6 +31,13 @@ export interface ThemePackage {
   heroImage: string
   galleryImages: string[]
   shoppingCategories: ThemeShoppingCategory[]
+}
+
+/** Shopping list as customers see it: hidden items and empty categories removed. */
+export function visibleShoppingCategories(categories: ThemeShoppingCategory[]): ThemeShoppingCategory[] {
+  return categories
+    .map((category) => ({ ...category, items: category.items.filter((item) => !item.hidden) }))
+    .filter((category) => category.items.length > 0)
 }
 
 export const themePackages = rawPackages as unknown as ThemePackage[]

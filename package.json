@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "generate:packages": "python scripts/generate-theme-packages.py && python scripts/fetch-product-images.py"
+    "generate:packages": "python scripts/generate-theme-packages.py && python scripts/fetch-product-images.py",
+    "test:e2e:mocked": "playwright test --config playwright.mocked.config.ts"
   },
   "dependencies": {
     "@radix-ui/react-slider": "^1.2.3",

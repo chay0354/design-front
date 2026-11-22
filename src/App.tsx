@@ -18,6 +18,13 @@ import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
 import { TipsPage } from './pages/TipsPage'
 import { BlockAdmin, RequireAdmin, RequireUser } from './components/RouteGuards'
+import { ConsentBanner } from './components/ConsentBanner'
+import { GiftVoucherPage } from './pages/GiftVoucherPage'
+import { GiftVoucherViewPage } from './pages/GiftVoucherViewPage'
+import { GiftRedeemPage } from './pages/GiftRedeemPage'
+import { captureReferralFromUrl } from './utils/tracking'
+
+captureReferralFromUrl()
 
 function ScrollToTop() {
   const { pathname, search } = useLocation()
@@ -151,8 +158,33 @@ export default function App() {
                 </RequireUser>
               }
             />
+            <Route
+              path="/gift"
+              element={
+                <BlockAdmin>
+                  <GiftVoucherPage />
+                </BlockAdmin>
+              }
+            />
+            <Route
+              path="/gift/voucher/:voucherId"
+              element={
+                <RequireUser>
+                  <GiftVoucherViewPage />
+                </RequireUser>
+              }
+            />
+            <Route
+              path="/gift/redeem/:code"
+              element={
+                <BlockAdmin>
+                  <GiftRedeemPage />
+                </BlockAdmin>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <ConsentBanner />
           </div>
         </BrowserRouter>
       </DataProvider>

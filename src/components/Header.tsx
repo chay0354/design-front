@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Check, Grid3X3, Home, LogOut, Settings, ShoppingBag, User } from 'lucide-react'
+import { Check, Gift, Grid3X3, Home, LogOut, Settings, ShoppingBag, User } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 function MenuIcon() {
@@ -102,6 +102,10 @@ export function Header() {
           החשבון שלי
         </NavLink>
       )}
+      <NavLink to="/gift" className={navLink} onClick={() => setMenuOpen(false)}>
+        <Gift className="h-4 w-4" strokeWidth={1.5} />
+        שובר מתנה
+      </NavLink>
       <NavLink to="/about" className={navLink} onClick={() => setMenuOpen(false)}>
         אודות
       </NavLink>

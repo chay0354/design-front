@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { supabase } from '../lib/supabase'
 import { resolveDesignPackageImagesForPackage } from '../data/designPackageImages'
-import { themePackages as staticPackages, type ThemePackage } from '../data/themePackages'
+import { themePackages as staticPackages, visibleShoppingCategories, type ThemePackage } from '../data/themePackages'
 import { colorScales as staticColorScales, type ColorScale } from '../data/colorScales'
 import { buildCollageShareUrl, collageStoragePath } from '../utils/collageShare'
 import {
@@ -91,6 +91,10 @@ interface DataContextValue {
   getPackageContent: (id: string) => PackageContent | null
   getColorScaleForPreference: (preference: string) => ColorScale
   savePackage: (pkg: ThemePackage, sortOrder?: number) => Promise<void>
+  /** Saves admin edits without publishing them to customers. */
+  savePackageDraft: (pkg: ThemePackage) => Promise<void>
+  discardPackageDraft: (id: string) => Promise<void>
+  loadPackageDrafts: () => Promise<Record<string, { draft: ThemePackage; updatedAt: string }>>
   deletePackage: (id: string) => Promise<void>
   saveColorScale: (scale: ColorScale, sortOrder?: number) => Promise<void>
   deleteColorScale: (id: string) => Promise<void>
@@ -218,7 +222,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return {
         heroImage,
         galleryImages,
-        shoppingCategories: pkg.shoppingCategories,
+        shoppingCategories: visibleShoppingCategories(pkg.shoppingCategories),
         placementGuide: [],
       }
     },
@@ -248,11 +252,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      const now = new Date().toISOString()
       const rows = packagesToSave.map((entry) => ({
         id: entry.id,
         sort_order: sortOrder ?? packages.findIndex((p) => p.id === entry.id),
         data: entry,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
+        ...(entry.id === pkg.id ? { draft: null, draft_updated_at: null, published_at: now } : {}),
       }))
 
       const { error } = await supabase.from('app_packages').upsert(rows)
@@ -261,6 +267,57 @@ export function DataProvider({ children }: { children: ReactNode }) {
     },
     [packages, reload],
   )
+
+  const savePackageDraft = useCallback(
+    async (pkg: ThemePackage) => {
+      const now = new Date().toISOString()
+      const { data: existing, error: readError } = await supabase
+        .from('app_packages')
+        .select('id')
+        .eq('id', pkg.id)
+        .maybeSingle()
+      if (readError) throw readError
+      if (existing) {
+        const { error } = await supabase
+          .from('app_packages')
+          .update({ draft: pkg, draft_updated_at: now })
+          .eq('id', pkg.id)
+        if (error) throw error
+        return
+      }
+      // First save of a default variant: keep what customers see today as the published version.
+      const published = packages.find((p) => p.id === pkg.id) ?? pkg
+      const { error } = await supabase.from('app_packages').insert({
+        id: pkg.id,
+        sort_order: Math.max(0, packages.findIndex((p) => p.id === pkg.id)),
+        data: published,
+        draft: pkg,
+        draft_updated_at: now,
+        updated_at: now,
+      })
+      if (error) throw error
+    },
+    [packages],
+  )
+
+  const discardPackageDraft = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('app_packages')
+      .update({ draft: null, draft_updated_at: null })
+      .eq('id', id)
+    if (error) throw error
+  }, [])
+
+  const loadPackageDrafts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('app_packages')
+      .select('id, draft, draft_updated_at')
+      .not('draft', 'is', null)
+    if (error) return {}
+    return Object.fromEntries(
+      (data || []).map((row) => [row.id as string, { draft: row.draft as ThemePackage, updatedAt: row.draft_updated_at as string }]),
+    )
+  }, [])
 
   const deletePackage = useCallback(
     async (id: string) => {
@@ -370,6 +427,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       getPackageContent,
       getColorScaleForPreference,
       savePackage,
+      savePackageDraft,
+      discardPackageDraft,
+      loadPackageDrafts,
       deletePackage,
       saveColorScale,
       deleteColorScale,
@@ -388,6 +448,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       getPackageContent,
       getColorScaleForPreference,
       savePackage,
+      savePackageDraft,
+      discardPackageDraft,
+      loadPackageDrafts,
       deletePackage,
       saveColorScale,
       deleteColorScale,

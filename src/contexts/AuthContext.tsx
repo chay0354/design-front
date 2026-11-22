@@ -8,7 +8,8 @@ import {
   type ReactNode,
 } from 'react'
 import { supabase } from '../lib/supabase'
-import type { ChildInfo, PurchaseOrder, User } from '../utils/auth'
+import type { ChildInfo, User } from '../utils/auth'
+import { apiFetch } from '../utils/backend'
 
 interface PetiteProfileRow {
   id: string
@@ -17,6 +18,36 @@ interface PetiteProfileRow {
   is_admin: boolean
   purchased_packages: string[]
   children: ChildInfo[]
+}
+
+export interface OrderRoomRequest {
+  roomId?: string
+  displayName: string
+  children: { name: string; age: number; gender: string }[]
+  designGender: string
+  designAge: number
+  ageChoice: unknown
+  ageGroup: string
+  ageTrack: 'child' | 'cross-age'
+  packageId: string
+  packageName: string
+  theme: string
+  colorPreference: string
+  wallDesignOption: string
+}
+
+export interface OrderRequest {
+  rooms: OrderRoomRequest[]
+  couponCode?: string
+  voucherCode?: string
+  referral?: { visitorId: string } | null
+  paymentOption?: 'full' | 'installments'
+  sessionId?: string | null
+}
+
+export interface OrderResult {
+  order: { id: string; orderNumber: number; total: number; discountTotal: number; voucherPackagesUsed: number }
+  items: { id: string; roomId: string; packageId: string }[]
 }
 
 export interface AuthResult {
@@ -30,23 +61,10 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<AuthResult>
   signUp: (email: string, password: string) => Promise<AuthResult>
   logout: () => Promise<void>
-  purchasePackage: (
-    packageId: string,
-    childName?: string,
-    childAge?: number,
-    gender?: string,
-    theme?: string,
-    colorPreference?: string,
-  ) => Promise<void>
-  purchaseAdditionalChild: (
-    packageId: string,
-    childName: string,
-    childAge: number,
-    gender?: string,
-    theme?: string,
-    colorPreference?: string,
-  ) => Promise<void>
-  completePurchase: (orders: PurchaseOrder[]) => Promise<void>
+  /** Re-reads the profile (purchases, children) after a server-side change. */
+  refreshProfile: () => Promise<void>
+  /** Creates a paid order on the server and refreshes the profile. */
+  submitOrder: (order: OrderRequest) => Promise<OrderResult>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -108,8 +126,6 @@ async function createProfileRow(
       id: userId,
       email,
       name: email.split('@')[0],
-      purchased_packages: [],
-      children: [],
     }),
   })
 
@@ -135,33 +151,6 @@ async function loadProfileWithToken(
   if (row) return mapProfile(row)
   const created = await createProfileRow(accessToken, userId, email)
   return mapProfile(created)
-}
-
-async function saveProfileWithToken(accessToken: string, user: User): Promise<void> {
-  const res = await profileRequest(
-    accessToken,
-    `petite_profiles?id=eq.${encodeURIComponent(user.id)}`,
-    {
-      method: 'PATCH',
-      headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({
-        email: user.email,
-        name: user.name,
-        purchased_packages: user.purchasedPackages,
-        children: user.children,
-        updated_at: new Date().toISOString(),
-      }),
-    },
-  )
-
-  if (!res.ok) {
-    throw new Error(await res.text())
-  }
-}
-
-async function getAccessToken(): Promise<string | null> {
-  const { data } = await supabase.auth.getSession()
-  return data.session?.access_token ?? null
 }
 
 function authErrorMessage(error: { message: string; code?: string }): string {
@@ -332,128 +321,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
-  const completePurchase = useCallback(
-    async (orders: PurchaseOrder[]) => {
-      if (!user || orders.length === 0) return
+  const refreshProfile = useCallback(async () => {
+    await loadSessionUser()
+  }, [loadSessionUser])
 
-      const purchaseDate = new Date().toISOString()
-      const purchasedPackages = [...user.purchasedPackages]
-      const children = [...user.children]
-
-      for (const order of orders) {
-        if (!purchasedPackages.includes(order.packageId)) {
-          purchasedPackages.push(order.packageId)
-        }
-
-        const alreadyAdded = children.some(
-          (child) => child.packageId === order.packageId && child.name === order.childName,
-        )
-        if (!alreadyAdded) {
-          children.push({
-            name: order.childName,
-            age: order.childAge,
-            packageId: order.packageId,
-            purchaseDate,
-            gender: order.gender,
-            theme: order.theme,
-            colorPreference: order.colorPreference,
-          })
-        }
-      }
-
-      const nextUser: User = { ...user, purchasedPackages, children }
-
-      const token = await getAccessToken()
-      if (!token) return
-
-      await saveProfileWithToken(token, nextUser)
-      setUser(nextUser)
+  const submitOrder = useCallback(
+    async (order: OrderRequest) => {
+      const result = await apiFetch<OrderResult>('/api/checkout/orders', { body: order })
+      await loadSessionUser()
+      return result
     },
-    [user],
-  )
-
-  const purchasePackage = useCallback(
-    async (
-      packageId: string,
-      childName?: string,
-      childAge?: number,
-      gender?: string,
-      theme?: string,
-      colorPreference?: string,
-    ) => {
-      if (!user) return
-
-      const nextUser: User = {
-        ...user,
-        purchasedPackages: user.purchasedPackages.includes(packageId)
-          ? user.purchasedPackages
-          : [...user.purchasedPackages, packageId],
-        children: [...user.children],
-      }
-
-      if (childName && childAge) {
-        const alreadyAdded = nextUser.children.some(
-          (child) => child.packageId === packageId && child.name === childName,
-        )
-        if (!alreadyAdded) {
-          nextUser.children.push({
-            name: childName,
-            age: childAge,
-            packageId,
-            purchaseDate: new Date().toISOString(),
-            gender,
-            theme,
-            colorPreference,
-          })
-        }
-      }
-
-      const token = await getAccessToken()
-      if (!token) return
-
-      await saveProfileWithToken(token, nextUser)
-      setUser(nextUser)
-    },
-    [user],
-  )
-
-  const purchaseAdditionalChild = useCallback(
-    async (
-      packageId: string,
-      childName: string,
-      childAge: number,
-      gender?: string,
-      theme?: string,
-      colorPreference?: string,
-    ) => {
-      if (!user) return
-
-      const nextUser: User = {
-        ...user,
-        purchasedPackages: user.purchasedPackages.includes(packageId)
-          ? user.purchasedPackages
-          : [...user.purchasedPackages, packageId],
-        children: [
-          ...user.children,
-          {
-            name: childName,
-            age: childAge,
-            packageId,
-            purchaseDate: new Date().toISOString(),
-            gender,
-            theme,
-            colorPreference,
-          },
-        ],
-      }
-
-      const token = await getAccessToken()
-      if (!token) return
-
-      await saveProfileWithToken(token, nextUser)
-      setUser(nextUser)
-    },
-    [user],
+    [loadSessionUser],
   )
 
   const value = useMemo(
@@ -463,11 +341,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       logout,
-      purchasePackage,
-      purchaseAdditionalChild,
-      completePurchase,
+      refreshProfile,
+      submitOrder,
     }),
-    [user, loading, signIn, signUp, logout, purchasePackage, purchaseAdditionalChild, completePurchase],
+    [user, loading, signIn, signUp, logout, refreshProfile, submitOrder],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

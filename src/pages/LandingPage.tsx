@@ -308,6 +308,26 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="mx-auto w-full max-w-3xl px-4 pt-6 pb-4">
+          <div className="flex flex-col items-center gap-5 rounded-3xl border border-[#EDE4D8] bg-[#FBF8F3] px-6 py-8 text-center sm:flex-row sm:text-right">
+            <img src="/assets/gift-icon.png" alt="" aria-hidden="true" className="h-20 w-20 shrink-0 object-contain" />
+            <div className="flex-1">
+              <h2 className="text-[1.6rem] leading-tight font-bold text-[#2F2A26] sm:text-[2rem]">שובר מתנה</h2>
+              <p className="mt-1 text-[14px] font-medium text-[#A88A72]">מתנה קטנה, חלומות גדולים</p>
+              <p className="mt-2 text-[13.5px] leading-6 text-[#3C3631] sm:text-[15px]">
+                יש מתנות שנשארות הרבה מעבר לרגע שבו מקבלים אותן. העניקו מתנה עיצוב לחדר הילדים, מקום לגדול
+                בו, לחלום בו וליצור זיכרונות יפים.
+              </p>
+            </div>
+            <Link
+              to="/gift"
+              className="shrink-0 rounded-full bg-[#3F3A36] px-6 py-3 text-sm text-white hover:bg-[#2F2B28]"
+            >
+              לרכישת שובר מתנה
+            </Link>
+          </div>
+        </section>
+
         <section className="relative mx-auto w-full max-w-5xl px-4 pt-4 pb-5 text-center sm:pt-8">
           <h2 className="text-[1.75rem] leading-tight font-bold text-[#2F2A26] sm:text-[2.3rem]">אז איך ייראה החדר שלכם?</h2>
           <p className="mx-auto mt-2 max-w-md text-[13.5px] leading-6 font-medium text-[#3C3631] sm:text-[15px]">

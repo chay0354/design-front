@@ -1,3 +1,4 @@
+import { visibleShoppingCategories } from '../data/themePackages'
 import { useLayoutEffect } from 'react'
 import { Armchair, ArrowLeft, CheckCircle2, Lock, createLucideIcon } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -122,7 +123,7 @@ function ChildPackageCard({
   const collage = collectCollageImages(
     content?.heroImage || pkg.heroImage,
     content?.galleryImages || pkg.galleryImages,
-    content?.shoppingCategories || pkg.shoppingCategories,
+    content?.shoppingCategories || visibleShoppingCategories(pkg.shoppingCategories),
   )
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
   const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name

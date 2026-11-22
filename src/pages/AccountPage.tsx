@@ -23,6 +23,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import type { ThemePackage } from '../data/themePackages'
 import type { PackageContent } from '../contexts/DataContext'
+import { useGuideVideos, videoEmbed } from '../utils/guideVideos'
 import {
   getChildForPackage,
   getChildPackageEntries,
@@ -347,11 +348,138 @@ function PurchasedPackageRow({
   )
 }
 
+const LESSON_ICONS = [Bed, Archive, Home]
+
+function mergeGuideVideos<T extends { id: string; icon: typeof Bed; image: string; title: string; description: string }>(
+  defaults: T[],
+  edited: { id: string; title: string; description: string; image: string; videoUrl: string }[] | null,
+) {
+  if (!edited) return defaults.map((lesson) => ({ ...lesson, videoUrl: '' }))
+  return edited.map((lesson, index) => {
+    const base = defaults.find((d) => d.id === lesson.id) || defaults[index % defaults.length]
+    return {
+      ...base,
+      id: lesson.id,
+      icon: base?.icon ?? LESSON_ICONS[index % LESSON_ICONS.length],
+      title: lesson.title || base.title,
+      description: lesson.description || base.description,
+      image: lesson.image || base.image,
+      videoUrl: lesson.videoUrl,
+    }
+  })
+}
+
+function GuideVideoPlayer({ title, url }: { title: string; url: string }) {
+  const embed = videoEmbed(url)
+  if (!embed) {
+    return (
+      <div className="flex aspect-[2.3/1] w-full items-center justify-center bg-[#3F3A36]/80">
+        <div className="p-6 text-center text-white">
+          <p className="mb-2 text-sm">וידאו: {title}</p>
+          <p className="text-xs opacity-75">השיעור יעלה בקרוב</p>
+        </div>
+      </div>
+    )
+  }
+  return embed.kind === 'iframe' ? (
+    <iframe
+      src={`${embed.src}?autoplay=1`}
+      title={title}
+      className="aspect-video w-full"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      allowFullScreen
+    />
+  ) : (
+    <video src={embed.src} controls autoPlay className="aspect-video w-full bg-black" />
+  )
+}
+
+/** "New design for this room": the questionnaire starts with this room's children. */
+function redesignPath(child: ChildInfo) {
+  return child.roomId ? `/questionnaire?roomId=${encodeURIComponent(child.roomId)}` : '/questionnaire'
+}
+
+const formatDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('he-IL') : '')
+
+function ArchiveView({
+  entries,
+  scaleNameFor,
+  imageFor,
+  onOpen,
+  onBack,
+}: {
+  entries: { child: ChildInfo; pkg: ThemePackage }[]
+  scaleNameFor: (child?: ChildInfo) => string | undefined
+  imageFor: (pkg: ThemePackage) => string
+  onOpen: (pkg: ThemePackage) => void
+  onBack: () => void
+}) {
+  const rooms = new Map<string, { child: ChildInfo; pkg: ThemePackage }[]>()
+  for (const entry of [...entries].sort((a, b) => b.child.purchaseDate.localeCompare(a.child.purchaseDate))) {
+    const key = entry.child.roomId || entry.child.name
+    if (!rooms.has(key)) rooms.set(key, [])
+    rooms.get(key)!.push(entry)
+  }
+
+  return (
+    <div>
+      <div className="mb-8 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-2xl font-light text-[#2F2B28]">
+          <Archive className="h-5 w-5 text-[#B39A86]" strokeWidth={1.5} />
+          ארכיון החבילות
+        </h2>
+        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-[#8A7A6B] hover:underline">
+          חזרה לחדרים שלי
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+      </div>
+      <p className="mb-8 text-sm text-[#8B8B8B]">
+        כאן נשמרות חבילות קודמות שהוחלפו בעיצוב חדש לאותו חדר. כל התוכן המקורי נשאר זמין לצפייה.
+      </p>
+      <div className="space-y-10">
+        {[...rooms.entries()].map(([roomKey, roomEntries]) => (
+          <section key={roomKey}>
+            <h3 className="mb-3 text-lg text-[#4A4540]">החדר של {roomEntries[0].child.name}</h3>
+            <div className="space-y-3">
+              {roomEntries.map(({ child, pkg }) => (
+                <article
+                  key={`${child.packageId}-${child.purchaseDate}`}
+                  className="flex items-center gap-4 rounded-xl border border-[#EDE6DE] bg-white p-3"
+                >
+                  <img src={imageFor(pkg) || FALLBACK_ROOM} alt="" className="h-20 w-24 shrink-0 rounded-md object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[#2F2B28]">{child.theme ? `חבילת ${child.theme}` : pkg.name}</p>
+                    <p className="text-sm text-[#8A847C]">
+                      {[child.name, scaleNameFor(child)].filter(Boolean).join(' · ')}
+                    </p>
+                    <p className="text-xs text-[#A39A8F]">
+                      נרכשה ב־{formatDate(child.purchaseDate)} · הועברה לארכיון ב־{formatDate(child.archivedAt)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onOpen(pkg)}
+                    className="shrink-0 rounded-full border border-[#E2D8CC] px-4 py-2 text-sm text-[#5A544E] hover:bg-[#F8F4EF]"
+                  >
+                    לצפייה
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function AccountPage() {
   const navigate = useNavigate()
   const { user, loading } = useAuth()
   const { packages, getPackageById, getPackageContent, getColorScaleForPreference } = useData()
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  const [showArchive, setShowArchive] = useState(false)
+  const guideVideos = useGuideVideos()
 
   if (loading) {
     return <PageLoading />
@@ -362,7 +490,9 @@ export function AccountPage() {
   }
 
   const purchasedPackages = packages.filter((pkg) => hasPurchased(user, pkg.id))
-  const childPackageEntries = getChildPackageEntries(user, packages, getPackageById)
+  const allChildEntries = getChildPackageEntries(user, packages, getPackageById)
+  const childPackageEntries = allChildEntries.filter((entry) => !entry.child.archivedAt)
+  const archivedEntries = allChildEntries.filter((entry) => entry.child.archivedAt)
 
   const getPackageStatus = (pkg: ThemePackage, child?: ChildInfo) => {
     if (child) return getPackageStatusForChild(pkg, child)
@@ -392,8 +522,9 @@ export function AccountPage() {
     (name) => user.children.find((c) => c.name === name)!,
   )
 
+  // Packages bought before children were recorded. Archived packages belong to the archive, not here.
   const orphanPackages = purchasedPackages.filter(
-    (pkg) => !childPackageEntries.some((entry) => entry.pkg.id === pkg.id),
+    (pkg) => !allChildEntries.some((entry) => entry.pkg.id === pkg.id),
   )
 
   const scrollToMasterclass = () => {
@@ -425,8 +556,28 @@ export function AccountPage() {
                 יצירת החבילה הראשונה
               </button>
             </div>
+          ) : showArchive ? (
+            <ArchiveView
+              entries={archivedEntries}
+              scaleNameFor={scaleNameFor}
+              imageFor={(pkg) => packagePreviewImage(getPackageContent(pkg.id))}
+              onOpen={(pkg) => navigate(`/package/${pkg.id}`)}
+              onBack={() => setShowArchive(false)}
+            />
           ) : (
             <>
+              {archivedEntries.length > 0 && (
+                <div className="mb-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowArchive(true)}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#EDE6DE] bg-[#F8F5F1] px-4 py-2 text-sm text-[#5A544E] hover:bg-[#F1EBE3]"
+                  >
+                    <Archive className="h-4 w-4 text-[#B39A86]" strokeWidth={1.5} />
+                    ארכיון חבילות ({archivedEntries.length})
+                  </button>
+                </div>
+              )}
               {orphanPackages.length > 0 && (
                 <div className="mb-4 space-y-4">
                   {orphanPackages.map((pkg) => (
@@ -445,9 +596,7 @@ export function AccountPage() {
 
               {uniqueChildren.map((child) => {
                 const childEntries = packagesByChild.get(child.name) || []
-                const activeEntries = childEntries.filter(
-                  (entry) => getPackageStatus(entry.pkg, entry.child).status !== 'outdated',
-                )
+                const activeEntries = childEntries.filter((entry) => !entry.child.archivedAt)
 
                 if (activeEntries.length === 0) return null
 
@@ -469,8 +618,8 @@ export function AccountPage() {
                             showGrowCard
                             onOpen={() => navigate(`/package/${pkg.id}`)}
                             onGrow={
-                              status.status === 'expiring'
-                                ? () => navigate('/questionnaire')
+                              status.status !== 'active'
+                                ? () => navigate(redesignPath(entryChild))
                                 : undefined
                             }
                           />
@@ -486,40 +635,6 @@ export function AccountPage() {
                 כל חבילה כוללת פריטים שנבחרו בקפידה, קישורים לרכישה והנחיות לעיצוב שמתאימים לכם.
               </p>
 
-              {childPackageEntries.some(
-                (entry) => getPackageStatus(entry.pkg, entry.child).status === 'outdated',
-              ) && (
-                <div className="mt-16 border-t border-[#F0EBE4] pt-12">
-                  <h2 className="mb-2 text-center text-2xl font-light text-[#4A4A4A]">
-                    החדרים שלכם לאורך השנים
-                  </h2>
-                  <p className="mx-auto mb-10 max-w-xl text-center text-sm text-[#8B8B8B]">
-                    כשהחדרים יתפתחו, החבילות הקודמות יעברו לכאן.
-                  </p>
-                  <div className="space-y-16">
-                    {childPackageEntries.map((entry) => {
-                      const { pkg, child: entryChild } = entry
-                      const status = getPackageStatus(pkg, entryChild)
-                      if (status.status !== 'outdated') return null
-
-                      return (
-                        <PurchasedPackageRow
-                          key={`archive-${entryChild.name}-${entryChild.packageId}-${entryChild.purchaseDate}`}
-                          pkg={pkg}
-                          child={entryChild}
-                          statusMessage="ארכיון"
-                          imageUrl={packagePreviewImage(getPackageContent(pkg.id))}
-                          colors={colorsFor(pkg, entryChild)}
-                          scaleName={scaleNameFor(entryChild)}
-                          showGrowCard={false}
-                          onOpen={() => navigate(`/package/${pkg.id}`)}
-                          onGrow={() => navigate('/questionnaire')}
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
             </>
           )}
         </section>
@@ -605,7 +720,7 @@ export function AccountPage() {
           </div>
 
           <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
-            {[
+            {mergeGuideVideos([
               {
                 id: 'corner',
                 icon: Bed,
@@ -627,34 +742,27 @@ export function AccountPage() {
                 title: 'משחקים או למידה?',
                 description: 'פינה אחת שאפשר לשחק בה וגם להכין בה שיעורים.',
               },
-            ].map(({ id, icon: Icon, image, title, description }) => (
+            ], guideVideos).map(({ id, icon: Icon, image, title, description, videoUrl }) => (
               <article
                 key={id}
                 className="flex flex-col overflow-hidden rounded-md border border-[#ECE5DD] bg-white text-center shadow-[0_4px_14px_rgba(90,70,40,0.05)]"
               >
-                <button
-                  type="button"
-                  className="relative block w-full overflow-hidden"
-                  onClick={() => setPlayingVideo(playingVideo === id ? null : id)}
-                >
-                  {playingVideo !== id ? (
-                    <>
-                      <img src={image} alt="" className="aspect-[2.3/1] w-full object-cover" />
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 shadow">
-                          <Play className="h-5 w-5 fill-[#3C3834] text-[#3C3834]" />
-                        </span>
+                {playingVideo !== id ? (
+                  <button
+                    type="button"
+                    className="relative block w-full overflow-hidden"
+                    onClick={() => setPlayingVideo(id)}
+                  >
+                    <img src={image} alt="" className="aspect-[2.3/1] w-full object-cover" />
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 shadow">
+                        <Play className="h-5 w-5 fill-[#3C3834] text-[#3C3834]" />
                       </span>
-                    </>
-                  ) : (
-                    <div className="flex aspect-[2.3/1] w-full items-center justify-center bg-[#3F3A36]/80">
-                      <div className="p-6 text-center text-white">
-                        <p className="mb-2 text-sm">וידאו: {title}</p>
-                        <p className="text-xs opacity-75">כאן יוצג הוידאו המלא</p>
-                      </div>
-                    </div>
-                  )}
-                </button>
+                    </span>
+                  </button>
+                ) : (
+                  <GuideVideoPlayer title={title} url={videoUrl} />
+                )}
 
                 <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
                   <div className="mb-1 flex items-center justify-center gap-2">

@@ -26,7 +26,11 @@ export function LoginPage() {
 
     const intendedPackage = sessionStorage.getItem('intended_package')
     const intendedCheckoutQuery = sessionStorage.getItem('intended_checkout_query')
-    if (intendedPackage) {
+    const intendedPath = sessionStorage.getItem('intended_path')
+    if (intendedPath && intendedPath.startsWith('/')) {
+      sessionStorage.removeItem('intended_path')
+      navigate(intendedPath)
+    } else if (intendedPackage) {
       sessionStorage.removeItem('intended_package')
       sessionStorage.removeItem('intended_checkout_query')
       const query = intendedCheckoutQuery ? `?${intendedCheckoutQuery}` : ''

@@ -28,6 +28,8 @@ export type AgeChoice =
   | { type: 'bridge'; ageGroupId: PackageAgeGroupId }
 
 export interface QuestionnaireRoom {
+  /** Set when designing again for a room the family already bought a package for. */
+  roomId?: string
   children: RoomChild[]
   designGender: CatalogGender | ''
   ageChoice: AgeChoice | null
@@ -165,6 +167,17 @@ export {
 } from '../data/packageCatalog'
 
 export { filterColorScalesForChild } from '../data/themeColorScales'
+
+/** Room fields the server stores for statistics, archive and future "extra packages". */
+export function roomOrderMeta(room: QuestionnaireRoom) {
+  const profile = roomDesignProfile(room)
+  return {
+    designGender: profile.gender,
+    designAge: profile.age,
+    ageGroup: room.ageChoice?.type === 'bridge' ? room.ageChoice.ageGroupId : getAgeGroupIdForAge(profile.age),
+    ageTrack: (room.ageChoice?.type === 'bridge' ? 'cross-age' : 'child') as 'child' | 'cross-age',
+  }
+}
 
 export function wallDesignLabel(option: string): string {
   if (option === 'paint') return 'קיר מרכזי בצביעה'
