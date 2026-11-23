@@ -1,6 +1,7 @@
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronRight, Sprout } from 'lucide-react'
 import { Sparkle } from '../components/BrushTitle'
+import { displayColorScaleName } from '../data/colorScales'
 import { Header } from '../components/Header'
 import { PageLoading } from '../components/PageLoading'
 import { useAuth } from '../contexts/AuthContext'
@@ -68,7 +69,9 @@ export function AccountGrowPage() {
                 <div className="min-w-0">
                   <h2 className="text-2xl font-medium text-[#3B302A]">החדר של {room.names}</h2>
                   <span className="mt-2 inline-block rounded-full bg-[#F5EDE4] px-3 py-1 text-[11px] text-[#5F554C] sm:text-xs">
-                    חבילת {packageThemeName(room)} · החבילה הנוכחית
+                    {[`חבילת ${packageThemeName(room)}`, displayColorScaleName(room.entry.colorPreference || ''), 'החבילה הנוכחית']
+                      .filter(Boolean)
+                      .join(' · ')}
                   </span>
                   <p className="mt-2 text-sm text-[#5F554C]">הותאמה {ageLabel(room.entry.age)}</p>
                   <span className="mt-3 inline-block rounded-full bg-[#F7E9DC] px-5 py-1.5 text-lg font-medium text-[#3B302A]">

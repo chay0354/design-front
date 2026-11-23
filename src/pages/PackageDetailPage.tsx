@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { displayColorScaleName } from '../data/colorScales'
 import { visibleShoppingCategories, type ThemePackage } from '../data/themePackages'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -180,6 +181,7 @@ export function PackageDetailPage() {
 
   const title = kids.length > 0 ? `החדר של ${formatRoomNames(kids)}` : pkg.name
   const themeName = entry?.theme || pkg.name
+  const scaleName = displayColorScaleName(colorPreference)
   const paletteColors =
     colorScale.colors.length > 0
       ? colorScale.colors.map((color) => ({ key: `${color.roleLabel}-${color.name}`, hex: color.hex, label: color.name, code: color.code }))
@@ -212,6 +214,7 @@ export function PackageDetailPage() {
           </h1>
           <p className="mx-auto mt-3 inline-block rounded-full bg-[#EFE6DE] px-5 py-1.5 text-[17px] font-medium text-[#3B302A] sm:text-xl">
             חבילת {themeName}
+            {scaleName ? ` · ${scaleName}` : ''}
           </p>
           {archivedEntry?.archivedAt && (
             <p className="mt-2 inline-block rounded-full bg-[#F1E8DF] px-3 py-1 text-xs text-[#7A6150]">
@@ -252,7 +255,7 @@ export function PackageDetailPage() {
 
         <section className={`${CARD} px-5 py-4`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-medium text-[#3B302A]">{colorPreference ? colorScale.name : 'פלטת הגוונים'}</h2>
+            <h2 className="text-xl font-medium text-[#3B302A]">{scaleName || 'פלטת הגוונים'}</h2>
             <div className="flex flex-wrap gap-2.5">
               {paletteColors.map((color) => (
                 <span

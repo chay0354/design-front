@@ -22,6 +22,7 @@ import { Header } from '../components/Header'
 import { PageLoading } from '../components/PageLoading'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
+import { displayColorScaleName } from '../data/colorScales'
 import type { ThemePackage } from '../data/themePackages'
 import { DEFAULT_APPLICATION_GUIDES, useApplicationGuides, useGuideVideos, videoEmbed } from '../utils/guideVideos'
 import { getChildPackageEntries, getPackageStatusForChild, hasPurchased, type ChildInfo } from '../utils/auth'
@@ -650,7 +651,7 @@ export function AccountPage() {
                   <RoomCard
                     key={room.key}
                     title={`החדר של ${room.names}`}
-                    theme={packageThemeName(room)}
+                    theme={[packageThemeName(room), displayColorScaleName(room.entry.colorPreference || '')].filter(Boolean).join(' · ')}
                     imageUrl={imageFor(room.pkg)}
                     colors={colorsFor(room.pkg, room.entry)}
                     note={roomNote(room)}

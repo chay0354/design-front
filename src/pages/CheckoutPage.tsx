@@ -14,6 +14,7 @@ import { PageLoading } from '../components/PageLoading'
 import { useAuth } from '../contexts/AuthContext'
 
 import { useData } from '../contexts/DataContext'
+import { displayColorScaleName } from '../data/colorScales'
 
 import {
 
@@ -900,6 +901,7 @@ export function CheckoutPage() {
                     gender: childGender,
                     age: childAge,
                     theme: childTheme,
+                    colorPreference: childColorPreference,
                     wallDesignOption: primary?.wallDesignOption || searchParams.get('wallDesignOption') || '',
                     pkgName: mainPkg.name,
                     price: linePrice(0, ROOM_PACKAGE_PRICE),
@@ -910,6 +912,7 @@ export function CheckoutPage() {
                     gender: order.child.gender,
                     age: order.child.age,
                     theme: order.child.theme,
+                    colorPreference: order.child.colorPreference,
                     wallDesignOption: order.child.wallDesignOption,
                     pkgName: order.pkg?.name || '',
                     price: linePrice(index + 1, order.price),
@@ -928,8 +931,12 @@ export function CheckoutPage() {
                         </p>
                         <p className="text-xs text-[#6F6A64]">
                           {rooms
-                            ? `${card.theme}${card.wallDesignOption ? ` · קיר: ${wallDesignLabel(card.wallDesignOption)}` : ''}`
-                            : `${genderLabel(card.gender)} • גיל ${card.age} • ${card.theme}`}
+                            ? [card.theme, displayColorScaleName(card.colorPreference), card.wallDesignOption ? `קיר: ${wallDesignLabel(card.wallDesignOption)}` : '']
+                                .filter(Boolean)
+                                .join(' · ')
+                            : [genderLabel(card.gender), `גיל ${card.age}`, card.theme, displayColorScaleName(card.colorPreference)]
+                                .filter(Boolean)
+                                .join(' • ')}
                         </p>
                       </div>
                     </div>

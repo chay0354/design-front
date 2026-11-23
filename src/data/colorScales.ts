@@ -167,6 +167,11 @@ export function getQuestionnaireLabelForScale(scale: ColorScale): string {
   return COLOR_SCALE_QUESTIONNAIRE[scale.id]?.label ?? scale.name
 }
 
+/** The name the customer picked, without the emoji used on the questionnaire cards. */
+export function displayColorScaleName(preference: string): string {
+  return preference.replace(/[\s\uFE0F]*\p{Extended_Pictographic}\uFE0F?/gu, '').trim()
+}
+
 export function getQuestionnaireOptionsForScales(scales: ColorScale[]) {
   return scales.map((scale) => {
     const meta = COLOR_SCALE_QUESTIONNAIRE[scale.id]

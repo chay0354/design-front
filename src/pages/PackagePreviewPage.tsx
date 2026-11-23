@@ -11,6 +11,7 @@ import {
   getAgeGroupIdForAge,
   type CatalogGender,
 } from '../data/packageCatalog'
+import { displayColorScaleName } from '../data/colorScales'
 import type { ThemePackage } from '../data/themePackages'
 import {
   INSTALLMENT_COUNT,
@@ -77,6 +78,7 @@ function ChildPackageCard({
   const roomImage = design.teaser || design.hero || content?.heroImage || pkg.heroImage
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
   const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name
+  const scaleName = displayColorScaleName(colorPreference)
   const styleDescription =
     'כאן תמצאו סקיצה מלאה המותאמת לגיל, להעדפות ולסגנון שלכם. הקונספט העיצובי, כיוון העיצוב והנחיות הסטיילינג נבנו במיוחד כדי ליצור חדר חמים, רגוע ומלא קסם עבור ילדכם.'
 
@@ -96,9 +98,10 @@ function ChildPackageCard({
             <BrushMark className="px-8">חבילת העיצוב של {childName || 'הילד/ה'}</BrushMark>
           </h2>
           {discountLabel && <p className="mt-2 text-sm text-[#8A6A52]">{discountLabel}</p>}
-          <p className="mt-3 flex items-center justify-center gap-2.5 text-[16px] text-[#3C3834]">
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-2.5 text-[16px] text-[#3C3834]">
             <Sparkle className="h-3 w-3 text-[#C9A991]" />
             {packageTitle} לגילאי {ageGroup.range[0]}–{ageGroup.range[1]}
+            {scaleName ? ` · ${scaleName}` : ''}
             <Sparkle className="h-3 w-3 text-[#C9A991]" />
           </p>
         </div>
@@ -107,7 +110,7 @@ function ChildPackageCard({
           <div className="grid items-start gap-4 sm:grid-cols-2 sm:gap-4">
             <div className="flex flex-col items-center justify-center rounded-xl bg-white px-3 py-4 text-center">
               <p className="text-[13px] text-[#5A544E]">סקלת הגוונים שנבחרה</p>
-              <p className="text-[22px] leading-tight text-[#2F2B28]">{colorScale.name}</p>
+              <p className="text-[22px] leading-tight text-[#2F2B28]">{scaleName || colorScale.name}</p>
               <div className="mt-3 flex items-end justify-center gap-2">
                 {colorScale.colors.slice(0, 6).map((color) => (
                   <div
