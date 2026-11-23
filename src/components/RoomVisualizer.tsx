@@ -112,7 +112,7 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
   }
 
   return (
-    <section className={`${cardClassName.replace('bg-white', '')} bg-[#FCF8F4] px-4 py-5 sm:px-6`}>
+    <section className={`relative overflow-hidden ${cardClassName.replace('bg-white', '')} bg-[#FCF8F4] px-4 py-5 sm:px-6`}>
       <div className="text-center">
         <h2 className="flex items-center justify-center gap-2 text-xl font-semibold text-[#3B302A]">
           ראו את החדר שלכם מתעורר לחיים
@@ -122,17 +122,6 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
           העלו תמונה של החדר שלכם וגלו איך העיצוב שבחרתם יכול להשתלב בו בעזרת בינה מלאכותית.
         </p>
       </div>
-
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          void onFile(e.target.files?.[0])
-          e.target.value = ''
-        }}
-      />
 
       {result ? (
         <div className="mt-4">
@@ -173,17 +162,23 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
             <Camera className="h-10 w-10 shrink-0 text-[#5F4B3B]" strokeWidth={1.2} />
           </div>
 
-          <button
-            type="button"
-            onClick={pickPhoto}
-            disabled={generating}
-            className="relative mx-auto mt-4 block w-full max-w-sm overflow-hidden rounded-2xl border-[1.5px] border-dashed border-[#C9B4A1] bg-white text-center hover:bg-[#FDFAF7] disabled:cursor-wait"
-          >
+          <label className="relative mx-auto mt-4 block w-full max-w-sm cursor-pointer overflow-hidden rounded-2xl border-[1.5px] border-dashed border-[#C9B4A1] bg-white text-center hover:bg-[#FDFAF7]">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              disabled={generating}
+              className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              onChange={(e) => {
+                void onFile(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
             {photo ? (
               <>
                 <img src={photo} alt="תמונת החדר שהעליתם" className="aspect-[4/3] w-full object-cover" />
                 {generating ? (
-                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/75 px-4 text-[13px] text-[#3B302A]">
+                  <span className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-white/75 px-4 text-[13px] text-[#3B302A]">
                     <Loader2 className="h-7 w-7 animate-spin text-[#9C7458]" />
                     מלבישים את חבילת העיצוב על החדר שלכם…
                     <span className="text-[11px] text-[#7A7068]">זה יכול לקחת עד דקה</span>
@@ -200,7 +195,7 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
                 <span className="text-[14px] text-[#3B302A]">העלאת תמונת החדר</span>
               </span>
             )}
-          </button>
+          </label>
 
           <button
             type="button"

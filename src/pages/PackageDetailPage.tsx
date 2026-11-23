@@ -277,10 +277,10 @@ export function PackageDetailPage() {
           )}
         </section>
 
-        {content.heroImage && (
+        {(content.heroImage || content.galleryImages[0]) && (
           <RoomVisualizer
             packageId={pkg.id}
-            packageImage={content.heroImage}
+            packageImage={content.heroImage || content.galleryImages[0]}
             roomKey={room?.key ?? orderItemId ?? ''}
             cardClassName={CARD}
           />
