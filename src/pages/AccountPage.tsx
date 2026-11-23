@@ -293,12 +293,14 @@ function ActionCard({
   text,
   icon,
   badge,
+  oneLine = false,
   onClick,
 }: {
   title: string
   text: string
   icon: ReactNode
   badge?: string
+  oneLine?: boolean
   onClick: () => void
 }) {
   return (
@@ -310,7 +312,13 @@ function ActionCard({
       <span className="flex w-16 shrink-0 justify-center text-[#9C7E66] sm:w-20">{icon}</span>
       <span className="h-14 w-px shrink-0 bg-[#E6DACE]" aria-hidden="true" />
       <span className="min-w-0 flex-1">
-        <span className="block text-xl font-medium text-[#3B302A] sm:text-2xl">{title}</span>
+        <span
+          className={`block font-medium text-[#3B302A] ${
+            oneLine ? 'whitespace-nowrap text-[17px] sm:text-2xl' : 'text-xl sm:text-2xl'
+          }`}
+        >
+          {title}
+        </span>
         <span className="mt-1 block text-[13px] leading-6 text-[#5F554C] sm:text-sm">{text}</span>
         {badge && (
           <span className="mt-2 inline-block max-w-full whitespace-nowrap rounded-full bg-[#EFE4D9] px-4 py-1 text-[13px] text-[#7A6150]">
@@ -681,6 +689,7 @@ export function AccountPage() {
             )}
             <ActionCard
               title="מעצבים חדר נוסף"
+              oneLine
               text="גם לילד נוסף מגיע חדר מלא קסם. בחרו חבילת עיצוב שמתאימה בדיוק לו."
               icon={<DoorOpen className="h-12 w-12" strokeWidth={1.1} />}
               badge={hasAnything ? '20% הנחה על חדר נוסף' : undefined}
