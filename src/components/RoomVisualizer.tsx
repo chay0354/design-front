@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Camera, CloudUpload, Download, Info, Loader2, RefreshCw, WandSparkles } from 'lucide-react'
 import { apiFetch } from '../utils/backend'
 
@@ -45,19 +45,6 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
   const [result, setResult] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-    const params = new URLSearchParams({ packageId, ...(roomKey ? { roomKey } : {}) })
-    apiFetch<{ visualization: { imageUrl: string } | null }>(`/api/rooms/visualizations/latest?${params}`)
-      .then((data) => {
-        if (!cancelled && data.visualization) setResult(data.visualization.imageUrl)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [packageId, roomKey])
 
   const pickPhoto = () => inputRef.current?.click()
 
@@ -108,7 +95,7 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
         }
       }
       if (dropped && Date.now() - startedAt > 20000) {
-        setError('החיבור נותק לפני שהתמונה חזרה. רעננו את העמוד — אם ההדמיה הושלמה היא תופיע כאן.')
+        setError('החיבור נותק לפני שהתמונה חזרה. נסו שוב.')
       } else {
         setError(message && !dropped ? message : 'לא הצלחנו ליצור את ההדמיה, נסו שוב')
       }
