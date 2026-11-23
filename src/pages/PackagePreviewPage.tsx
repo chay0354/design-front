@@ -1,10 +1,8 @@
-import { visibleShoppingCategories } from '../data/themePackages'
 import { useLayoutEffect } from 'react'
 import { Armchair, ArrowLeft, CheckCircle2, Lock, createLucideIcon } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BrushMark, Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
-import { ProductImage } from '../components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { resolveDesignPackageImagesForSelection } from '../data/designPackageImages'
@@ -34,20 +32,7 @@ const Rug = createLucideIcon('rug', [
   ['path', { d: 'M20 8.5h2M20 10.5h2M20 12.5h2M20 14.5h2M20 16h2', key: 'fringe-left' }],
 ])
 
-const PLACEHOLDER = '/assets/lock-preview.png'
 const giftIcon = '/assets/gift-icon.png'
-
-function CollageTile({ src }: { src: string }) {
-  return (
-    <div className="aspect-square overflow-hidden bg-[#F7F4F0]">
-      {src.startsWith('http') ? (
-        <ProductImage src={src} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <img src={src} alt="" className="h-full w-full object-cover" />
-      )}
-    </div>
-  )
-}
 
 function TeaserGrid({ src }: { src: string }) {
   return (
@@ -57,37 +42,6 @@ function TeaserGrid({ src }: { src: string }) {
       className="aspect-square w-full object-cover lg:object-contain max-lg:h-[46svh] max-lg:aspect-auto"
     />
   )
-}
-
-function collectCollageImages(
-  heroImage: string,
-  galleryImages: string[],
-  shoppingCategories: ThemePackage['shoppingCategories'],
-): string[] {
-  const seen = new Set<string>()
-  const images: string[] = []
-
-  for (const url of [heroImage, ...galleryImages]) {
-    if (url && !seen.has(url)) {
-      seen.add(url)
-      images.push(url)
-    }
-  }
-
-  for (const category of shoppingCategories) {
-    for (const item of category.items) {
-      if (item.image && item.image.startsWith('http') && !seen.has(item.image)) {
-        seen.add(item.image)
-        images.push(item.image)
-      }
-    }
-  }
-
-  while (images.length < 9) {
-    images.push(PLACEHOLDER)
-  }
-
-  return images.slice(0, 9)
 }
 
 function ChildPackageCard({
@@ -120,23 +74,17 @@ function ChildPackageCard({
   const content = getPackageContent(pkg.id)
   const colorScale = getColorScaleForPreference(colorPreference)
   const design = resolveDesignPackageImagesForSelection(gender, age, theme, colorScale.id)
-  const collage = collectCollageImages(
-    content?.heroImage || pkg.heroImage,
-    content?.galleryImages || pkg.galleryImages,
-    content?.shoppingCategories || visibleShoppingCategories(pkg.shoppingCategories),
-  )
+  const roomImage = design.teaser || design.hero || content?.heroImage || pkg.heroImage
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
   const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name
   const styleDescription =
     'כאן תמצאו סקיצה מלאה המותאמת לגיל, להעדפות ולסגנון שלכם. הקונספט העיצובי, כיוון העיצוב והנחיות הסטיילינג נבנו במיוחד כדי ליצור חדר חמים, רגוע ומלא קסם עבור ילדכם.'
 
-  const preview = design.teaser ? (
-    <TeaserGrid src={design.teaser} />
+  const preview = roomImage ? (
+    <TeaserGrid src={roomImage} />
   ) : (
-    <div className="grid grid-cols-3 gap-1" dir="ltr">
-      {collage.map((src, index) => (
-        <CollageTile key={`${src}-${index}`} src={src} />
-      ))}
+    <div className="flex aspect-square items-center justify-center bg-[#F7F4F0] px-6 text-center text-sm text-[#B5A99A]">
+      תמונת החבילה תתווסף בקרוב
     </div>
   )
 
