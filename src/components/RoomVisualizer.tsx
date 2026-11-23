@@ -59,8 +59,8 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
     }
   }
 
-  const loadLatest = async () => {
-    const params = new URLSearchParams({ packageId, ...(roomKey ? { roomKey } : {}) })
+  const loadLatest = async (since?: string) => {
+    const params = new URLSearchParams({ packageId, ...(roomKey ? { roomKey } : {}), ...(since ? { since } : {}) })
     const data = await apiFetch<{ visualization: { imageUrl: string } | null }>(
       `/api/rooms/visualizations/latest?${params}`,
     )
@@ -71,7 +71,7 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
     if (!photo) return
     setGenerating(true)
     setError('')
-    const startedAt = Date.now()
+    const startedAt = new Date().toISOString()
     try {
       const data = await apiFetch<{ imageUrl: string }>('/api/rooms/visualize', {
         body: { packageId, packageImageUrl: packageImage, roomKey, image: photo },
@@ -84,7 +84,7 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
         for (let attempt = 0; attempt < 4; attempt += 1) {
           await new Promise((resolve) => setTimeout(resolve, 3000))
           try {
-            const saved = await loadLatest()
+            const saved = await loadLatest(startedAt)
             if (saved) {
               setResult(saved)
               return
@@ -94,7 +94,7 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
           }
         }
       }
-      if (dropped && Date.now() - startedAt > 20000) {
+      if (dropped && Date.now() - Date.parse(startedAt) > 20000) {
         setError('החיבור נותק לפני שהתמונה חזרה. נסו שוב.')
       } else {
         setError(message && !dropped ? message : 'לא הצלחנו ליצור את ההדמיה, נסו שוב')
