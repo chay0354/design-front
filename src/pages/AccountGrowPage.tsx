@@ -65,26 +65,30 @@ export function AccountGrowPage() {
               key={room.key}
               className="rounded-[26px] border border-[#EFE6DC] bg-white p-4 shadow-[0_6px_24px_rgba(120,95,70,0.07)] sm:p-5"
             >
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4">
-                <div className="min-w-0">
-                  <h2 className="text-2xl font-medium text-[#3B302A]">החדר של {room.names}</h2>
-                  <span className="mt-2 inline-block rounded-full bg-[#F5EDE4] px-3 py-1 text-[11px] text-[#5F554C] sm:text-xs">
-                    {[`חבילת ${packageThemeName(room)}`, displayColorScaleName(room.entry.colorPreference || ''), 'החבילה הנוכחית']
+              <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-stretch gap-3 sm:gap-4">
+                <div className="flex min-w-0 flex-col items-center justify-center text-center">
+                  <h2 className="text-[1.35rem] font-medium leading-tight text-balance text-[#3B302A] sm:text-2xl">
+                    החדר של {room.names}
+                  </h2>
+                  <span className="mt-2 whitespace-nowrap rounded-full bg-[#F5EDE4] px-3 py-1 text-[11px] text-[#5F554C] sm:text-xs">
+                    חבילת {packageThemeName(room)} · החבילה הנוכחית
+                  </span>
+                  <p className="mt-2 text-[13px] text-[#5F554C] sm:text-sm">
+                    {[`הותאמה ${ageLabel(room.entry.age)}`, displayColorScaleName(room.entry.colorPreference || '')]
                       .filter(Boolean)
                       .join(' · ')}
-                  </span>
-                  <p className="mt-2 text-sm text-[#5F554C]">הותאמה {ageLabel(room.entry.age)}</p>
-                  <span className="mt-3 inline-block rounded-full bg-[#F7E9DC] px-5 py-1.5 text-lg font-medium text-[#3B302A]">
+                  </p>
+                  <span className="mt-3 rounded-full bg-[#F7E9DC] px-6 py-1.5 text-lg font-medium text-[#3B302A]">
                     20% הנחה
                   </span>
-                  <p className="mt-1 text-[13px] text-[#5F554C]">
+                  <p className="mt-1 whitespace-nowrap text-[12px] text-[#5F554C] sm:text-[13px]">
                     להתאמת החדר למי ש{kidsPronoun(room.kids, { boy: 'הוא', girl: 'היא', many: 'הם' })} היום
                   </p>
                 </div>
                 <img
                   src={packagePreviewImage(getPackageContent(room.pkg.id))}
                   alt=""
-                  className="aspect-[5/4] w-full rounded-2xl object-cover"
+                  className="h-full min-h-[220px] w-full rounded-2xl object-cover"
                 />
               </div>
               <button
