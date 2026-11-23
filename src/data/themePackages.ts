@@ -33,10 +33,19 @@ export interface ThemePackage {
   shoppingCategories: ThemeShoppingCategory[]
 }
 
-/** Shopping list as customers see it: hidden items and empty categories removed. */
+/** Spreadsheet section labels for a color scale, not products. The chosen scale stays in the package header. */
+function isScaleMarker(name: string): boolean {
+  return /לסקל/.test(name)
+}
+
+/** Shopping list as customers see it: hidden items, scale labels, and empty categories removed. */
 export function visibleShoppingCategories(categories: ThemeShoppingCategory[]): ThemeShoppingCategory[] {
   return categories
-    .map((category) => ({ ...category, items: category.items.filter((item) => !item.hidden) }))
+    .filter((category) => !isScaleMarker(category.category))
+    .map((category) => ({
+      ...category,
+      items: category.items.filter((item) => !item.hidden && !isScaleMarker(item.name)),
+    }))
     .filter((category) => category.items.length > 0)
 }
 
