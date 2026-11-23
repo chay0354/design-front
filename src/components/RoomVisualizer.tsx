@@ -149,22 +149,11 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
 
       {result ? (
         <div className="mt-4">
-          <div className={`grid gap-2.5 ${photo ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {photo && (
-              <figure className="overflow-hidden rounded-2xl bg-white">
-                <img src={photo} alt="החדר לפני" className="aspect-[3/4] w-full object-cover sm:aspect-[4/3]" />
-                <figcaption className="py-1.5 text-center text-[12px] text-[#5F554C]">החדר היום</figcaption>
-              </figure>
-            )}
-            <figure className="overflow-hidden rounded-2xl bg-white">
-              <img
-                src={result}
-                alt="הדמיית החדר עם חבילת העיצוב"
-                className={`w-full object-cover ${photo ? 'aspect-[3/4] sm:aspect-[4/3]' : ''}`}
-              />
-              <figcaption className="py-1.5 text-center text-[12px] text-[#5F554C]">עם חבילת העיצוב</figcaption>
-            </figure>
-          </div>
+          <img
+            src={result}
+            alt="הדמיית החדר עם חבילת העיצוב"
+            className="max-h-[70vh] w-full rounded-2xl object-contain"
+          />
           <div className="mt-3 flex flex-wrap justify-center gap-2.5">
             <a
               href={`${result}${result.includes('?') ? '&' : '?'}download=petite-dreams-room.png`}
