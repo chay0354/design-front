@@ -307,9 +307,9 @@ function ActionCard({
     <button
       type="button"
       onClick={onClick}
-      className={`${CARD} flex w-full items-center gap-4 px-4 py-5 text-right transition-colors hover:bg-[#FDFAF7] sm:px-6`}
+      className={`${CARD} flex w-full items-center gap-3 px-4 py-5 text-right transition-colors hover:bg-[#FDFAF7] sm:gap-4 sm:px-6`}
     >
-      <span className="flex w-16 shrink-0 justify-center text-[#9C7E66] sm:w-20">{icon}</span>
+      <span className="flex w-14 shrink-0 justify-center text-[#9C7E66] sm:w-20">{icon}</span>
       <span className="h-14 w-px shrink-0 bg-[#E6DACE]" aria-hidden="true" />
       <span className="min-w-0 flex-1">
         <span
@@ -321,7 +321,7 @@ function ActionCard({
         </span>
         <span className="mt-1 block text-[13px] leading-6 text-[#5F554C] sm:text-sm">{text}</span>
         {badge && (
-          <span className="mt-2 inline-block max-w-full whitespace-nowrap rounded-full bg-[#EFE4D9] px-4 py-1 text-[13px] text-[#7A6150]">
+          <span className="mt-2 inline-block max-w-full whitespace-nowrap rounded-full bg-[#EFE4D9] px-2.5 py-1 text-[12px] leading-5 text-[#7A6150]">
             {badge}
           </span>
         )}
