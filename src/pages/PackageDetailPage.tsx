@@ -378,22 +378,20 @@ export function PackageDetailPage() {
 
         <p className="text-center text-[11px] tracking-[0.25em] text-[#B5A99A]">PETITE DREAMS · MY ROOM</p>
 
-        <section className={`${CARD} px-4 py-4`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 text-lg font-medium text-[#3B302A]">
-              <Headphones className="h-5 w-5 text-[#8A6A52]" strokeWidth={1.4} />
-              צריכים עזרה ביישום?
-            </h2>
-            <button
-              type="button"
-              onClick={() => navigate('/account#toolbox')}
-              className="inline-flex items-center gap-2 rounded-full bg-[#8A6A52] px-4 py-2 text-[13px] text-white hover:opacity-90"
-            >
-              <Wrench className="h-4 w-4" strokeWidth={1.5} />
-              קבלו הכלים לביצוע מושלם
-            </button>
-          </div>
-          <p className="mt-2 text-[12px] leading-5 text-[#5F554C]">
+        <section className={`${CARD} px-4 py-5 text-center`}>
+          <h2 className="flex items-center justify-center gap-2 text-lg font-medium text-[#3B302A]">
+            צריכים עזרה ביישום?
+            <Headphones className="h-5 w-5 text-[#8A6A52]" strokeWidth={1.4} />
+          </h2>
+          <button
+            type="button"
+            onClick={() => navigate('/tips')}
+            className="mx-auto mt-3 inline-flex items-center gap-2 rounded-full bg-[#8A6A52] px-5 py-2.5 text-[13px] text-white hover:opacity-90"
+          >
+            קבלו הכלים לביצוע מושלם
+            <Wrench className="h-4 w-4" strokeWidth={1.5} />
+          </button>
+          <p className="mx-auto mt-3 max-w-md text-[12px] leading-5 text-[#5F554C]">
             הקישור לא עובד או שהפריט אזל? העתיקו את תמונת המוצר והדביקו אותה בחיפוש לפי תמונה ב-AliExpress, כדי למצוא
             את הפריט או חלופה דומה.
           </p>
