@@ -18,6 +18,7 @@ import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { PageLoading } from '../components/PageLoading'
 import { ProductImage } from '../components/ProductImage'
+import { RoomVisualizer } from '../components/RoomVisualizer'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { hasPurchased } from '../utils/auth'
@@ -204,8 +205,14 @@ export function PackageDetailPage() {
         </button>
 
         <header className="text-center">
-          <h1 className="text-[1.9rem] font-medium leading-tight text-[#3B302A] sm:text-4xl">{title}</h1>
-          <p className="mt-1 text-base text-[#5F554C] sm:text-lg">חבילת {themeName}</p>
+          <h1 className="flex items-center justify-center gap-2.5 text-[1.9rem] font-medium leading-tight text-[#3B302A] sm:gap-3 sm:text-4xl">
+            <Sparkle className="h-3.5 w-3.5 shrink-0 text-[#C9A991] sm:h-4 sm:w-4" />
+            <span className="min-w-0">{title}</span>
+            <Sparkle className="h-3.5 w-3.5 shrink-0 text-[#C9A991] sm:h-4 sm:w-4" />
+          </h1>
+          <p className="mx-auto mt-3 inline-block rounded-full bg-[#EFE6DE] px-5 py-1.5 text-[17px] font-medium text-[#3B302A] sm:text-xl">
+            חבילת {themeName}
+          </p>
           {archivedEntry?.archivedAt && (
             <p className="mt-2 inline-block rounded-full bg-[#F1E8DF] px-3 py-1 text-xs text-[#7A6150]">
               חבילה מהארכיון · נרכשה ב־{new Date(archivedEntry.purchaseDate).toLocaleDateString('he-IL')}
@@ -266,6 +273,15 @@ export function PackageDetailPage() {
             </p>
           )}
         </section>
+
+        {content.heroImage && (
+          <RoomVisualizer
+            packageId={pkg.id}
+            packageImage={content.heroImage}
+            roomKey={room?.key ?? orderItemId ?? ''}
+            cardClassName={CARD}
+          />
+        )}
 
         <section className={`${CARD} px-4 py-5 sm:px-5`}>
           <div className="mb-4 text-center">

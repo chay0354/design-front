@@ -734,6 +734,7 @@ function ChoiceRadio({ selected }: { selected: boolean }) {
 
 function childAgeLabel(child: RoomChild) {
   const who = child.gender === 'girl' ? 'בת' : 'בן'
+  if (child.age === 0) return `${who} עד שנה`
   if (child.age === 1) return `${who} שנה`
   if (child.age === 2) return `${who} שנתיים`
   return `${who} ${child.age}`
@@ -1086,18 +1087,18 @@ function ChildStep({
       <p className="mb-2 text-center text-[#4A4540]">באיזה גיל?</p>
       <div className="mb-4 text-center">
         <div className="text-5xl font-light text-[#7E8B74]">{child.age}</div>
-        <div className="text-sm text-[#8A847C]">שנים</div>
+        <div className="text-sm text-[#8A847C]">{child.age === 0 ? 'עד שנה' : 'שנים'}</div>
       </div>
       <div dir="ltr">
         <Slider
           value={[child.age]}
           onValueChange={(value) => onChange({ age: value[0] })}
-          min={1}
+          min={0}
           max={12}
           step={1}
         />
         <div className="mt-2 flex justify-between text-sm text-[#8A847C]">
-          <span>1</span>
+          <span>0</span>
           <span>12</span>
         </div>
       </div>

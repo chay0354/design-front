@@ -312,7 +312,7 @@ function ActionCard({
         <span className="block text-xl font-medium text-[#3B302A] sm:text-2xl">{title}</span>
         <span className="mt-1 block text-[13px] leading-6 text-[#5F554C] sm:text-sm">{text}</span>
         {badge && (
-          <span className="mt-2 inline-block rounded-full bg-[#EFE4D9] px-4 py-1 text-[13px] text-[#7A6150]">
+          <span className="mt-2 inline-block max-w-full whitespace-nowrap rounded-full bg-[#EFE4D9] px-4 py-1 text-[13px] text-[#7A6150]">
             {badge}
           </span>
         )}
@@ -596,9 +596,15 @@ export function AccountPage() {
         ) : (
           <>
             <section className="relative text-center">
-              <h1 className="text-[2rem] font-medium leading-tight text-[#3B302A] sm:text-4xl">החדרים שלי</h1>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#5F554C] sm:text-base">
-                כל חבילות העיצוב שרכשתם במקום אחד, כולל טיפים וכל מה שצריך כדי ליישם אותן.
+              <h1 className="flex items-center justify-center gap-2.5 text-[2rem] font-medium leading-tight text-[#3B302A] sm:gap-3 sm:text-4xl">
+                <Sparkle className="h-3.5 w-3.5 shrink-0 text-[#C9A991] sm:h-4 sm:w-4" />
+                <span>החדרים שלי</span>
+                <Sparkle className="h-3.5 w-3.5 shrink-0 text-[#C9A991] sm:h-4 sm:w-4" />
+              </h1>
+              <p className="mx-auto mt-3 inline-block max-w-md rounded-2xl bg-[#EFE6DE] px-5 py-2.5 text-[15px] font-medium leading-6 text-[#3B302A] sm:text-base">
+                כל חבילות העיצוב שרכשתם במקום אחד,
+                <br />
+                כולל טיפים וכל מה שצריך כדי ליישם אותן.
               </p>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:absolute sm:top-1 sm:left-0 sm:mt-0 sm:flex-col sm:items-end">
                 {rooms.length > 0 && (
