@@ -72,17 +72,46 @@ export function RoomVisualizer({ packageId, packageImage, roomKey = '', cardClas
     }
   }
 
+  const loadLatest = async () => {
+    const params = new URLSearchParams({ packageId, ...(roomKey ? { roomKey } : {}) })
+    const data = await apiFetch<{ visualization: { imageUrl: string } | null }>(
+      `/api/rooms/visualizations/latest?${params}`,
+    )
+    return data.visualization?.imageUrl ?? null
+  }
+
   const generate = async () => {
     if (!photo) return
     setGenerating(true)
     setError('')
+    const startedAt = Date.now()
     try {
       const data = await apiFetch<{ imageUrl: string }>('/api/rooms/visualize', {
         body: { packageId, packageImageUrl: packageImage, roomKey, image: photo },
       })
       setResult(data.imageUrl)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'לא הצלחנו ליצור את ההדמיה, נסו שוב')
+      const message = err instanceof Error ? err.message : ''
+      const dropped = /load failed|failed to fetch|networkerror|החיבור/i.test(message)
+      if (dropped) {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 3000))
+          try {
+            const saved = await loadLatest()
+            if (saved) {
+              setResult(saved)
+              return
+            }
+          } catch {
+            // The result request can fail while the image is still being saved.
+          }
+        }
+      }
+      if (dropped && Date.now() - startedAt > 20000) {
+        setError('החיבור נותק לפני שהתמונה חזרה. רעננו את העמוד — אם ההדמיה הושלמה היא תופיע כאן.')
+      } else {
+        setError(message && !dropped ? message : 'לא הצלחנו ליצור את ההדמיה, נסו שוב')
+      }
     } finally {
       setGenerating(false)
     }
