@@ -1,81 +1,64 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { OrderRoomRequest } from '../contexts/AuthContext'
 import { apiFetch, ApiError } from '../utils/backend'
 import { getActiveReferral, getPendingVoucher, peekQuestionnaireSessionId, setPendingVoucher, trackQuestionnaire } from '../utils/tracking'
-
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-
-import { Check, CreditCard, Gift, Lock, ShoppingBag, Tag, X } from 'lucide-react'
-
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  CircleCheck,
+  CreditCard,
+  Gift,
+  House,
+  Infinity as InfinityIcon,
+  Lock,
+  Mail,
+  ReceiptText,
+  Ticket,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { Header } from '../components/Header'
-
 import { PageLoading } from '../components/PageLoading'
-
 import { useAuth } from '../contexts/AuthContext'
-
 import { useData } from '../contexts/DataContext'
 import { displayColorScaleName } from '../data/colorScales'
-
+import { packagePreviewImage } from '../utils/rooms'
 import {
-
   formatRoomNames,
-
-  genderLabel,
-
   parseRoomsParam,
-
   INSTALLMENT_COUNT,
   ROOM_PACKAGE_PRICE,
-  SHOW_PACKAGE_PRICE,
   installmentAmount,
   roomDesignProfile,
   roomOrderMeta,
   roomPackagePrice,
   getAgeGroupIdForAge,
-
   type QuestionnaireChild,
-
-  wallDesignLabel,
-
 } from '../utils/questionnaire'
 
-function packageEmoji(theme: string) {
-
-  if (theme.includes('חיות')) return '🦁'
-
-  if (theme.includes('הרפתקאות')) return '⛺'
-
-  if (theme.includes('ים')) return '🚢'
-
-  if (theme.includes('תחבורה')) return '🚗'
-
-  return '✨'
-
-}
-
-
+const SAGE = '#8A917D'
+const CARD = 'rounded-[18px] border border-[#EEE6DC] bg-white'
+const INPUT =
+  'w-full rounded-[10px] border border-[#E4DBD0] bg-white px-3.5 py-3 text-[15px] text-[#3B342E] placeholder:text-[#B3A99D] focus:border-[#B9AC9C] focus:outline-none'
 
 function formatCardNumber(value: string) {
-
-  const digits = value.replace(/\s+/g, '').replace(/\D/g, '').slice(0, 16)
-
+  const digits = value.replace(/\D/g, '').slice(0, 16)
   return digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim()
-
 }
-
-
 
 function formatExpiry(value: string) {
-
   const digits = value.replace(/\D/g, '').slice(0, 4)
-
   if (digits.length <= 2) return digits
-
   return `${digits.slice(0, 2)}/${digits.slice(2)}`
-
 }
 
-
+function validPhone(value: string) {
+  const digits = value.replace(/\D/g, '')
+  return digits.length >= 9 && digits.length <= 12
+}
 
 interface CheckoutQuote {
   roomPrice: number
@@ -92,100 +75,200 @@ interface CheckoutQuote {
   voucherError: { code: string; message: string } | null
 }
 
-function CodeField({
+type Step = 1 | 2 | 3
+
+const STEPS: { id: Step; label: string }[] = [
+  { id: 1, label: 'פרטי קשר' },
+  { id: 2, label: 'פרטי תשלום' },
+  { id: 3, label: 'סיכום הזמנה' },
+]
+
+function Stepper({ step }: { step: Step }) {
+  return (
+    <ol className="mx-auto flex max-w-sm items-start justify-between px-2">
+      {STEPS.map((item, index) => {
+        const done = item.id < step
+        const active = item.id === step
+        return (
+          <li key={item.id} className="relative flex flex-1 flex-col items-center">
+            {index < STEPS.length - 1 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-[15px] right-1/2 h-px w-full"
+                style={{ backgroundColor: done ? SAGE : '#DCD3C8' }}
+              />
+            )}
+            <span
+              className="relative z-10 flex h-[30px] w-[30px] items-center justify-center rounded-full border text-[14px] font-medium"
+              style={
+                done || active
+                  ? { backgroundColor: SAGE, borderColor: SAGE, color: '#fff' }
+                  : { backgroundColor: '#fff', borderColor: '#CFC5B9', color: '#6F665D' }
+              }
+            >
+              {done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : item.id}
+            </span>
+            <span className={`mt-1.5 text-[12px] ${active ? 'text-[#3B342E]' : 'text-[#7C746B]'}`}>{item.label}</span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+function SectionHeading({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle?: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="flex items-center gap-2 text-[20px] font-semibold text-[#2F2A26]">
+        <span className="text-[#6F665D]">{icon}</span>
+        {title}
+      </h2>
+      {subtitle && <p className="mt-1 text-[14px] leading-6 text-[#5F574F]">{subtitle}</p>}
+    </div>
+  )
+}
+
+function PrimaryButton({ children, onClick, disabled, type = 'button' }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: 'button' | 'submit' }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className="flex w-full items-center justify-center gap-2 rounded-[12px] py-3.5 text-[16px] font-medium text-white shadow-[0_2px_8px_rgba(80,85,70,0.18)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      style={{ backgroundColor: SAGE }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function CardBrands() {
+  return (
+    <span dir="ltr" className="flex items-center gap-1.5">
+      <span className="rounded-[3px] border border-[#E3E3E3] bg-white px-1 text-[10px] font-extrabold italic leading-4 text-[#1A1F71]">VISA</span>
+      <span className="relative flex h-4 w-6 items-center" aria-label="Mastercard">
+        <span className="absolute left-0 h-4 w-4 rounded-full bg-[#EB001B]" />
+        <span className="absolute right-0 h-4 w-4 rounded-full bg-[#F79E1B] opacity-90" />
+      </span>
+      <CreditCard className="h-4 w-4 text-[#6F8FB7]" />
+    </span>
+  )
+}
+
+function CodeToggle({
   icon,
   label,
   placeholder,
   value,
   onChange,
   applied,
+  appliedText,
   error,
   note,
   loading,
   onApply,
   onRemove,
 }: {
-  icon: React.ReactNode
+  icon: ReactNode
   label: string
   placeholder: string
   value: string
   onChange: (value: string) => void
-  applied: string
+  applied: boolean
+  appliedText: string
   error?: string
   note?: string
   loading: boolean
   onApply: () => void
   onRemove: () => void
 }) {
-  const [open, setOpen] = useState(Boolean(value))
-  if (!open && !applied) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 text-sm text-[#8B7340] hover:underline"
-      >
-        {icon}
-        {label}
-      </button>
-    )
-  }
+  const [open, setOpen] = useState(Boolean(value) || applied)
   return (
-    <div className="rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-4">
-      <p className="mb-2 flex items-center gap-2 text-sm text-[#4A4A4A]">
-        {icon}
-        {label}
-      </p>
-      {applied ? (
-        <div className="flex items-center justify-between gap-2 rounded-sm bg-[#F8F3EC] px-3 py-2 text-sm text-[#6F6254]">
-          <span>{applied}</span>
-          <button type="button" onClick={onRemove} aria-label="הסרת הקוד" className="text-[#8B8B8B] hover:text-[#4A4A4A]">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                if (value.trim()) onApply()
-              }
-            }}
-            placeholder={placeholder}
-            dir="ltr"
-            className="min-w-0 flex-1 rounded-sm border border-[#E8DED2] bg-white px-3 py-2 text-left uppercase focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={onApply}
-            disabled={!value.trim() || loading}
-            className="rounded-sm bg-[#3F3A36] px-4 py-2 text-sm text-white hover:bg-[#2F2B28] disabled:opacity-50"
-          >
-            {loading ? 'בודקת...' : 'הפעלת הקוד'}
-          </button>
+    <div className={`${CARD} px-3.5 py-3`}>
+      <button type="button" onClick={() => setOpen((current) => !current)} className="flex w-full items-center justify-between gap-2 text-[15px] text-[#3B342E]">
+        <span className="flex items-center gap-2">
+          <span className="text-[#8A7B6B]">{icon}</span>
+          {label}
+        </span>
+        <ChevronDown className={`h-4 w-4 text-[#8A8178] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="mt-3">
+          {applied ? (
+            <div className="flex items-center gap-2 rounded-[10px] border border-[#E4DBD0] bg-[#FBF8F4] px-3 py-2.5">
+              <Check className="h-4 w-4 shrink-0" style={{ color: SAGE }} strokeWidth={2.5} />
+              <span dir="ltr" className="flex-1 text-right text-[15px] text-[#3B342E]">
+                {appliedText}
+              </span>
+              <button type="button" onClick={onRemove} aria-label="הסרת הקוד" className="text-[#8B8178] hover:text-[#3B342E]">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    if (value.trim()) onApply()
+                  }
+                }}
+                placeholder={placeholder}
+                dir="ltr"
+                className={`${INPUT} min-w-0 flex-1 py-2.5 text-left uppercase`}
+              />
+              <button
+                type="button"
+                onClick={onApply}
+                disabled={!value.trim() || loading}
+                className="shrink-0 rounded-[10px] px-4 text-[14px] text-white disabled:opacity-50"
+                style={{ backgroundColor: SAGE }}
+              >
+                {loading ? 'בודקים…' : 'החל'}
+              </button>
+            </div>
+          )}
+          {error && <p className="mt-2 text-[13px] text-[#A05A5A]">{error}</p>}
+          {note && <p className="mt-2 text-[12px] leading-5 text-[#6F665D]">{note}</p>}
         </div>
       )}
-      {error && <p className="mt-2 text-sm text-[#A05A5A]">{error}</p>}
-      {note && <p className="mt-2 text-xs text-[#6B6B6B]">{note}</p>}
+    </div>
+  )
+}
+
+function SummaryRows({ rows, total, installments }: { rows: { label: string; value: string }[]; total: number; installments: string }) {
+  return (
+    <div className="space-y-3">
+      {rows.length > 1 && (
+        <div className="space-y-1.5 px-1 text-[14px] text-[#4A433C]">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-center justify-between">
+              <span>{row.label}</span>
+              <span dir="ltr">{row.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="rounded-[12px] bg-[#F4EDE4] px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[16px] font-medium text-[#2F2A26]">סה״כ לתשלום</span>
+          <span className="text-[24px] font-semibold text-[#2F2A26]">₪{total}</span>
+        </div>
+        {installments && <p className="mt-0.5 text-[13px] text-[#6F665D]">{installments}</p>}
+      </div>
     </div>
   )
 }
 
 export function CheckoutPage() {
-
   const { packageId } = useParams()
-
   const [searchParams] = useSearchParams()
-
   const navigate = useNavigate()
-
   const { user, loading, submitOrder } = useAuth()
-
-  const { getPackageById, findMatchingPackages, loading: dataLoading } = useData()
+  const { getPackageById, getPackageContent, findMatchingPackages, loading: dataLoading } = useData()
 
   const rooms = parseRoomsParam(searchParams.get('rooms'))
 
@@ -236,39 +319,17 @@ export function CheckoutPage() {
       const fromId = getPackageById(packageId)
       if (fromId) return fromId
     }
-
     if (childGender && childAge && childTheme) {
-      return findMatchingPackages(
-        childGender as 'boy' | 'girl' | 'unisex',
-        childAge,
-        childTheme,
-        childColorPreference,
-      )[0]
+      return findMatchingPackages(childGender as 'boy' | 'girl' | 'unisex', childAge, childTheme, childColorPreference)[0]
     }
-
     if (packageId) return getPackageById(packageId)
     return undefined
-  }, [
-    packageId,
-    rooms,
-    getPackageById,
-    findMatchingPackages,
-    childGender,
-    childAge,
-    childTheme,
-    childColorPreference,
-  ])
+  }, [packageId, rooms, getPackageById, findMatchingPackages, childGender, childAge, childTheme, childColorPreference])
 
   const siblingOrders = useMemo(
     () =>
       additionalChildren.map((child, index) => {
-        const matched =
-          findMatchingPackages(
-            child.gender,
-            child.age,
-            child.theme,
-            child.colorPreference,
-          )[0] || mainPkg
+        const matched = findMatchingPackages(child.gender, child.age, child.theme, child.colorPreference)[0] || mainPkg
         return {
           child,
           pkg: matched!,
@@ -278,24 +339,18 @@ export function CheckoutPage() {
     [additionalChildren, findMatchingPackages, mainPkg],
   )
 
+  const [step, setStep] = useState<Step>(1)
+  const [completed, setCompleted] = useState<{ orderNumber: number } | null>(null)
+  const [phone, setPhone] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [contactError, setContactError] = useState('')
   const [cardNumber, setCardNumber] = useState('')
-
   const [expiry, setExpiry] = useState('')
-
   const [cvv, setCvv] = useState('')
-
-  const [fullName, setFullName] = useState('')
-
   const [acceptTerms, setAcceptTerms] = useState(false)
-
-  const [acceptPersonalUseOnly, setAcceptPersonalUseOnly] = useState(false)
-
-  const [acceptDesignModel, setAcceptDesignModel] = useState(false)
-
+  const [termsError, setTermsError] = useState('')
   const [processing, setProcessing] = useState(false)
-
   const [paymentOption, setPaymentOption] = useState<'full' | 'installments'>('installments')
-
   const [couponInput, setCouponInput] = useState('')
   const [couponCode, setCouponCode] = useState('')
   const [voucherInput, setVoucherInput] = useState(() => getPendingVoucher() || '')
@@ -308,6 +363,10 @@ export function CheckoutPage() {
   useEffect(() => {
     trackQuestionnaire('cart')
   }, [])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [step, completed])
 
   useEffect(() => {
     let cancelled = false
@@ -334,116 +393,108 @@ export function CheckoutPage() {
     }
   }, [roomCount, roomIdsKey, couponCode, voucherCode])
 
-  const couponError = couponCode ? quote?.couponError?.message : undefined
-  const voucherError = voucherCode ? quote?.voucherError?.message : undefined
-
-
-
   useEffect(() => {
-
     if (!loading && !user) {
-
       sessionStorage.setItem('intended_package', packageId || '')
-
       sessionStorage.setItem('intended_checkout_query', searchParams.toString())
-
     }
-
   }, [user, loading, packageId, searchParams])
 
+  if (loading || dataLoading) return <PageLoading />
+  if (!user) return <Navigate to="/login" replace />
 
-
-  if (loading || dataLoading) {
-
-    return <PageLoading />
-
+  if (completed) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2]">
+        <Header />
+        <main className="mx-auto max-w-md px-4 py-12 text-center">
+          <CircleCheck className="mx-auto h-16 w-16" style={{ color: '#6F7564' }} strokeWidth={1.3} />
+          <h1 className="mt-4 text-[26px] font-semibold text-[#2F2A26]">ההזמנה בוצעה בהצלחה!</h1>
+          <p className="mt-2 text-[15px] text-[#5F574F]">מספר הזמנה: #{completed.orderNumber}</p>
+          <div className={`${CARD} mt-8 flex items-center gap-3 px-4 py-4 text-right`}>
+            <Mail className="h-6 w-6 shrink-0 text-[#6F665D]" strokeWidth={1.4} />
+            <p className="min-w-0 flex-1 text-[14px] leading-6 text-[#3B342E]">
+              פרטי ההזמנה נשלחו למייל:
+              <span dir="ltr" className="block truncate text-[#5F574F]">
+                {user.email}
+              </span>
+            </p>
+          </div>
+          <div className="mt-8">
+            <PrimaryButton onClick={() => navigate('/account')}>
+              <House className="h-5 w-5" strokeWidth={1.6} />
+              כניסה לאזור האישי
+            </PrimaryButton>
+          </div>
+        </main>
+      </div>
+    )
   }
-
-
-
-  if (!user) {
-
-    return <Navigate to="/login" replace />
-
-  }
-
-
 
   if (!mainPkg) {
-
     const previewParams = new URLSearchParams()
-
     if (childName) previewParams.set('childName', childName)
-
     if (childGender) previewParams.set('gender', childGender)
-
     if (childAge) previewParams.set('age', childAge.toString())
-
     if (childTheme) previewParams.set('theme', childTheme)
-
     if (childColorPreference) previewParams.set('colorPreference', childColorPreference)
-
     const roomsParam = searchParams.get('rooms')
     if (roomsParam) previewParams.set('rooms', roomsParam)
     const extraChildren = searchParams.get('additionalChildren')
     if (extraChildren) previewParams.set('additionalChildren', extraChildren)
-
     return <Navigate to={`/preview/recommended?${previewParams.toString()}`} replace />
-
   }
 
-
-
-  const localTotal =
-    ROOM_PACKAGE_PRICE + siblingOrders.reduce((sum, order) => sum + order.price, 0)
+  const localTotal = ROOM_PACKAGE_PRICE + siblingOrders.reduce((sum, order) => sum + order.price, 0)
   const total = quote ? quote.total : localTotal
-  const linePrice = (index: number, fallback: number) => quote?.lines[index]?.price ?? fallback
-  const lineLabel = (index: number) => {
-    const type = quote?.lines[index]?.discountType
-    if (type === 'voucher') return 'שובר מתנה'
-    if (type === 'coupon') return `קופון ${quote?.coupon?.code ?? ''}`
-    if (type === 'sibling') return searchParams.get('rooms') ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'
-    if (type === 'upgrade') return 'עיצוב מחדש לחדר קיים 20%'
-    return ''
+  const subtotal = quote ? quote.subtotal : localTotal
+  const paidInFull = Boolean(quote && quote.total === 0)
+  const monthlyPayment = installmentAmount(total)
+  const installmentsText =
+    !paidInFull && paymentOption === 'installments' ? `(${INSTALLMENT_COUNT} תשלומים של ₪${monthlyPayment})` : ''
+
+  const couponError = couponCode ? quote?.couponError?.message : undefined
+  const voucherError = voucherCode ? quote?.voucherError?.message : undefined
+
+  const discountRows: { label: string; value: string }[] = []
+  if (quote) {
+    const discountOf = (type: string) =>
+      quote.lines.filter((line) => line.discountType === type).reduce((sum, line) => sum + line.discountAmount, 0)
+    const siblingDiscount = discountOf('sibling')
+    if (siblingDiscount > 0) discountRows.push({ label: 'הנחת חדר נוסף (20%)', value: `−₪${siblingDiscount}` })
+    const upgradeDiscount = discountOf('upgrade')
+    if (upgradeDiscount > 0) discountRows.push({ label: 'עיצוב מחדש לחדר קיים (20%)', value: `−₪${upgradeDiscount}` })
+    if (quote.couponApplied && quote.coupon) {
+      discountRows.push({ label: `הנחת קופון (${quote.coupon.discountPercent}%)`, value: `−₪${quote.couponSavings}` })
+    }
+    const voucherDiscount = quote.lines
+      .filter((line) => line.paidByVoucher)
+      .reduce((sum, line) => sum + line.discountAmount, 0)
+    if (voucherDiscount > 0) discountRows.push({ label: 'שובר מתנה', value: `−₪${voucherDiscount}` })
+  }
+  const summaryRows = [{ label: roomCount > 1 ? 'מחיר החבילות' : 'מחיר החבילה', value: `₪${subtotal}` }, ...discountRows]
+
+  const orderLines = [
+    { name: childName, theme: childTheme, colorPreference: childColorPreference, pkg: mainPkg },
+    ...siblingOrders.map((order) => ({ name: order.child.name, theme: order.child.theme, colorPreference: order.child.colorPreference, pkg: order.pkg })),
+  ]
+
+  const goToPayment = () => {
+    if (!validPhone(phone)) {
+      setContactError('יש להזין מספר טלפון תקין')
+      return
+    }
+    setContactError('')
+    setStep(2)
   }
 
-  const monthlyPayment = installmentAmount(total)
-
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-
-    e.preventDefault()
-
+  const handleSubmit = async () => {
     if (!acceptTerms) {
-
-      alert('יש לאשר את התנאים וההגבלות')
-
+      setTermsError('יש לאשר את תנאי השימוש כדי להשלים את ההזמנה')
       return
-
     }
-
-    if (!acceptPersonalUseOnly) {
-
-      alert('יש לאשר שהחבילה לשימוש אישי בלבד')
-
-      return
-
-    }
-
-    if (!acceptDesignModel) {
-
-      alert('יש לאשר שהחבילה כוללת מודל עיצוב')
-
-      return
-
-    }
-
-
-
+    setTermsError('')
     setProcessing(true)
-
-
 
     try {
       const orderRooms: OrderRoomRequest[] = rooms
@@ -482,619 +533,314 @@ export function CheckoutPage() {
             wallDesignOption: entry.wallDesignOption,
           }))
 
-      await submitOrder({
+      const result = await submitOrder({
         rooms: orderRooms,
         couponCode: quote?.coupon ? couponCode : undefined,
         voucherCode: quote?.voucher ? voucherCode : undefined,
         referral: getActiveReferral(),
         paymentOption,
         sessionId: peekQuestionnaireSessionId(),
+        phone: phone.trim(),
+        marketingOptIn,
       })
       if (quote?.voucher) setPendingVoucher(null)
-
-      if (siblingOrders.length > 0) {
-
-        navigate('/account')
-
-      } else {
-
-        const params = new URLSearchParams({
-
-          purchased: 'true',
-
-          childName,
-
-          childAge: childAge.toString(),
-
-          gender: childGender,
-
-          theme: childTheme,
-
-          colorPreference: childColorPreference,
-
-        })
-
-        navigate(`/package/${mainPkg.id}?${params.toString()}`)
-
-      }
-
+      setCompleted({ orderNumber: result.order.orderNumber })
     } catch (err) {
-      alert(err instanceof ApiError && err.status === 409 ? err.message : 'התשלום נכשל. נסי שוב.')
+      alert(err instanceof ApiError && err.status === 409 ? err.message : 'התשלום נכשל. נסו שוב.')
+    } finally {
       setProcessing(false)
     }
-
   }
 
-
-
   return (
-
-    <div className="min-h-screen bg-[#FDFCFB]">
-
+    <div className="min-h-screen bg-[#FAF7F2]">
       <Header />
 
-
-
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-
-        <div className="mb-8 text-center">
-
-          <h1 className="mb-2 text-4xl font-light text-[#4A4A4A]">תשלום מאובטח</h1>
-
-          <p className="text-[#6B6B6B]">השלימי את הרכישה כדי לפתוח את חבילות העיצוב</p>
-
-        </div>
-
-
-
-        <div className="grid gap-8 lg:grid-cols-3">
-
-          <div className="lg:col-span-2">
-
-            <div className="rounded-sm border border-[#E8DED2] bg-white p-8 shadow-sm">
-
-              <div className="mb-6 flex items-center gap-2">
-
-                <Lock className="h-5 w-5 text-[#C8B6A6]" />
-
-                <span className="text-sm text-[#6B6B6B]">תשלום מאובטח עם הצפנת SSL</span>
-
-              </div>
-
-
-
-              <form onSubmit={handleSubmit}>
-
-                <div className="mb-8">
-
-                  <h3 className="mb-4 text-xl font-normal text-[#4A4A4A]">פרטי קשר</h3>
-
-                  <input
-
-                    type="email"
-
-                    value={user.email}
-
-                    disabled
-
-                    className="w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-4 py-3"
-
-                  />
-
-                </div>
-
-
-
-                <div className="mb-8">
-
-                  <h3 className="mb-4 flex items-center gap-2 text-xl font-normal text-[#4A4A4A]">
-
-                    <CreditCard className="h-5 w-5" />
-
-                    פרטי תשלום
-
-                  </h3>
-
-                  <p className="mb-4 text-sm text-[#6B6B6B]">
-
-                    תשלום דמו — ניתן להשלים רכישה גם בלי למלא פרטי כרטיס אשראי.
-
-                  </p>
-
-                  <div className="space-y-4">
-
-                    <input
-
-                      type="text"
-
-                      value={fullName}
-
-                      onChange={(e) => setFullName(e.target.value)}
-
-                      placeholder="שם בעל הכרטיס"
-
-                      className="w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-4 py-3 focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-
-                    />
-
-                    <input
-
-                      type="text"
-
-                      value={cardNumber}
-
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-
-                      placeholder="1234 5678 9012 3456"
-
-                      maxLength={19}
-
-                      inputMode="numeric"
-
-                      autoComplete="cc-number"
-
-                      dir="ltr"
-
-                      className="w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-4 py-3 text-left focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-
-                      <input
-
-                        type="text"
-
-                        value={expiry}
-
-                        onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-
-                        placeholder="MM/YY"
-
-                        maxLength={5}
-
-                        inputMode="numeric"
-
-                        autoComplete="cc-exp"
-
-                        dir="ltr"
-
-                        className="w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-4 py-3 text-left focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-
-                      />
-
-                      <input
-
-                        type="text"
-
-                        value={cvv}
-
-                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
-
-                        placeholder="CVV"
-
-                        maxLength={3}
-
-                        inputMode="numeric"
-
-                        autoComplete="cc-csc"
-
-                        dir="ltr"
-
-                        className="w-full rounded-sm border border-[#E8DED2] bg-[#F9F7F4] px-4 py-3 text-left focus:ring-2 focus:ring-[#C8B6A6] focus:outline-none"
-
-                      />
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-
-
-                <div className="mb-8 space-y-4">
-                  <CodeField
-                    icon={<Tag className="h-4 w-4" />}
-                    label="יש לך קוד קופון?"
-                    placeholder="קוד קופון"
-                    value={couponInput}
-                    onChange={setCouponInput}
-                    applied={quote?.coupon && couponCode ? `קוד ${quote.coupon.code} הוחל — ${quote.coupon.discountPercent}% הנחה` : ''}
-                    error={couponError}
-                    loading={quoteLoading && couponInput.trim().toUpperCase() === couponCode}
-                    onApply={() => setCouponCode(couponInput.trim().toUpperCase())}
-                    onRemove={() => {
-                      setCouponCode('')
-                      setCouponInput('')
-                    }}
-                    note={
-                      quote?.coupon && couponCode && !quote.couponApplied
-                        ? 'ההנחה הקיימת בהזמנה גבוהה יותר, לכן הקופון לא שינה את המחיר (אין כפל הנחות).'
-                        : SHOW_PACKAGE_PRICE && quote?.couponApplied
-                          ? `חסכת ₪${quote.couponSavings} — מחיר מעודכן ₪${quote.total}`
-                          : ''
-                    }
-                  />
-                  <CodeField
-                    icon={<Gift className="h-4 w-4" />}
-                    label="יש לך שובר מתנה?"
-                    placeholder="קוד שובר, למשל PD-XXXXXXXX"
-                    value={voucherInput}
-                    onChange={setVoucherInput}
-                    applied={
-                      quote?.voucher && voucherCode
-                        ? `השובר מכסה ${quote.voucherPackagesUsed} ${quote.voucherPackagesUsed === 1 ? 'חבילה' : 'חבילות'} בהזמנה הזו (נותרו בו ${quote.voucher.packagesRemaining})`
-                        : ''
-                    }
-                    error={voucherError}
-                    loading={quoteLoading && voucherInput.trim().toUpperCase() === voucherCode}
-                    onApply={() => setVoucherCode(voucherInput.trim().toUpperCase())}
-                    onRemove={() => {
-                      setVoucherCode('')
-                      setVoucherInput('')
-                      setPendingVoucher(null)
-                    }}
-                    note={quote?.voucher && voucherCode && quote.total === 0 ? 'ההזמנה משולמת במלואה בשובר — ללא חיוב נוסף.' : ''}
-                  />
-                </div>
-
-                <div className="mb-6 space-y-4">
-
-                  {[
-
-                    {
-
-                      checked: acceptDesignModel,
-
-                      onChange: setAcceptDesignModel,
-
-                      text: (
-
-                        <>
-
-                          <strong>אני מאשר/ת את מודל העיצוב של PETITE DREAMS:</strong> החבילה
-
-                          מעניקה את הנוסחה המקצועית לביצוע עצמאי — הדמיות, פלטות צבעים והנחיות
-
-                          מיקום. הרכישה מתבצעת מול ספקים חיצוניים ובאחריותי.
-
-                        </>
-
-                      ),
-
-                    },
-
-                    {
-
-                      checked: acceptPersonalUseOnly,
-
-                      onChange: setAcceptPersonalUseOnly,
-
-                      text: 'ידוע לי שחבילה זו לשימוש אישי בלבד ואינה ניתנת להעברה או שימוש מסחרי.',
-
-                    },
-
-                    {
-
-                      checked: acceptTerms,
-
-                      onChange: setAcceptTerms,
-
-                      text: (
-
-                        <>
-
-                          אני מסכים/ה ל{' '}
-
-                          <Link to="/terms" className="text-[#C8B6A6] hover:underline">
-
-                            תנאי השימוש
-
-                          </Link>{' '}
-
-                          ול{' '}
-
-                          <Link to="/privacy" className="text-[#C8B6A6] hover:underline">
-
-                            מדיניות הפרטיות
-
-                          </Link>
-
-                        </>
-
-                      ),
-
-                    },
-
-                  ].map((item, index) => (
-
-                    <div
-
-                      key={index}
-
-                      className="rounded-sm border border-[#E8DED2] bg-[#F9F7F4] p-5"
-
-                    >
-
-                      <label className="flex cursor-pointer items-start gap-3">
-
-                        <input
-
-                          type="checkbox"
-
-                          checked={item.checked}
-
-                          onChange={(e) => item.onChange(e.target.checked)}
-
-                          className="mt-1 h-4 w-4 flex-shrink-0 accent-[#C8B6A6]"
-
-                          required
-
-                        />
-
-                        <span className="text-sm leading-relaxed text-[#4A4A4A]">{item.text}</span>
-
-                      </label>
-
-                    </div>
-
-                  ))}
-
-                </div>
-
-
-
-                <button
-
-                  type="submit"
-
-                  disabled={processing}
-
-                  className={`w-full rounded-sm py-4 text-lg font-normal transition-all ${
-
-                    processing
-
-                      ? 'cursor-not-allowed bg-[#E8DED2] text-[#C5C5C5]'
-
-                      : 'bg-[#C8B6A6] text-white shadow-sm hover:bg-[#B5A99A]'
-
-                  }`}
-
-                >
-
-                  {processing
-
-                    ? 'מעבד תשלום...'
-
-                    : quote && quote.total === 0
-                      ? 'מימוש השובר והשלמת ההזמנה'
-                    : !SHOW_PACKAGE_PRICE
-                      ? 'השלימי רכישה'
-
-                    : paymentOption === 'installments'
-
-                      ? `שלמי ₪${monthlyPayment} × ${INSTALLMENT_COUNT} תשלומים`
-
-                      : `שלמי ₪${total} עכשיו`}
-
-                </button>
-
-              </form>
-
+      <main className="mx-auto max-w-md px-4 pt-6 pb-12">
+        <Stepper step={step} />
+
+        {step === 1 && (
+          <section className="mt-7">
+            <SectionHeading icon={<UserRound className="h-5 w-5" strokeWidth={1.6} />} title="פרטי קשר" subtitle="נשמח לעדכן אותך לגבי ההזמנה ולשלוח עדכונים חשובים." />
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-[14px] font-medium text-[#3B342E]">
+                  כתובת אימייל <span className="text-[#B4544F]">*</span>
+                </span>
+                <input type="email" value={user.email} readOnly dir="ltr" className={`${INPUT} bg-[#FBF8F4] text-left`} />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[14px] font-medium text-[#3B342E]">
+                  מספר טלפון <span className="text-[#B4544F]">*</span>
+                </span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="050-1234567"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  dir="ltr"
+                  className={`${INPUT} text-left`}
+                />
+              </label>
+              {contactError && <p className="text-[13px] text-[#A05A5A]">{contactError}</p>}
+              <label className="flex cursor-pointer items-start gap-2.5 pt-1">
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(event) => setMarketingOptIn(event.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[#8A917D]"
+                />
+                <span className="text-[14px] leading-6 text-[#4A433C]">אשמח לקבל עדכונים, הטבות והשראה לעיצוב חדרי ילדים.</span>
+              </label>
             </div>
+            <div className="mt-10">
+              <PrimaryButton onClick={goToPayment}>
+                המשך לתשלום
+                <ArrowLeft className="h-5 w-5" />
+              </PrimaryButton>
+            </div>
+          </section>
+        )}
 
-          </div>
+        {step === 2 && (
+          <section className="mt-7 space-y-4">
+            <SectionHeading icon={<CreditCard className="h-5 w-5" strokeWidth={1.6} />} title="פרטי תשלום" subtitle={paidInFull ? undefined : 'בחרו את אופן התשלום'} />
 
-
-
-          <div>
-
-            <div className="sticky top-6 rounded-sm border border-[#E8DED2] bg-white p-6 shadow-sm">
-
-              <h3 className="mb-4 text-xl font-normal text-[#4A4A4A]">סיכום חבילות העיצוב</h3>
-
-              <div className="mb-4 space-y-4">
-                {[
-                  {
-                    name: childName,
-                    gender: childGender,
-                    age: childAge,
-                    theme: childTheme,
-                    colorPreference: childColorPreference,
-                    wallDesignOption: primary?.wallDesignOption || searchParams.get('wallDesignOption') || '',
-                    pkgName: mainPkg.name,
-                    price: linePrice(0, ROOM_PACKAGE_PRICE),
-                    label: lineLabel(0) || (rooms ? 'חבילת עיצוב לחדר' : 'חבילה ראשית'),
-                  },
-                  ...siblingOrders.map((order, index) => ({
-                    name: order.child.name,
-                    gender: order.child.gender,
-                    age: order.child.age,
-                    theme: order.child.theme,
-                    colorPreference: order.child.colorPreference,
-                    wallDesignOption: order.child.wallDesignOption,
-                    pkgName: order.pkg?.name || '',
-                    price: linePrice(index + 1, order.price),
-                    label: lineLabel(index + 1) || (rooms ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'),
-                  })),
-                ].map((card, index) => (
-                  <div
-                    key={`${card.name}-${index}`}
-                    className="rounded-2xl border border-[#E7E1D8] bg-[#FBF8F3] p-4"
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="text-2xl">{packageEmoji(card.theme)}</span>
-                      <div>
-                        <p className="font-normal text-[#3C3834]">
-                          {rooms ? `החדר של ${card.name}` : card.name}
-                        </p>
-                        <p className="text-xs text-[#6F6A64]">
-                          {rooms
-                            ? [card.theme, displayColorScaleName(card.colorPreference), card.wallDesignOption ? `קיר: ${wallDesignLabel(card.wallDesignOption)}` : '']
-                                .filter(Boolean)
-                                .join(' · ')
-                            : [genderLabel(card.gender), `גיל ${card.age}`, card.theme, displayColorScaleName(card.colorPreference)]
-                                .filter(Boolean)
-                                .join(' • ')}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-[#8A847C]">{card.pkgName}</p>
-                    {!rooms && card.wallDesignOption ? (
-                      <p className="mt-1 text-xs text-[#6F6A64]">
-                        קיר: {wallDesignLabel(card.wallDesignOption)}
-                      </p>
-                    ) : null}
-                    {SHOW_PACKAGE_PRICE && (
-                      <div className="mt-2 flex justify-between text-sm">
-                        <span className="text-[#8A6A52]">{card.label}</span>
-                        <span className="font-normal text-[#3C3834]">₪{card.price}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-
-
-              {SHOW_PACKAGE_PRICE && (
-                <div className="mb-4 flex justify-between border-t border-[#E8DED2] pt-4">
-
-                  <span className="text-lg font-normal text-[#4A4A4A]">סה״כ</span>
-
-                  <span className="text-2xl font-normal text-[#4A4A4A]">₪{total}</span>
-
-                </div>
-              )}
-
-
-
-              {SHOW_PACKAGE_PRICE && (
-              <div className="mb-4 space-y-2">
-
-                {(['installments', 'full'] as const).map((option) => (
-
-                  <label key={option} className="block cursor-pointer">
-
-                    <input
-
-                      type="radio"
-
-                      name="paymentOption"
-
-                      value={option}
-
-                      checked={paymentOption === option}
-
-                      onChange={() => setPaymentOption(option)}
-
-                      className="sr-only"
-
-                    />
-
-                    <div
-
-                      className={`rounded-sm border-2 p-3 transition-all ${
-
-                        paymentOption === option
-
-                          ? 'border-[#C8B6A6] bg-[#F9F7F4]'
-
-                          : 'border-[#E8DED2] hover:border-[#D4C4B0]'
-
+            {!paidInFull && (
+              <div className="grid grid-cols-2 gap-3">
+                {(['full', 'installments'] as const).map((option) => {
+                  const selected = paymentOption === option
+                  return (
+                    <label
+                      key={option}
+                      className={`flex cursor-pointer items-start gap-2 rounded-[14px] border px-3 py-3 transition-colors ${
+                        selected ? 'border-[#BFB09E] bg-[#F3EDE5]' : 'border-[#E4DBD0] bg-white'
                       }`}
-
                     >
-
-                      {option === 'installments' ? (
-
-                        <div>
-
-                          <div className="text-sm text-[#6B6B6B]">{INSTALLMENT_COUNT} תשלומים</div>
-
-                          <div className="text-3xl font-normal leading-tight text-[#4A4A4A]">
-
-                            ₪{monthlyPayment}
-
-                            <span className="ms-1 text-base text-[#6B6B6B]">לחודש</span>
-
-                          </div>
-
-                          {paymentOption === 'installments' && (
-
-                            <p className="mt-2 text-sm leading-6 text-[#4A4A4A]">
-
-                              תזכורת: {INSTALLMENT_COUNT} תשלומים של ₪{monthlyPayment} בכל חודש, סה״כ ₪{total}.
-
-                            </p>
-
-                          )}
-
-                        </div>
-
-                      ) : (
-
-                        <div className="flex items-baseline justify-between">
-
-                          <span className="text-sm text-[#6B6B6B]">תשלום אחד</span>
-
-                          <span className="text-base text-[#4A4A4A]">₪{total}</span>
-
-                        </div>
-
-                      )}
-
-                    </div>
-
-                  </label>
-
-                ))}
-
+                      <input
+                        type="radio"
+                        name="paymentOption"
+                        checked={selected}
+                        onChange={() => setPaymentOption(option)}
+                        className="mt-1 h-4 w-4 shrink-0 accent-[#6F665D]"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-[13px] text-[#4A433C]">
+                          {option === 'full' ? 'תשלום מלא של' : `${INSTALLMENT_COUNT} תשלומים של`}
+                        </span>
+                        <span className="block text-[20px] font-semibold leading-tight text-[#2F2A26]">
+                          {option === 'full' ? `₪${total}` : `₪${monthlyPayment}`}
+                          {option === 'installments' && <span className="ms-1 text-[13px] font-normal text-[#5F574F]">לחודש</span>}
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
               </div>
-              )}
+            )}
 
+            <CodeToggle
+              icon={<Ticket className="h-4 w-4" />}
+              label="יש לכם קוד קופון?"
+              placeholder="קוד קופון"
+              value={couponInput}
+              onChange={setCouponInput}
+              applied={Boolean(quote?.coupon && couponCode)}
+              appliedText={quote?.coupon?.code ?? couponCode}
+              error={couponError}
+              loading={quoteLoading && couponInput.trim().toUpperCase() === couponCode}
+              onApply={() => setCouponCode(couponInput.trim().toUpperCase())}
+              onRemove={() => {
+                setCouponCode('')
+                setCouponInput('')
+              }}
+              note={
+                quote?.coupon && couponCode && !quote.couponApplied
+                  ? 'ההנחה הקיימת בהזמנה גבוהה יותר, לכן הקופון לא שינה את המחיר (אין כפל הנחות).'
+                  : ''
+              }
+            />
 
+            <CodeToggle
+              icon={<Gift className="h-4 w-4" />}
+              label="יש לכם שובר מתנה?"
+              placeholder="PD-XXXXXXXX"
+              value={voucherInput}
+              onChange={setVoucherInput}
+              applied={Boolean(quote?.voucher && voucherCode)}
+              appliedText={quote?.voucher?.code ?? voucherCode}
+              error={voucherError}
+              loading={quoteLoading && voucherInput.trim().toUpperCase() === voucherCode}
+              onApply={() => setVoucherCode(voucherInput.trim().toUpperCase())}
+              onRemove={() => {
+                setVoucherCode('')
+                setVoucherInput('')
+                setPendingVoucher(null)
+              }}
+              note={
+                quote?.voucher && voucherCode
+                  ? `השובר מכסה ${quote.voucherPackagesUsed} ${quote.voucherPackagesUsed === 1 ? 'חבילה' : 'חבילות'} בהזמנה הזו (נותרו בו ${quote.voucher.packagesRemaining})`
+                  : ''
+              }
+            />
 
-              <div className="space-y-2 text-xs text-[#6B6B6B]">
-
-                <div className="flex items-center gap-2">
-
-                  <ShoppingBag className="h-4 w-4" />
-
-                  <span>משלוח דיגיטלי מיידי</span>
-
-                </div>
-
-                <div className="flex items-center gap-2">
-
-                  <Lock className="h-4 w-4" />
-
-                  <span>גישה לכל החיים בחשבון שלך</span>
-
-                </div>
-
-                <div className="flex items-center gap-2">
-
-                  <Check className="h-4 w-4" />
-
-                  <span>כל קישורי הקניות כלולים</span>
-
-                </div>
-
+            {discountRows.length ? (
+              <div className={`${CARD} p-4`}>
+                <h3 className="mb-3 flex items-center gap-2 text-[16px] font-medium text-[#2F2A26]">
+                  <ReceiptText className="h-4 w-4 text-[#6F665D]" />
+                  סיכום לתשלום
+                </h3>
+                <SummaryRows rows={summaryRows} total={total} installments={installmentsText} />
               </div>
+            ) : (
+              <div className="flex items-start gap-3 rounded-[14px] border border-[#E9DFD3] bg-[#F4EDE4] px-4 py-3.5">
+                <ReceiptText className="mt-1 h-5 w-5 shrink-0 text-[#6F665D]" strokeWidth={1.5} />
+                <div>
+                  <p className="text-[15px] text-[#3B342E]">סה״כ לתשלום</p>
+                  <p className="text-[26px] font-semibold leading-tight text-[#2F2A26]">₪{total}</p>
+                  {installmentsText && <p className="text-[13px] text-[#6F665D]">{installmentsText}</p>}
+                </div>
+              </div>
+            )}
 
+            {!paidInFull && (
+              <div className={`${CARD} p-4`}>
+                <h3 className="mb-3 flex items-center gap-2 text-[16px] font-medium text-[#2F2A26]">
+                  <CreditCard className="h-4 w-4 text-[#6F665D]" />
+                  פרטי כרטיס אשראי
+                </h3>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={cardNumber}
+                      onChange={(event) => setCardNumber(formatCardNumber(event.target.value))}
+                      placeholder="1234 5678 9012 3456"
+                      maxLength={19}
+                      inputMode="numeric"
+                      autoComplete="cc-number"
+                      dir="ltr"
+                      className={`${INPUT} pe-24 text-left`}
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
+                      <CardBrands />
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={cvv}
+                      onChange={(event) => setCvv(event.target.value.replace(/\D/g, '').slice(0, 4))}
+                      placeholder="CVV"
+                      maxLength={4}
+                      inputMode="numeric"
+                      autoComplete="cc-csc"
+                      dir="ltr"
+                      className={`${INPUT} text-center`}
+                    />
+                    <input
+                      type="text"
+                      value={expiry}
+                      onChange={(event) => setExpiry(formatExpiry(event.target.value))}
+                      placeholder="MM/YY"
+                      maxLength={5}
+                      inputMode="numeric"
+                      autoComplete="cc-exp"
+                      dir="ltr"
+                      className={`${INPUT} text-center`}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <PrimaryButton onClick={() => setStep(3)} disabled={quoteLoading && !quote}>
+                המשך לסיכום הזמנה
+                <ArrowLeft className="h-5 w-5" />
+              </PrimaryButton>
+              <button type="button" onClick={() => setStep(1)} className="mx-auto mt-3 flex items-center gap-1 text-[14px] text-[#5F574F] hover:text-[#2F2A26]">
+                <ArrowRight className="h-4 w-4" />
+                חזרה לפרטי קשר
+              </button>
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section className="mt-7 space-y-4">
+            <SectionHeading icon={<Lock className="h-5 w-5" strokeWidth={1.6} />} title="סיכום הזמנה" />
+
+            <div className={`${CARD} divide-y divide-[#F0E9E0]`}>
+              {orderLines.map((line, index) => (
+                <div key={`${line.name}-${index}`} className="flex items-center gap-3 p-3">
+                  <img src={packagePreviewImage(getPackageContent(line.pkg.id))} alt="" className="h-14 w-14 shrink-0 rounded-[10px] object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-medium text-[#2F2A26]">{line.theme ? `חבילת ${line.theme}` : line.pkg.name}</p>
+                    <p className="truncate text-[13px] text-[#6F665D]">
+                      {[line.name ? `החדר של ${line.name}` : '', displayColorScaleName(line.colorPreference)].filter(Boolean).join(' · ')}
+                    </p>
+                    <p className="text-[13px] text-[#6F665D]">כמות 1</p>
+                  </div>
+                </div>
+              ))}
             </div>
 
-          </div>
+            <div className={`${CARD} p-4`}>
+              <h3 className="mb-3 flex items-center gap-2 text-[16px] font-medium text-[#2F2A26]">
+                <ReceiptText className="h-4 w-4 text-[#6F665D]" />
+                סיכום לתשלום
+              </h3>
+              <SummaryRows rows={summaryRows} total={total} installments={installmentsText} />
+            </div>
 
-        </div>
+            <div className={`${CARD} divide-y divide-[#F0E9E0]`}>
+              <p className="flex items-center gap-3 px-4 py-3 text-[14px] leading-6 text-[#3B342E]">
+                <Mail className="h-5 w-5 shrink-0 text-[#6F665D]" strokeWidth={1.5} />
+                פרטי ההזמנה ישלחו למייל לאחר השלמת הרכישה
+              </p>
+              <p className="flex items-center gap-3 px-4 py-3 text-[14px] leading-6 text-[#3B342E]">
+                <InfinityIcon className="h-5 w-5 shrink-0 text-[#6F665D]" strokeWidth={1.5} />
+                החבילה זמינה ללא הגבלת זמן באזור האישי שלכם.
+              </p>
+            </div>
 
-      </div>
+            <label className="flex cursor-pointer items-start gap-2.5 px-1">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(event) => setAcceptTerms(event.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0 accent-[#8A917D]"
+              />
+              <span className="text-[13px] leading-6 text-[#4A433C]">
+                קראתי ואני מסכים/ה ל
+                <Link to="/terms" className="underline">
+                  תנאי השימוש
+                </Link>{' '}
+                ול
+                <Link to="/privacy" className="underline">
+                  מדיניות הפרטיות
+                </Link>
+                . החבילה לשימוש אישי בלבד, והפריטים נרכשים מספקים חיצוניים.
+              </span>
+            </label>
+            {termsError && <p className="px-1 text-[13px] text-[#A05A5A]">{termsError}</p>}
 
+            <div className="pt-1">
+              <PrimaryButton onClick={handleSubmit} disabled={processing}>
+                <Lock className="h-4 w-4" />
+                {processing ? 'מעבדים את ההזמנה…' : paidInFull ? 'מימוש השובר ואישור ההזמנה' : 'לתשלום ואישור ההזמנה'}
+              </PrimaryButton>
+              <button type="button" onClick={() => setStep(2)} className="mx-auto mt-3 flex items-center gap-1 text-[14px] text-[#5F574F] hover:text-[#2F2A26]">
+                <ArrowRight className="h-4 w-4" />
+                חזרה לפרטי תשלום
+              </button>
+            </div>
+          </section>
+        )}
+      </main>
     </div>
-
   )
-
 }
-

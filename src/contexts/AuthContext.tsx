@@ -44,6 +44,8 @@ export interface OrderRequest {
   referral?: { visitorId: string } | null
   paymentOption?: 'full' | 'installments'
   sessionId?: string | null
+  phone?: string
+  marketingOptIn?: boolean
 }
 
 export interface OrderResult {
