@@ -19,12 +19,10 @@ export const colorScales: ColorScale[] = [
     name: 'חמים טבעיים',
     questionnaireKeywords: ['חמים'],
     colors: [
-      { roleLabel: 'גוון בסיס — קיר', code: '413.0', name: 'פשתן טבעי', hex: '#E8DCC8' },
-      { roleLabel: 'גוון תומך 1', name: 'שיבולת שועל', hex: '#D4C4A8' },
-      { roleLabel: 'גוון תומך 2', name: 'אפור חם', hex: '#B8A898' },
-      { roleLabel: 'גוון תומך 3', name: 'חול חמים', hex: '#C9A87C' },
-      { roleLabel: 'גוון דגש', name: 'ירוק פליז עמוק', hex: '#5C6B4A' },
-      { roleLabel: 'גוון תומך 4', name: 'שוקולד עמוק', hex: '#5C4033' },
+      { roleLabel: 'גוון בסיס — קיר', name: 'שמנת חמה', hex: '#E9D7BE' },
+      { roleLabel: 'גוון תומך 1', name: 'בז׳ בהיר', hex: '#DAC8B7' },
+      { roleLabel: 'גוון תומך 2', name: 'טאופ חם', hex: '#C8BDAE' },
+      { roleLabel: 'גוון דגש', name: 'מרווה מאובקת', hex: '#AEB29B' },
     ],
   },
   {
@@ -32,12 +30,11 @@ export const colorScales: ColorScale[] = [
     name: 'סקלת כחולים 1',
     questionnaireKeywords: ['כחול'],
     colors: [
-      { roleLabel: 'גוון בסיס — קיר', name: 'כחול סערה', hex: '#4A6670' },
-      { roleLabel: 'גוון תומך 1', name: 'עכשיו מעונן', hex: '#8FAAB8' },
-      { roleLabel: 'גוון תומך 2', name: 'חלב שקדים', hex: '#F5EDE4' },
-      { roleLabel: 'גוון תומך 3', name: 'אבן', hex: '#9E9E94' },
-      { roleLabel: 'גוון תומך 4', name: 'חול חמים', hex: '#C9A87C' },
-      { roleLabel: 'גוון דגש', name: 'חמרה', hex: '#A65D3F' },
+      { roleLabel: 'גוון דגש', name: 'כחול אבקתי', hex: '#4B7184' },
+      { roleLabel: 'גוון תומך 1', name: 'כחול רך', hex: '#90B1C0' },
+      { roleLabel: 'גוון תומך 2', name: 'כחול בהיר', hex: '#D0DDE3' },
+      { roleLabel: 'גוון בסיס — קיר', name: 'שמנת רכה', hex: '#F5EDE2' },
+      { roleLabel: 'גוון תומך 3', name: 'בז׳ חם', hex: '#E6DACD' },
     ],
   },
   {
@@ -58,12 +55,10 @@ export const colorScales: ColorScale[] = [
     name: 'סקלת אפורים',
     questionnaireKeywords: ['אפור'],
     colors: [
-      { roleLabel: 'גוון בסיס — קיר', code: 'ngy04', name: 'אפור אורבני', hex: '#8E8E8E' },
-      { roleLabel: 'גוון תומך 1', name: 'חלב שקדים', hex: '#F5EDE4' },
-      { roleLabel: 'גוון תומך 2', name: 'אפור נוצה', hex: '#D8D8D8' },
-      { roleLabel: 'גוון תומך 3', name: 'אפור פשתן', hex: '#C5C0B8' },
-      { roleLabel: 'גוון תומך 4', name: 'אפור בזלת', hex: '#6B6B6B' },
-      { roleLabel: 'גוון דגש', name: 'גוון אלון טבעי', hex: '#A0826D' },
+      { roleLabel: 'גוון בסיס — קיר', name: 'אפור ענן', hex: '#D8D8D6' },
+      { roleLabel: 'גוון תומך 1', name: 'אפור בהיר', hex: '#C5C5C3' },
+      { roleLabel: 'גוון תומך 2', name: 'אפור אבן', hex: '#A8AAA9' },
+      { roleLabel: 'גוון דגש', name: 'אפור כחלחל', hex: '#868C8C' },
     ],
   },
   {
@@ -71,12 +66,12 @@ export const colorScales: ColorScale[] = [
     name: 'סקלה צבעונית',
     questionnaireKeywords: ['צבעוני'],
     colors: [
-      { roleLabel: 'גוון בסיס — קיר', code: '448.0', name: 'אקליפטוס מעושן', hex: '#7A8B7E' },
-      { roleLabel: 'גוון תומך 1', name: 'טרקוטה', hex: '#C17F59' },
-      { roleLabel: 'גוון תומך 2', name: 'פשתן', hex: '#E8DCC4' },
-      { roleLabel: 'גוון תומך 3', name: 'מרווה', hex: '#8B9A7A' },
-      { roleLabel: 'גוון תומך 4', name: 'עץ מייפל', hex: '#C4956A' },
-      { roleLabel: 'גוון דגש', name: 'אגוז עמוק', hex: '#6B4F3A' },
+      { roleLabel: 'גוון דגש', name: 'מרווה', hex: '#98A68F' },
+      { roleLabel: 'גוון תומך 1', name: 'מרווה בהירה', hex: '#C0CBBA' },
+      { roleLabel: 'גוון תומך 2', name: 'טרקוטה רכה', hex: '#CC9978' },
+      { roleLabel: 'גוון תומך 3', name: 'אפרסק', hex: '#DFB192' },
+      { roleLabel: 'גוון תומך 4', name: 'צהוב חמאה', hex: '#F3D2A6' },
+      { roleLabel: 'גוון בסיס — קיר', name: 'ורוד אבקתי', hex: '#EBD5CF' },
     ],
   },
   {
@@ -129,12 +124,12 @@ export const COLOR_SCALE_QUESTIONNAIRE: Record<
   'warm-natural': {
     label: 'חמים טבעיים 🪵',
     benefit: 'תחושת בית: פלטת מקרקעת שיוצרת חמימות מיידית וגדלה עם הילד באהבה.',
-    previewColors: ['#D4A574', '#8B7355', '#A0826D'],
+    previewColors: ['#E9D7BE', '#C8BDAE', '#AEB29B'],
   },
   'calming-blues': {
     label: 'כחולים מרגיעים 🌊',
     benefit: 'לילות שקטים: גוונים קרירים המעודדים ויסות רגשי וסביבת שינה מרגיעה.',
-    previewColors: ['#4A7C9E', '#7BA4C7', '#B0D4E8'],
+    previewColors: ['#4B7184', '#90B1C0', '#D0DDE3'],
   },
   'fresh-greens': {
     label: 'ירוקים מרעננים 🍃',
@@ -144,12 +139,12 @@ export const COLOR_SCALE_QUESTIONNAIRE: Record<
   'elegant-grays': {
     label: 'אפורים אלגנטיים 🌫️',
     benefit: 'הבחירה החכמה: מראה נקי שיוצר שקט בעין ונותן במה לאישיות של הילד.',
-    previewColors: ['#8E8E8E', '#A8A8A8', '#C5C5C5'],
+    previewColors: ['#D8D8D6', '#A8AAA9', '#868C8C'],
   },
   'happy-colorful': {
     label: 'צבעוניים שמחים 🌈',
     benefit: 'חגיגה יצירתית: שילוב הרמוני שמעודד חיוניות בלי ליצור עומס ויזואלי.',
-    previewColors: ['#E57373', '#FFB74D', '#81C784'],
+    previewColors: ['#98A68F', '#CC9978', '#F3D2A6'],
   },
   'soft-pinks': {
     label: 'ורודים עדינים 🌸',

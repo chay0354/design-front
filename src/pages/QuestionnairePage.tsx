@@ -220,14 +220,6 @@ function scaleTitle(label: string) {
   return label.replace(/[\s\uFE0F]*\p{Extended_Pictographic}\uFE0F?/gu, '').trim()
 }
 
-function swatchLuminance(hex: string) {
-  const value = Number.parseInt(hex.replace('#', ''), 16)
-  const red = (value >> 16) & 255
-  const green = (value >> 8) & 255
-  const blue = value & 255
-  return red * 0.299 + green * 0.587 + blue * 0.114
-}
-
 function PaletteIcon({ scaleId }: { scaleId: string }) {
   const stroke = '#A89888'
   if (scaleId === 'soft-pinks') {
@@ -295,11 +287,9 @@ function ColorPalettePreview({
 }: {
   swatches: { hex: string; name: string }[]
 }) {
-  const ordered = [...swatches].sort((a, b) => swatchLuminance(a.hex) - swatchLuminance(b.hex))
-
   return (
     <div className="flex h-10 overflow-hidden rounded-md" dir="ltr">
-      {ordered.map((swatch, index) => (
+      {swatches.map((swatch, index) => (
         <div
           key={`${swatch.hex}-${index}`}
           className="min-w-0 flex-1"
