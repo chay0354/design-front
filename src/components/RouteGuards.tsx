@@ -7,11 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 export function BlockAdmin({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
 
-  if (loading) {
-    return <PageLoading />
-  }
-
-  if (user?.isAdmin) {
+  if (!loading && user?.isAdmin) {
     return <Navigate to="/admin" replace />
   }
 

@@ -166,7 +166,9 @@ export function LandingPage() {
           <img
             src={heroPhoto}
             alt="חדר ילדים מעוצב עם ג'ירפה, נורות דגלים ופינת משחק"
-            className="mx-auto block h-auto w-full sm:h-[680px] sm:w-auto"
+            width={1152}
+            height={1315}
+            className="hero-photo mx-auto block h-auto w-full sm:h-[680px] sm:w-auto"
           />
           <div className="absolute inset-x-0 top-0 mx-auto max-w-3xl px-4 pt-4 text-center sm:pt-12">
             <h1 className="text-[2.3rem] leading-[0.95] font-semibold text-[#524436] sm:text-[3.6rem] sm:leading-[1.05]">
@@ -314,6 +316,9 @@ export function LandingPage() {
               src="/assets/gift-icon.png"
               alt=""
               aria-hidden="true"
+              width={1010}
+              height={1053}
+              loading="lazy"
               className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14"
             />
             <div className="flex-1">
@@ -350,12 +355,18 @@ export function LandingPage() {
             src="/assets/home-toys-left.png"
             alt=""
             aria-hidden="true"
+            width={520}
+            height={313}
+            loading="lazy"
             className="pointer-events-none absolute bottom-4 left-1 w-[24%] max-w-[220px]"
           />
           <img
             src="/assets/home-toys-right.png"
             alt=""
             aria-hidden="true"
+            width={520}
+            height={512}
+            loading="lazy"
             className="pointer-events-none absolute right-1 bottom-4 w-[21%] max-w-[190px]"
           />
         </section>

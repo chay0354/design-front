@@ -8,6 +8,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="only light" />
     <meta name="theme-color" content="#FDFCFB" />
+    <style>
+      html, body, #root { margin: 0; background: #fdfcfb; }
+      @layer base {
+        img { max-width: 100%; height: auto; }
+        header img { height: 2.75rem; width: auto; }
+        .hero-photo { display: block; width: 100%; height: auto; margin-inline: auto; }
+        @media (min-width: 640px) {
+          .hero-photo { width: auto; height: 680px; }
+        }
+      }
+    </style>
     <meta
       name="description"
       content="PETITE DREAMS הוא סטודיו לעיצוב חדרי ילדים. חבילות עיצוב מוכנות, פשוטות ליישום, במחיר נגיש."
