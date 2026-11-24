@@ -1022,9 +1022,9 @@ function RoomsStep({
                   ),
                 )
               }
-              className="mt-3 flex w-full items-center justify-center gap-1 text-sm text-[#8A847C]"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-[#C4A574] bg-[#FBF6EE] px-4 py-2.5 text-[15px] font-medium text-[#6F5A45]"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" strokeWidth={2} />
               הוספת ילד נוסף המתגורר בחדר
                       </button>
           </div>
