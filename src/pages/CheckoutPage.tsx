@@ -347,6 +347,7 @@ export function CheckoutPage() {
   const [cardNumber, setCardNumber] = useState('')
   const [expiry, setExpiry] = useState('')
   const [cvv, setCvv] = useState('')
+  const [acceptDesignModel, setAcceptDesignModel] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [termsError, setTermsError] = useState('')
   const [processing, setProcessing] = useState(false)
@@ -489,8 +490,8 @@ export function CheckoutPage() {
   }
 
   const handleSubmit = async () => {
-    if (!acceptTerms) {
-      setTermsError('יש לאשר את תנאי השימוש כדי להשלים את ההזמנה')
+    if (!acceptDesignModel || !acceptTerms) {
+      setTermsError('יש לסמן את שני האישורים כדי להשלים את ההזמנה')
       return
     }
     setTermsError('')
@@ -807,25 +808,47 @@ export function CheckoutPage() {
               </p>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-2.5 px-1">
-              <input
-                type="checkbox"
-                checked={acceptTerms}
-                onChange={(event) => setAcceptTerms(event.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 accent-[#8A917D]"
-              />
-              <span className="text-[13px] leading-6 text-[#4A433C]">
-                קראתי ואני מסכים/ה ל
-                <Link to="/terms" className="underline">
-                  תנאי השימוש
-                </Link>{' '}
-                ול
-                <Link to="/privacy" className="underline">
-                  מדיניות הפרטיות
+            <div className="px-1">
+              <h3 className="text-[16px] font-medium text-[#2F2A26]">רגע לפני השלמת הרכישה</h3>
+              <p className="mt-1 text-[13px] leading-6 text-[#5F574F]">
+                למידע נוסף מומלץ לעיין בעמוד{' '}
+                <Link to="/faq" className="underline">
+                  לפני שרוכשים
                 </Link>
-                . החבילה לשימוש אישי בלבד, והפריטים נרכשים מספקים חיצוניים.
-              </span>
-            </label>
+                .
+              </p>
+              <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={acceptDesignModel}
+                  onChange={(event) => setAcceptDesignModel(event.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[#8A917D]"
+                />
+                <span className="text-[13px] leading-6 text-[#4A433C]">
+                  החבילה כוללת הדמיות, הנחיות וקישורים לרכישה, ליישום עצמאי ללא ליווי אישי. הפריטים אינם כלולים במחיר,
+                  והשירות בנוגע למוצרים ולהזמנות ניתן ישירות על ידי הספקים.
+                </span>
+              </label>
+              <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(event) => setAcceptTerms(event.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[#8A917D]"
+                />
+                <span className="text-[13px] leading-6 text-[#4A433C]">
+                  החבילה מוגנת בזכויות יוצרים ומיועדת לשימוש אישי בלבד, ללא העברה, הפצה או שימוש מסחרי. אני מסכים/ה ל
+                  <Link to="/terms" className="underline">
+                    תנאי השימוש
+                  </Link>{' '}
+                  ול
+                  <Link to="/privacy" className="underline">
+                    מדיניות הפרטיות
+                  </Link>
+                  .
+                </span>
+              </label>
+            </div>
             {termsError && <p className="px-1 text-[13px] text-[#A05A5A]">{termsError}</p>}
 
             <div className="pt-1">
