@@ -105,3 +105,15 @@ export function resolveDesignPackageImagesForPackage(
 export function hasDesignPackageImages(images: DesignPackageImages): boolean {
   return Boolean(images.teaser || images.hero || images.gallery.length)
 }
+
+function isCollageTeaser(url: string): boolean {
+  return /\/teaser-/.test(url)
+}
+
+/** The summary screen shows one room photo. The old nine-image collage is only a fallback. */
+export function previewRoomImage(images: DesignPackageImages): string {
+  if (images.hero && !isCollageTeaser(images.hero)) return images.hero
+  const room = images.gallery.find((url) => /\/(?:room|hero)-/.test(url))
+  if (room) return room
+  return images.teaser || images.hero
+}

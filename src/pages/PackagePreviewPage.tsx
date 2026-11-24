@@ -5,7 +5,7 @@ import { BrushMark, Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
-import { resolveDesignPackageImagesForSelection } from '../data/designPackageImages'
+import { previewRoomImage, resolveDesignPackageImagesForSelection } from '../data/designPackageImages'
 import {
   getAgeGroup,
   getAgeGroupIdForAge,
@@ -75,7 +75,7 @@ function ChildPackageCard({
   const content = getPackageContent(pkg.id)
   const colorScale = getColorScaleForPreference(colorPreference)
   const design = resolveDesignPackageImagesForSelection(gender, age, theme, colorScale.id)
-  const roomImage = design.teaser || design.hero || content?.heroImage || pkg.heroImage
+  const roomImage = previewRoomImage(design) || content?.heroImage || pkg.heroImage
   const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
   const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name
   const scaleName = displayColorScaleName(colorPreference)
