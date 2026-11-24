@@ -24,7 +24,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { hasPurchased } from '../utils/auth'
 import { formatRoomNames } from '../utils/questionnaire'
-import { getAccountRooms, roomKids, type RoomKid } from '../utils/rooms'
+import { getAccountRooms, packagePreviewImage, roomKids, type RoomKid } from '../utils/rooms'
 
 const CARD = 'rounded-[22px] border border-[#EFE6DC] bg-white shadow-[0_6px_24px_rgba(120,95,70,0.06)]'
 
@@ -277,14 +277,12 @@ export function PackageDetailPage() {
           )}
         </section>
 
-        {(content.heroImage || content.galleryImages[0]) && (
-          <RoomVisualizer
-            packageId={pkg.id}
-            packageImage={content.heroImage || content.galleryImages[0]}
-            roomKey={room?.key ?? orderItemId ?? ''}
-            cardClassName={CARD}
-          />
-        )}
+        <RoomVisualizer
+          packageId={pkg.id}
+          packageImage={packagePreviewImage(content)}
+          roomKey={room?.key ?? orderItemId ?? ''}
+          cardClassName={CARD}
+        />
 
         <section className={`${CARD} px-4 py-5 sm:px-5`}>
           <div className="mb-4 text-center">
