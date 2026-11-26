@@ -169,8 +169,12 @@ export function PackageDetailPage() {
     liveContent && snapshot
       ? {
           ...liveContent,
-          heroImage: snapshot.heroImage || liveContent.heroImage,
-          galleryImages: snapshot.galleryImages?.length ? snapshot.galleryImages : liveContent.galleryImages,
+          heroImage: liveContent.heroImage || snapshot.heroImage || '',
+          galleryImages: liveContent.galleryImages.length
+            ? liveContent.galleryImages
+            : snapshot.galleryImages?.length
+              ? snapshot.galleryImages
+              : [],
           shoppingCategories: visibleShoppingCategories(snapshot.shoppingCategories || []),
         }
       : liveContent
@@ -233,13 +237,6 @@ export function PackageDetailPage() {
           ) : (
             <div className="flex aspect-[16/10] items-center justify-center rounded-[16px] bg-[#F7F4F0] px-6 text-center text-sm text-[#B5A99A]">
               תמונות עיצוב החבילה יתווספו בקרוב
-            </div>
-          )}
-          {content.galleryImages.length > 0 && (
-            <div className="mt-2.5 grid grid-cols-3 gap-2.5">
-              {content.galleryImages.map((image) => (
-                <img key={image} src={image} alt="" className="aspect-square rounded-xl object-cover" />
-              ))}
             </div>
           )}
         </section>

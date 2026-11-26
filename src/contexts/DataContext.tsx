@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { supabase } from '../lib/supabase'
-import { resolveDesignPackageImagesForPackage } from '../data/designPackageImages'
+import { previewRoomImage, resolveDesignPackageImagesForPackage } from '../data/designPackageImages'
 import { themePackages as staticPackages, visibleShoppingCategories, type ThemePackage } from '../data/themePackages'
 import { colorScales as staticColorScales, type ColorScale } from '../data/colorScales'
 import { buildCollageShareUrl, collageStoragePath } from '../utils/collageShare'
@@ -208,17 +208,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     (id: string): PackageContent | null => {
       const pkg = resolvePackageById(id, packages, staticBasePackages, colorScales)
       if (!pkg) return null
-      const gallery = resolvePackageGalleryImages(pkg, packages)
+      const stored = resolvePackageGalleryImages(pkg, packages)
       const design = resolveDesignPackageImagesForPackage(id, {
         gender: pkg.gender,
         age: pkg.ageRange[0],
         themeName: pkg.questionnaireTheme || pkg.theme,
       })
-      const heroImage = gallery.heroImage || design.hero
-      const galleryImages =
-        gallery.galleryImages.length > 0
-          ? gallery.galleryImages
-          : design.gallery.filter((url) => url && url !== heroImage)
+      const designHero = previewRoomImage(design)
+      const designGallery = design.gallery.filter((url) => url && url !== designHero && !/\/teaser-/.test(url))
+      // A saved product collage must not cover the current room photo on the package or payment screens.
+      const heroImage = designHero || stored.heroImage
+      const galleryImages = designHero
+        ? designGallery
+        : stored.galleryImages.filter((url) => url && url !== heroImage)
       return {
         heroImage,
         galleryImages,

@@ -317,89 +317,86 @@ export function GiftVoucherPage() {
 
   if (step === 'summary') {
     return (
-      <div className="min-h-screen bg-[#F7F4EF]">
+      <div className="min-h-screen bg-[#FAF7F2]">
         <Header />
-        <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-          <BrushTitle as="h1">סיכום הזמנה</BrushTitle>
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
-            <section className="space-y-5 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-              <div className="rounded-2xl border border-[#E7E1D8] bg-[#FBF8F3] p-5">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="text-lg text-[#3C3834]">שובר מתנה</h2>
-                  {SHOW_PACKAGE_PRICE && price ? <span className="text-xl text-[#3C3834]">₪{price}</span> : null}
+        <main className="mx-auto max-w-md px-4 py-8">
+          <h1 className="text-center text-[22px] font-medium text-[#2F2A26]">סיכום הזמנה</h1>
+          <div className="mt-6 space-y-4">
+            <section className="rounded-[18px] border border-[#EEE6DC] bg-white p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="text-[16px] font-medium text-[#2F2A26]">שובר מתנה</h2>
+                {SHOW_PACKAGE_PRICE && price ? <span className="text-[16px] text-[#2F2A26]">₪{price}</span> : null}
+              </div>
+              <p className="mt-1 text-[14px] leading-6 text-[#5F574F]">
+                {receivedPackagesLine(draft.recipientNames, draft.packagesCount)}
+              </p>
+              <dl className="mt-3 space-y-1 text-[14px] text-[#5F574F]">
+                <div className="flex gap-2">
+                  <dt>למי:</dt>
+                  <dd>{draft.recipientNames}</dd>
                 </div>
-                <p className="mt-1 text-[#5E5852]">
-                  {receivedPackagesLine(draft.recipientNames, draft.packagesCount)}
-                </p>
-                <dl className="mt-4 space-y-1 text-sm text-[#6F6A64]">
-                  <div className="flex gap-2">
-                    <dt className="text-[#8A847C]">למי:</dt>
-                    <dd>{draft.recipientNames}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="text-[#8A847C]">ממי:</dt>
-                    <dd>{draft.giverName}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="text-[#8A847C]">מסירה:</dt>
-                    <dd>{deliveryLabel[draft.deliveryMethod]}</dd>
-                  </div>
-                </dl>
-                {SHOW_PACKAGE_PRICE && price ? (
-                  <div className="mt-4 flex justify-between border-t border-[#E7E1D8] pt-3 text-[#3C3834]">
-                    <span>סה״כ לתשלום</span>
-                    <span>₪{price}</span>
-                  </div>
-                ) : null}
-              </div>
-
-              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E7E1D8] p-4 text-sm text-[#4A4A4A]">
-                <input
-                  type="checkbox"
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 accent-[#C8B6A6]"
-                />
-                <span>
-                  אני מסכים/ה ל
-                  <Link to="/terms" className="text-[#A88A72] underline">
-                    תנאי השימוש
-                  </Link>{' '}
-                  ול
-                  <Link to="/privacy" className="text-[#A88A72] underline">
-                    מדיניות הפרטיות
-                  </Link>
-                  . השובר נוצר ונשלח רק אחרי אישור התשלום, והחשבונית תונפק על שמי.
-                </span>
-              </label>
-
-              {error && <p className="text-sm text-[#A05A5A]">{error}</p>}
-
-              <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
-                <button
-                  type="button"
-                  onClick={handlePay}
-                  disabled={submitting}
-                  className="rounded-full bg-[#C4B49A] px-8 py-3.5 text-white hover:bg-[#B3A288] disabled:opacity-60"
-                >
-                  {submitting ? 'מעבד תשלום...' : 'לתשלום'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep('form')
-                    setError('')
-                  }}
-                  className="text-sm text-[#8A847C] hover:underline"
-                >
-                  חזרה לעריכת השובר
-                </button>
-              </div>
+                <div className="flex gap-2">
+                  <dt>ממי:</dt>
+                  <dd>{draft.giverName}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt>מסירה:</dt>
+                  <dd>{deliveryLabel[draft.deliveryMethod]}</dd>
+                </div>
+              </dl>
+              {SHOW_PACKAGE_PRICE && price ? (
+                <div className="mt-3 flex justify-between border-t border-[#F0E9E0] pt-3 text-[15px] text-[#2F2A26]">
+                  <span>סה״כ לתשלום</span>
+                  <span>₪{price}</span>
+                </div>
+              ) : null}
             </section>
-            <aside className="lg:sticky lg:top-6 lg:self-start">
-              <p className="mb-3 text-center text-sm text-[#8A847C]">כך ייראה השובר</p>
+
+            <aside>
+              <p className="mb-3 text-center text-[13px] text-[#6F665D]">כך ייראה השובר</p>
               <VoucherCard {...draft} />
             </aside>
+
+            <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-6 text-[#3B342E]">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 accent-[#8A917D]"
+              />
+              <span>
+                אני מסכים/ה ל
+                <Link to="/terms" className="underline">
+                  תנאי השימוש
+                </Link>{' '}
+                ול
+                <Link to="/privacy" className="underline">
+                  מדיניות הפרטיות
+                </Link>
+                . השובר נוצר ונשלח רק אחרי אישור התשלום, והחשבונית תונפק על שמי.
+              </span>
+            </label>
+
+            {error && <p className="text-sm text-[#A05A5A]">{error}</p>}
+
+            <button
+              type="button"
+              onClick={handlePay}
+              disabled={submitting}
+              className="flex w-full items-center justify-center rounded-[14px] bg-[#8A917D] py-3.5 text-[16px] text-white hover:bg-[#7C8470] disabled:opacity-60"
+            >
+              {submitting ? 'מעבדים את ההזמנה…' : 'לתשלום ואישור ההזמנה'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStep('form')
+                setError('')
+              }}
+              className="mx-auto flex text-[14px] text-[#5F574F] hover:text-[#2F2A26]"
+            >
+              חזרה לעריכת השובר
+            </button>
           </div>
         </main>
         <Footer />

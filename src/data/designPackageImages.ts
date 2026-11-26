@@ -110,10 +110,9 @@ function isCollageTeaser(url: string): boolean {
   return /\/teaser-/.test(url)
 }
 
-/** The summary screen shows one room photo. The old nine-image collage is only a fallback. */
+/** One room photo. The old nine-image collage is used only when the package has no other photo. */
 export function previewRoomImage(images: DesignPackageImages): string {
-  if (images.hero && !isCollageTeaser(images.hero)) return images.hero
-  const room = images.gallery.find((url) => /\/(?:room|hero)-/.test(url))
-  if (room) return room
-  return images.teaser || images.hero
+  const photos = [images.hero, ...images.gallery].filter((url): url is string => Boolean(url) && !isCollageTeaser(url))
+  const namedRoom = photos.find((url) => /\/(?:room|hero)-/.test(url))
+  return namedRoom || photos[0] || images.teaser || images.hero || ''
 }
