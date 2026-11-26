@@ -333,13 +333,14 @@ export function PackagePreviewPage() {
           <div className="mt-3 flex items-stretch gap-4 rounded-2xl bg-[#F8EEE5] px-4 py-4">
             <div className="flex-1 text-center">
               <h2 className="text-[17px] leading-snug font-bold text-[#2A2522] sm:text-[20px]">
-                <span className="whitespace-nowrap">ברכישת החבילה מחכה לכם</span>
-                <br />
-                <span className="whitespace-nowrap">מדריך עיצוב מלא</span>
+                כל מה שצריך לחדר מעוצב, בחבילה אחת
               </h2>
               <p className="mt-2 text-[13.5px] leading-6 text-[#3C3530]">
-                המותאם לגיל הילד, להעדפות ולסגנון שבחרתם. בפנים תמצאו קונספט עיצובי שלם, הנחיות ליישום וקישורים לפריטי
-                ההלבשה מאתרי און ליין במחירים נגישים, ללא פערי תיווך.
+                קונספט עיצובי שלם, הדמיות להמחשה, פריטי הלבשה שנבחרו בקפידה עם קישורים ישירים לרכישה והנחיות ליישום
+                העיצוב בחדר שלכם.
+              </p>
+              <p className="mt-2 text-[13.5px] leading-6 text-[#B07A50]">
+                בלי שעות של חיפושים, בלי התלבטויות ובלי פערי תיווך.
               </p>
             </div>
             <span className="w-px shrink-0 bg-[#D9BFA8]" aria-hidden="true" />
