@@ -33,8 +33,8 @@ function Slider({
       )}
       {...props}
     >
-      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-[#E4D3C4]">
-        <SliderPrimitive.Range className="absolute h-full bg-[#E4D3C4]" />
+      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-[#E8DFD6]">
+        <SliderPrimitive.Range className="absolute h-full bg-[#CDBBA8]" />
       </SliderPrimitive.Track>
       {Array.from({ length: values.length }, (_, index) => (
         <SliderPrimitive.Thumb

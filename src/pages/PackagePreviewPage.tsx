@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, ChevronDown, CirclePlay, Gift, Infinity as InfinityIcon, ShoppingBag, Sofa, Tag, Wallet } from 'lucide-react'
+import { useEffect, useLayoutEffect, useState } from 'react'
+import { ArrowLeft, ArrowRight, CirclePlay, Gift, Infinity as InfinityIcon, ShoppingBag, Sofa, Tag, Wallet } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
@@ -164,11 +164,11 @@ function RoomPreview({ card }: { card: RoomCard }) {
 }
 
 const FEATURES = [
-  { icon: ShoppingBag, label: <>מותאם לגיל<br />ולהעדפות</> },
-  { icon: InfinityIcon, label: <>גישה<br />לכל החיים</> },
-  { icon: CirclePlay, label: <>סרטוני<br />הדרכה</> },
-  { icon: Sofa, label: <>משתלב<br />בריהוט קיים</> },
-  { icon: Wallet, label: <>הלבשה<br />בתקציב נגיש</> },
+  { icon: ShoppingBag, label: <>מותאם<br />לגיל<br />ולהעדפות</> },
+  { icon: InfinityIcon, label: <>גישה ללא<br />הגבלת<br />זמן</> },
+  { icon: CirclePlay, label: <>סרטוני<br />הדרכה<br />מקצועיים</> },
+  { icon: Sofa, label: <>משתלב<br />בריהוט<br />קיים</> },
+  { icon: Wallet, label: <>עיצוב<br />בתקציב<br />נגיש</> },
 ]
 
 export function PackagePreviewPage() {
@@ -176,8 +176,6 @@ export function PackagePreviewPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { packages, findMatchingPackages, loading } = useData()
-  const bottomRef = useRef<HTMLDivElement>(null)
-
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
   }, [searchParams])
@@ -325,12 +323,15 @@ export function PackagePreviewPage() {
 
           <div className="mt-3 flex items-stretch gap-4 rounded-2xl bg-[#F8EEE5] px-4 py-4">
             <div className="flex-1 text-center">
-              <h2 className="text-[17px] leading-snug font-bold text-[#2A2522] sm:text-[20px]">
-                כל מה שצריך לחדר מעוצב, בחבילה אחת
+              <h2 className="text-[#2A2522]">
+                <span className="block text-[16px] leading-snug font-medium sm:text-[18px]">העיצוב כבר מוכן.</span>
+                <span className="mt-1 block text-[20px] leading-snug font-bold sm:text-[22px]">
+                  כל שנותר הוא להכניס אותו לחדר.
+                </span>
               </h2>
-              <p className="mt-2 text-[13.5px] leading-6 text-[#3C3530]">
-                קונספט עיצובי שלם, הדמיות להמחשה, פריטי הלבשה שנבחרו בקפידה עם קישורים ישירים לרכישה והנחיות ליישום
-                העיצוב בחדר שלכם.
+              <p className="mt-3 text-[13.5px] leading-6 text-[#3C3530]">
+                חבילת עיצוב מקצועית הכוללת הדמיות של חדר מעוצב, שילובי צבעים, מבחר פריטי עיצוב ודקורציה שנבחרו בקפידה עם
+                קישורים ישירים לרכישה מאתרי אונליין בחו״ל במחירים נגישים, והנחיות ליישום העיצוב אצלכם בבית.
               </p>
               <p className="mt-2 text-[13.5px] leading-6 text-[#B07A50]">
                 בלי שעות של חיפושים, בלי התלבטויות ובלי פערי תיווך.
@@ -346,23 +347,15 @@ export function PackagePreviewPage() {
             {FEATURES.map(({ icon: Icon, label }, index) => (
               <div key={index} className={`px-1 text-center ${index > 0 ? 'border-s border-[#EADFD4]' : ''}`}>
                 <Icon className="mx-auto mb-1.5 h-7 w-7 text-[#B07A50]" strokeWidth={1.4} />
-                <p className="text-[12px] leading-[1.25] text-[#3C3530]">{label}</p>
+                <p className="text-[11px] leading-[1.25] text-[#3C3530] sm:text-[12px]">{label}</p>
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            aria-label="גלילה למטה"
-            onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
-            className="relative z-10 mx-auto -mt-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#EFE6DD] bg-white text-[#2A2522] shadow-[0_2px_8px_rgba(110,80,50,0.15)]"
-          >
-            <ChevronDown className="h-5 w-5" />
-          </button>
 
           <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#FAF1EA] px-4 py-3">
             <p className="flex-1 text-center text-[13px] leading-6 text-[#3C3530]">
-              פריטי ההלבשה אינם כלולים במחיר החבילה ונרכשים בנפרד, מאתרי און ליין במחירים נגישים, בהתאם לבחירתכם ולתקציב
-              שלכם.
+              פריטי העיצוב והריהוט המוצגים אינם כלולים במחיר החבילה ונרכשים ישירות מאתרי אונליין בחו״ל, בהתאם לבחירתכם
+              ולתקציב שלכם.
             </p>
             <Tag className="h-7 w-7 shrink-0 text-[#B07A50]" strokeWidth={1.4} />
           </div>
@@ -388,7 +381,7 @@ export function PackagePreviewPage() {
             </span>
           </button>
 
-          <div ref={bottomRef} className="mt-4 flex items-center justify-between px-1">
+          <div className="mt-4 flex items-center justify-between px-1">
             <button
               type="button"
               onClick={() => navigate('/questionnaire')}

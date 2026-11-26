@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getYearsSincePurchase } from '../utils/auth'
 import { trackQuestionnaire } from '../utils/tracking'
@@ -586,25 +586,30 @@ export function QuestionnairePage() {
 
   const pad = (value: number) => String(value).padStart(2, '0')
   const wide = current.kind === 'wall' || current.kind === 'color'
+  const childStep = current.kind === 'child'
 
   return (
-    <div className="min-h-screen bg-[#F6F1EC]">
+    <div className="min-h-screen bg-[#F3EEE8]">
       <Header />
 
-      <div className={`mx-auto px-4 pt-3 pb-6 sm:px-6 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
-        <div className="mb-2 flex justify-start px-1 text-[13px] text-[#5C564F]">
-          <span dir="ltr">
-            {pad(stepNumber)} / {pad(totalSteps)}
-          </span>
-        </div>
-        <div className="mb-4 flex gap-2 px-1">
-          {steps.map((item, index) => (
-            <span
-              key={`${item.kind}-${index}`}
-              className={`h-1.5 flex-1 rounded-full ${index <= safeIndex ? 'bg-[#7E8B74]' : 'bg-[#E7E0D6]'}`}
-            />
-          ))}
-        </div>
+      <div className={`mx-auto px-4 pb-8 sm:px-6 ${childStep ? 'max-w-[340px] pt-4' : `pt-3 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}`}>
+        {!childStep && (
+          <>
+            <div className="mb-2 flex justify-start px-1 text-[13px] text-[#5C564F]">
+              <span dir="ltr">
+                {pad(stepNumber)} / {pad(totalSteps)}
+              </span>
+            </div>
+            <div className="mb-4 flex gap-2 px-1">
+              {steps.map((item, index) => (
+                <span
+                  key={`${item.kind}-${index}`}
+                  className={`h-1.5 flex-1 rounded-full ${index <= safeIndex ? 'bg-[#7E8B74]' : 'bg-[#E7E0D6]'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {redesignEntries.length > 0 && rooms.some((room) => room.roomId) && current.kind === 'rooms' && (
           <p className="mb-3 rounded-2xl bg-[#F8F3EC] px-4 py-3 text-center text-sm leading-6 text-[#6F6A64]">
@@ -615,7 +620,7 @@ export function QuestionnairePage() {
           </p>
         )}
 
-        <div className="rounded-[28px] border border-[#EFE8E0] bg-white px-5 py-7 shadow-[0_8px_30px_rgba(120,100,80,0.04)] sm:px-8">
+        <div className={`border border-[#E7E1D8] bg-white shadow-[0_8px_28px_rgba(120,100,80,0.05)] ${childStep ? 'rounded-[26px] px-6 py-7' : 'rounded-[28px] px-5 py-7 sm:px-8'}`}>
           {current.kind === 'rooms' && (
             <RoomsStep
               rooms={rooms}
@@ -683,7 +688,7 @@ export function QuestionnairePage() {
             />
           )}
 
-          <div className="mt-8 flex items-center justify-between">
+          <div dir="ltr" className={`${childStep ? 'mt-6' : 'mt-8'} flex items-center justify-between`}>
             <button
               type="button"
               onClick={handleBack}
@@ -696,14 +701,14 @@ export function QuestionnairePage() {
               type="button"
               onClick={handleNext}
               disabled={!canProceed()}
-              className={`inline-flex items-center gap-2 rounded-full px-6 py-2 text-[15px] transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-[15px] transition-colors ${
                 canProceed()
                   ? 'bg-[#E8DDD0] text-[#8A7B6A] hover:bg-[#DDD0C2]'
                   : 'cursor-not-allowed bg-[#E8DDD0] text-[#8A7B6A]'
               }`}
             >
-              {safeIndex === steps.length - 1 ? 'סיום' : 'המשך'}
               <ArrowLeft className="h-4 w-4" />
+              {safeIndex === steps.length - 1 ? 'סיום' : 'המשך'}
             </button>
           </div>
                   </div>
@@ -1030,6 +1035,14 @@ function RoomsStep({
           </div>
                     ))}
                   </div>
+
+      <div className="mt-4 rounded-2xl bg-[#E4EDE0] px-4 py-3 text-center text-[14px] leading-6 text-[#4F5C49]">
+        <p>כבר עיצבתם איתנו ורוצים לחדש את החדר?</p>
+        <Link to="/account" className="inline-flex items-center justify-center gap-1 underline underline-offset-2">
+          לשדרוג במחיר מיוחד באזור האישי
+          <ArrowLeft className="h-3.5 w-3.5" />
+        </Link>
+      </div>
                 </div>
               )
 }
@@ -1043,11 +1056,15 @@ function ChildStep({
 }) {
   return (
     <div>
-      <h2 className="text-center text-[1.65rem] font-normal text-[#2C2825]">קצת על {child.name}</h2>
-      <p className="mt-2 text-center text-[15px] text-[#8A847C]">ספרו לנו עוד קצת</p>
+      <h2 className="flex items-center justify-center gap-2.5 text-center text-[1.55rem] font-normal tracking-tight text-[#3A342F]">
+        <Sparkle className="h-3 w-3 text-[#C6A882]" />
+        קצת על {child.name}
+        <Sparkle className="h-3 w-3 text-[#C6A882]" />
+      </h2>
+      <p className="mt-1.5 text-center text-[14px] text-[#9A938C]">ספרו לנו עוד קצת</p>
 
-      <p className="mt-8 text-center text-[17px] text-[#3C3834]">בן או בת?</p>
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <p className="mt-7 text-center text-[16px] text-[#3C3834]">בן או בת?</p>
+      <div dir="ltr" className="mx-auto mt-3 flex w-fit items-center justify-center gap-3">
         {genderOptions.map((option) => {
           const selected = child.gender === option.value
           return (
@@ -1055,23 +1072,27 @@ function ChildStep({
               key={option.value}
               type="button"
               onClick={() => onChange({ gender: option.value })}
-              className={`flex flex-col items-center gap-3 rounded-2xl border bg-white py-7 transition-colors ${
-                selected ? 'border-[#C9B8A4] bg-[#FBF8F4]' : 'border-[#E6E0D8] hover:border-[#D4C4B0]'
+              className={`flex h-[112px] w-[86px] flex-col items-center justify-center gap-2 rounded-[18px] border transition-colors ${
+                selected
+                  ? 'border-[#D2CECA] bg-[#EEECEA] ring-1 ring-[#D2CECA]'
+                  : 'border-[#E4DDD4] bg-white hover:border-[#D4C4B0]'
               }`}
             >
-              <User className="h-8 w-8 text-[#C4B39A]" strokeWidth={1.3} />
-              <span className="text-[16px] text-[#4A4540]">{option.label}</span>
+              <User className="h-6 w-6 text-[#C4B39A]" strokeWidth={1.4} />
+              <span className="text-[15px] text-[#4A4540]">{option.label}</span>
             </button>
           )
         })}
       </div>
 
-      <p className="mt-8 text-center text-[17px] text-[#3C3834]">באיזה גיל?</p>
-      <div className="mt-2 text-center">
-        <div className="text-[56px] leading-none text-[#7E8B74]">{child.age}</div>
-        <div className="mt-1 text-[15px] text-[#9A928A]">{child.age === 0 ? 'עד שנה' : child.age === 1 ? 'שנה' : 'שנים'}</div>
+      <p className="mt-7 text-center text-[16px] text-[#3C3834]">באיזה גיל?</p>
+      <div className="mt-1 flex items-center justify-center gap-1.5">
+        <span className="text-[40px] leading-none text-[#7E8B74]">{child.age}</span>
+        <span className="text-[13px] text-[#A39C94]">
+          {child.age === 0 ? 'עד שנה' : child.age === 1 ? 'שנה' : 'שנים'}
+        </span>
       </div>
-      <div dir="ltr" className="mt-4 px-1">
+      <div dir="ltr" className="mt-3 px-1">
         <Slider
           value={[child.age]}
           onValueChange={(value) => onChange({ age: value[0] })}

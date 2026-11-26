@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, ExternalLink, Loader2, Mail, RefreshCw } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Loader2, Mail, RefreshCw, Wand2 } from 'lucide-react'
 import { apiFetch } from '../../utils/backend'
 import { Badge, LoadingState, cardClass, formatDate, inputClass, primaryButton, secondaryButton, useAdminData } from './shared'
 
@@ -42,10 +42,21 @@ const statusInfo = {
   unverified: { label: 'לא ניתן לאמת', tone: 'warn' },
 } as const
 
+interface Suggestion {
+  url: string
+  source: 'other-package' | 'variant' | 'search'
+  sourceLabel: string
+  title: string
+  verified: boolean
+}
+
 function LinkRow({ link, onChanged }: { link: LinkCheck; onChanged: () => void }) {
   const [replacing, setReplacing] = useState(false)
   const [newUrl, setNewUrl] = useState('')
+  const [everywhere, setEverywhere] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null)
+  const [searching, setSearching] = useState(false)
 
   const run = async (path: string, body: unknown = {}) => {
     setBusy(true)
@@ -56,6 +67,18 @@ function LinkRow({ link, onChanged }: { link: LinkCheck; onChanged: () => void }
       alert(err instanceof Error ? err.message : 'הפעולה נכשלה')
     } finally {
       setBusy(false)
+    }
+  }
+
+  const findSuggestions = async () => {
+    setSearching(true)
+    try {
+      const result = await apiFetch<{ suggestions: Suggestion[] }>(`/api/admin/links/${link.id}/suggestions`)
+      setSuggestions(result.suggestions)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'החיפוש נכשל')
+    } finally {
+      setSearching(false)
     }
   }
 
@@ -82,8 +105,12 @@ function LinkRow({ link, onChanged }: { link: LinkCheck; onChanged: () => void }
       )}
       {link.status !== 'ok' && (
         <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" className={primaryButton} disabled={searching || busy} onClick={findSuggestions}>
+            {searching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+            {searching ? 'מחפשת קישור שעובד...' : 'מצאי קישור חלופי'}
+          </button>
           <button type="button" className={secondaryButton} onClick={() => setReplacing(!replacing)}>
-            החלפת קישור
+            החלפה ידנית
           </button>
           <button type="button" className={secondaryButton} disabled={busy} onClick={() => run('recheck')}>
             בדיקה חוזרת
@@ -93,17 +120,61 @@ function LinkRow({ link, onChanged }: { link: LinkCheck; onChanged: () => void }
           </button>
         </div>
       )}
+      {suggestions && (
+        <div className="mt-2 rounded-sm border border-[#E8DED2] bg-[#FBF9F6] p-3">
+          {suggestions.length === 0 ? (
+            <p className="text-xs text-[#6B6B6B]">
+              לא נמצא קישור חלופי שעובד. אפשר להדביק קישור ידנית, או להגדיר SCRAPINGBEE_API_KEY בשרת כדי לאפשר חיפוש באתר הספק.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {suggestions.map((suggestion) => (
+                <li key={suggestion.url} className="flex flex-wrap items-center gap-2 text-xs">
+                  <Badge tone={suggestion.verified ? 'ok' : 'warn'}>{suggestion.verified ? 'נבדק ועובד' : 'לא ניתן לאמת'}</Badge>
+                  <span className="text-[#6B6B6B]">{suggestion.sourceLabel}</span>
+                  {suggestion.title && <span className="text-[#3C3834]">{suggestion.title}</span>}
+                  <a href={suggestion.url} target="_blank" rel="noreferrer" dir="ltr" className="max-w-[16rem] truncate text-[#8B7340]">
+                    {suggestion.url}
+                  </a>
+                  <button
+                    type="button"
+                    className={secondaryButton}
+                    disabled={busy}
+                    onClick={() => run('replace', { url: suggestion.url, everywhere: true })}
+                  >
+                    החלפה בכל החבילות
+                  </button>
+                  <button
+                    type="button"
+                    className={secondaryButton}
+                    disabled={busy}
+                    onClick={() => run('replace', { url: suggestion.url })}
+                  >
+                    החלפה בחבילה הזו בלבד
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {replacing && (
-        <div className="mt-2 flex gap-2">
-          <input className={inputClass} dir="ltr" placeholder="https://..." value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
-          <button
-            type="button"
-            className={primaryButton}
-            disabled={busy || !newUrl.trim()}
-            onClick={() => run('replace', { url: newUrl.trim() }).then(() => setReplacing(false))}
-          >
-            שמירה
-          </button>
+        <div className="mt-2 space-y-2">
+          <div className="flex gap-2">
+            <input className={inputClass} dir="ltr" placeholder="https://..." value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
+            <button
+              type="button"
+              className={primaryButton}
+              disabled={busy || !newUrl.trim()}
+              onClick={() => run('replace', { url: newUrl.trim(), everywhere }).then(() => setReplacing(false))}
+            >
+              שמירה
+            </button>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-[#6B6B6B]">
+            <input type="checkbox" checked={everywhere} onChange={(e) => setEverywhere(e.target.checked)} />
+            להחליף בכל החבילות שמשתמשות בקישור הזה
+          </label>
         </div>
       )}
     </div>
@@ -129,6 +200,43 @@ export function LinksTab() {
       alert(err instanceof Error ? err.message : 'הבדיקה נכשלה')
     } finally {
       setRunning(false)
+      setProgress('')
+    }
+  }
+
+  const [fixing, setFixing] = useState(false)
+
+  const autoFix = async () => {
+    if (
+      !confirm(
+        'לתקן אוטומטית? המערכת תנסה צורה נקייה של אותו קישור (בלי פרמטרי מעקב, בכתובת הרשמית של המוצר) ותחליף רק אם היא נפתחת. קישורים אחרים לא ייגעו — אותם אפשר לתקן עם "מצאי קישור חלופי".',
+      )
+    )
+      return
+    setFixing(true)
+    const attempted: string[] = []
+    let fixedCount = 0
+    try {
+      for (let i = 0; i < 20; i += 1) {
+        const result = await apiFetch<{ fixed: unknown[]; attempted: string[]; remaining: number }>(
+          '/api/admin/links/auto-fix',
+          { body: { exclude: attempted } },
+        )
+        attempted.push(...result.attempted)
+        fixedCount += result.fixed.length
+        setProgress(`תוקנו ${fixedCount} קישורים`)
+        if (result.remaining === 0) break
+      }
+      await reload()
+      alert(
+        fixedCount > 0
+          ? `תוקנו ${fixedCount} קישורים. את השאר אפשר לתקן עם "מצאי קישור חלופי".`
+          : 'אף קישור לא נפתח בצורה נקייה. אפשר להשתמש ב"מצאי קישור חלופי" בכל שורה.',
+      )
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'התיקון נכשל')
+    } finally {
+      setFixing(false)
       setProgress('')
     }
   }
@@ -162,6 +270,15 @@ export function LinksTab() {
           <button type="button" onClick={runCheck} disabled={running} className={primaryButton}>
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {running ? progress || 'בודקת...' : 'בדיקה עכשיו'}
+          </button>
+          <button
+            type="button"
+            onClick={autoFix}
+            disabled={fixing || running || !data || data.counts.broken === 0}
+            className={secondaryButton}
+          >
+            {fixing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {fixing ? progress || 'מתקנת...' : 'תיקון אוטומטי'}
           </button>
           <button type="button" onClick={sendReport} className={secondaryButton}>
             <Mail className="h-4 w-4" /> שליחת דוח

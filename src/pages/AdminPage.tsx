@@ -37,6 +37,7 @@ import {
   buildCatalogVariantId,
   expectedVariantCount,
   hasVariantPackages,
+  catalogPathForPackageId,
   parseCatalogVariantId,
   parseVariantId,
   resolveCatalogVariant,
@@ -48,6 +49,7 @@ import {
   PACKAGE_AGE_GROUPS,
   THEME_CATALOG,
   allCatalogThemeNames,
+  findCatalogTheme,
   type CatalogGender,
   type CatalogTheme,
   type PackageAgeGroupId,
@@ -69,6 +71,15 @@ function PackageTreeNav({
   const [expandedGenders, setExpandedGenders] = useState<Set<CatalogGender>>(() => new Set())
   const [expandedAges, setExpandedAges] = useState<Set<string>>(() => new Set())
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(() => new Set())
+
+  // Keep the selected package's branch open so the tree always shows where it sits.
+  useEffect(() => {
+    const path = selectedId ? catalogPathForPackageId(selectedId) : null
+    if (!path) return
+    setExpandedGenders((prev) => new Set(prev).add(path.gender))
+    setExpandedAges((prev) => new Set(prev).add(`${path.gender}:${path.ageId}`))
+    setExpandedThemes((prev) => new Set(prev).add(`${path.gender}:${path.ageId}:${path.themeId}`))
+  }, [selectedId])
 
   const basePackages = staticBasePackages.filter((pkg) =>
     BASE_PACKAGE_IDS.includes(pkg.id as (typeof BASE_PACKAGE_IDS)[number]),
@@ -190,7 +201,16 @@ function PackageTreeNav({
                               onClick={() => toggle(tKey, setExpandedThemes)}
                               className="flex w-full items-center justify-between px-5 py-2 text-right text-sm text-[#4A4A4A] hover:bg-[#F9F7F4]"
                             >
-                              <span>{theme.name}</span>
+                              <span className="flex items-center gap-2">
+                                {theme.name}
+                                <span className="rounded-full bg-[#F3EEE8] px-1.5 py-0.5 text-[10px] text-[#8B8B8B]">
+                                  {(() => {
+                                    const scales = filterColorScalesForTheme(colorScales, gender, ageId, theme.id)
+                                    const saved = scales.filter((scale) => isVariantSaved(theme, gender, ageId, scale.id)).length
+                                    return `${saved}/${scales.length}`
+                                  })()}
+                                </span>
+                              </span>
                               {themeOpen ? (
                                 <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-[#B5A99A]" />
                               ) : (
@@ -501,9 +521,37 @@ function PackageImagesEditor({
   )
 }
 
+function HierarchyPath({ packageId, colorScales }: { packageId: string; colorScales: ColorScale[] }) {
+  const path = catalogPathForPackageId(packageId)
+  if (!path) return null
+  const scaleId = parseCatalogVariantId(packageId)?.colorScaleId ?? parseVariantId(packageId)?.colorScaleId
+  const steps = [
+    CATALOG_GENDERS.find((entry) => entry.id === path.gender)?.label,
+    PACKAGE_AGE_GROUPS.find((entry) => entry.id === path.ageId)?.label,
+    findCatalogTheme(path.gender, path.ageId, path.themeId)?.name,
+    colorScales.find((scale) => scale.id === scaleId)?.name,
+  ].filter((step): step is string => Boolean(step))
+
+  return (
+    <div className="mb-4 rounded-sm border border-[#E8DED2] bg-[#FBF9F6] px-4 py-3">
+      <p className="mb-1 text-xs text-[#8B8B8B]">מיקום בהיררכיה: מין ← גיל ← נושא ← סקלת צבעים</p>
+      <p className="flex flex-wrap items-center gap-1.5 text-sm text-[#4A4A4A]">
+        {steps.map((step, index) => (
+          <span key={`${step}-${index}`} className="flex items-center gap-1.5">
+            {index > 0 && <ChevronLeft className="h-3.5 w-3.5 text-[#B5A99A]" />}
+            <span className={index === steps.length - 1 ? 'font-normal' : ''}>{step}</span>
+          </span>
+        ))}
+      </p>
+      <p className="mt-1 text-xs text-[#8B8B8B]">המין, הגיל והנושא נקבעים לפי המקום בעץ ולכן נעולים לעריכה.</p>
+    </div>
+  )
+}
+
 function PackageEditor({
   draft,
   setDraft,
+  colorScales,
   isNew,
   onSave,
   onSaveDraft,
@@ -516,6 +564,7 @@ function PackageEditor({
 }: {
   draft: ThemePackage
   setDraft: (pkg: ThemePackage) => void
+  colorScales: ColorScale[]
   isNew: boolean
   onSave: () => void
   onSaveDraft: () => void
@@ -527,6 +576,8 @@ function PackageEditor({
   saving: boolean
 }) {
   const update = (partial: Partial<ThemePackage>) => setDraft({ ...draft, ...partial })
+  // Packages that sit in the catalog tree get their gender, age and theme from the tree.
+  const inHierarchy = catalogPathForPackageId(draft.id) !== null
   const [fetchingProductImages, setFetchingProductImages] = useState(false)
   const [previewing, setPreviewing] = useState(false)
 
@@ -582,6 +633,7 @@ function PackageEditor({
     <div className="space-y-5">
       <div className={cardClass}>
         <h3 className="mb-4 text-lg font-normal text-[#4A4A4A]">פרטי חבילה</h3>
+        <HierarchyPath packageId={draft.id} colorScales={colorScales} />
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass}>מזהה (id)</label>
@@ -617,7 +669,8 @@ function PackageEditor({
             <select
               value={draft.questionnaireTheme}
               onChange={(e) => update({ questionnaireTheme: e.target.value })}
-              className={inputClass}
+              disabled={inHierarchy}
+              className={`${inputClass} disabled:opacity-60`}
             >
               {QUESTIONNAIRE_THEMES.map((theme) => (
                 <option key={theme} value={theme}>
@@ -643,7 +696,8 @@ function PackageEditor({
             <select
               value={draft.gender}
               onChange={(e) => update({ gender: e.target.value as ThemePackage['gender'] })}
-              className={inputClass}
+              disabled={inHierarchy}
+              className={`${inputClass} disabled:opacity-60`}
             >
               <option value="unisex">יוניסקס</option>
               <option value="boy">בנים</option>
@@ -656,7 +710,8 @@ function PackageEditor({
               type="number"
               value={draft.ageRange[0]}
               onChange={(e) => update({ ageRange: [Number(e.target.value), draft.ageRange[1]] })}
-              className={inputClass}
+              disabled={inHierarchy}
+              className={`${inputClass} disabled:opacity-60`}
             />
           </div>
           <div>
@@ -665,7 +720,8 @@ function PackageEditor({
               type="number"
               value={draft.ageRange[1]}
               onChange={(e) => update({ ageRange: [draft.ageRange[0], Number(e.target.value)] })}
-              className={inputClass}
+              disabled={inHierarchy}
+              className={`${inputClass} disabled:opacity-60`}
             />
           </div>
         </div>
@@ -1441,6 +1497,7 @@ export function AdminPage() {
                 <PackageEditor
                   draft={packageDraft}
                   setDraft={setPackageDraft}
+                  colorScales={colorScales}
                   isNew={isNew}
                   onSave={handleSavePackage}
                   onSaveDraft={handleSaveDraft}
