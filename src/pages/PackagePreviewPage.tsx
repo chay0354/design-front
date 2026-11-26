@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, ChevronDown, Gift, Infinity as InfinityIcon, ShieldCheck, ShoppingBag, Sofa, Tag, Ticket } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, CirclePlay, Gift, Infinity as InfinityIcon, ShoppingBag, Sofa, Tag, Wallet } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
@@ -164,18 +164,11 @@ function RoomPreview({ card }: { card: RoomCard }) {
 }
 
 const FEATURES = [
-  { icon: ShoppingBag, label: <>מותאם גיל והעדפות</> },
-  {
-    icon: InfinityIcon,
-    label: (
-      <>
-        גישה לאזור האישי <strong className="font-semibold">לכל החיים</strong>
-      </>
-    ),
-  },
-  { icon: ShieldCheck, label: <>טיפים ליישום (בסרטונים)</> },
-  { icon: Sofa, label: <>מתלבש על ריהוט קיים</> },
-  { icon: Ticket, label: <>סטיילינג בלבד</> },
+  { icon: ShoppingBag, label: <>מותאם לגיל<br />ולהעדפות</> },
+  { icon: InfinityIcon, label: <>גישה<br />לכל החיים</> },
+  { icon: CirclePlay, label: <>סרטוני<br />הדרכה</> },
+  { icon: Sofa, label: <>משתלב<br />בריהוט קיים</> },
+  { icon: Wallet, label: <>הלבשה<br />בתקציב נגיש</> },
 ]
 
 export function PackagePreviewPage() {
@@ -349,14 +342,22 @@ export function PackagePreviewPage() {
             </span>
           </div>
 
-          <div className="mt-3 grid grid-cols-5 rounded-2xl border border-[#F1E9E1] bg-white px-1 py-3">
+          <div className="mt-3 grid grid-cols-5 rounded-2xl border border-[#F1E9E1] bg-white px-1 py-4">
             {FEATURES.map(({ icon: Icon, label }, index) => (
               <div key={index} className={`px-1 text-center ${index > 0 ? 'border-s border-[#EADFD4]' : ''}`}>
                 <Icon className="mx-auto mb-1.5 h-7 w-7 text-[#B07A50]" strokeWidth={1.4} />
-                <p className="text-[11.5px] leading-4 text-[#3C3530]">{label}</p>
+                <p className="text-[12px] leading-[1.25] text-[#3C3530]">{label}</p>
               </div>
             ))}
           </div>
+          <button
+            type="button"
+            aria-label="גלילה למטה"
+            onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+            className="relative z-10 mx-auto -mt-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#EFE6DD] bg-white text-[#2A2522] shadow-[0_2px_8px_rgba(110,80,50,0.15)]"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </button>
 
           <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#FAF1EA] px-4 py-3">
             <p className="flex-1 text-center text-[13px] leading-6 text-[#3C3530]">
@@ -395,14 +396,6 @@ export function PackagePreviewPage() {
             >
               <ArrowRight className="h-5 w-5" />
               חזור
-            </button>
-            <button
-              type="button"
-              aria-label="גלילה למטה"
-              onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#6B4A35] shadow-[0_2px_8px_rgba(110,80,50,0.15)]"
-            >
-              <ChevronDown className="h-5 w-5" />
             </button>
             <button
               type="button"
