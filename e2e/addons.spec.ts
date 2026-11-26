@@ -571,3 +571,19 @@ test('personal area groups several children into one room card', async ({ page }
   await expect(page).toHaveURL(new RegExp(`/questionnaire\\?roomId=${roomA}`))
   await expect(page.getByText(/עיצוב חדש לחדר של אייר וטל/)).toBeVisible()
 })
+
+test('package preview after the questionnaire matches the new design', async ({ page }) => {
+  await page.route('**/api/checkout/quote', (route) => route.fulfill({ json: { total: 540 } }))
+  await page.addInitScript(() => localStorage.setItem('pd_cookie_consent', 'accepted'))
+  const rooms = [
+    { children: [{ name: 'ארד', gender: 'boy', age: 5 }], designGender: 'boy', ageChoice: null, theme: "גיבורי על ג'וניור", colorPreference: 'אפורים אלגנטיים 🌫️', wallDesignOption: 'paint' },
+  ]
+  await page.goto(`/preview/recommended?rooms=${encodeURIComponent(JSON.stringify(rooms))}`)
+  await expect(page.getByRole('heading', { name: 'חבילת העיצוב של ארד' })).toBeVisible()
+  await expect(page.getByText("חבילת גיבורי על ג'וניור לגיל 5")).toBeVisible()
+  await expect(page.getByText('אפורים אלגנטיים', { exact: true })).toBeVisible()
+  await expect(page.getByText('90 ש״ח בלבד')).toBeVisible()
+  await expect(page.getByText('או 540 ש״ח בתשלום אחד')).toBeVisible()
+  await page.getByRole('button', { name: /^הבא/ }).click()
+  await expect(page).toHaveURL(/\/login$/)
+})

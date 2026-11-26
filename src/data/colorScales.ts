@@ -10,6 +10,23 @@ export interface ColorScale {
   name: string
   questionnaireKeywords: string[]
   colors: ColorSwatch[]
+  /** One line shown under the scale name on the package preview. */
+  description?: string
+}
+
+const SCALE_DESCRIPTIONS: Record<string, string> = {
+  'warm-natural': 'גוונים חמימים וטבעיים שיוצרים תחושה רכה, עוטפת ונעימה',
+  'calming-blues': 'גוונים מרגיעים שמשרים שלווה ומתאימים לשעות של משחק ומנוחה',
+  'fresh-greens': 'גוונים רעננים בהשראת הטבע, למראה חי, צלול ומאוזן',
+  'elegant-grays': 'למראה נקי ואלגנטי שיוצר שקט בעין ונותן במה לאישיות של הילד',
+  'happy-colorful': 'שילוב צבעוני ושמח שמעורר דמיון, אנרגיה ויצירתיות',
+  'soft-pinks': 'גוונים עדינים ורכים ליצירת חדר חלומי, חמים ומלא קסם',
+  'sunny-yellows': 'גוונים שמשיים ומאירים שמכניסים לחדר אור, שמחה וחום',
+}
+
+/** The admin-edited description, or the default one for the built-in scales. */
+export function colorScaleDescription(scale: ColorScale): string {
+  return scale.description?.trim() || SCALE_DESCRIPTIONS[scale.id] || ''
 }
 
 /** Color scales from petite dreams.xlsx — Tambour codes and shade names */

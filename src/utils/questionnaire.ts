@@ -148,10 +148,10 @@ export function formatRoomNames(children: { name: string }[]): string {
   return `${names.slice(0, -1).join(', ')} ו${names[names.length - 1]}`
 }
 
-export const ROOM_PACKAGE_PRICE = 660
-export const INSTALLMENT_COUNT = 12
-/** Temporary: hide package prices on the customer site. */
-export const SHOW_PACKAGE_PRICE = false
+/** Fallback only — the server price (admin settings) is what customers are charged and shown. */
+export const ROOM_PACKAGE_PRICE = 540
+export const INSTALLMENT_COUNT = 6
+export const SHOW_PACKAGE_PRICE = true
 
 export function roomPackagePrice(basePrice: number, roomIndex: number): number {
   return roomIndex === 0 ? basePrice : Math.round(basePrice * 0.8)

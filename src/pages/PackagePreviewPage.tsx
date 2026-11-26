@@ -1,228 +1,189 @@
-import { useLayoutEffect } from 'react'
-import { Armchair, ArrowLeft, CheckCircle2, Lock, createLucideIcon } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ArrowLeft, ArrowRight, ChevronDown, Gift, Infinity as InfinityIcon, ShieldCheck, ShoppingBag, Sofa, Tag, Ticket } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { BrushMark, Sparkle } from '../components/BrushTitle'
+import { Sparkle } from '../components/BrushTitle'
 import { Header } from '../components/Header'
+import { ProductImage } from '../components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
+import { colorScaleDescription, displayColorScaleName } from '../data/colorScales'
 import { previewRoomImage, resolveDesignPackageImagesForSelection } from '../data/designPackageImages'
-import {
-  getAgeGroup,
-  getAgeGroupIdForAge,
-  type CatalogGender,
-} from '../data/packageCatalog'
-import { displayColorScaleName } from '../data/colorScales'
-import type { ThemePackage } from '../data/themePackages'
+import { getAgeGroup, getAgeGroupIdForAge, type CatalogGender } from '../data/packageCatalog'
+import { visibleShoppingCategories, type ThemePackage } from '../data/themePackages'
+import { apiFetch } from '../utils/backend'
 import {
   INSTALLMENT_COUNT,
   ROOM_PACKAGE_PRICE,
-  SHOW_PACKAGE_PRICE,
+  buildQuestionnaireSteps,
   formatRoomNames,
-  installmentAmount,
+  isCrossAgeRoom,
   parseRoomsParam,
   roomDesignProfile,
   roomPackagePrice,
   type QuestionnaireChild,
 } from '../utils/questionnaire'
 
-const Rug = createLucideIcon('rug', [
-  ['rect', { x: '4', y: '7', width: '16', height: '10', rx: '0.8', key: 'body' }],
-  ['path', { d: 'M7 7v10M17 7v10', key: 'bands' }],
-  ['path', { d: 'M12 9.5 14.5 12 12 14.5 9.5 12z', key: 'diamond' }],
-  ['path', { d: 'M4 8.5H2M4 10.5H2M4 12.5H2M4 14.5H2M4 16H2', key: 'fringe-right' }],
-  ['path', { d: 'M20 8.5h2M20 10.5h2M20 12.5h2M20 14.5h2M20 16h2', key: 'fringe-left' }],
-])
+const PLACEHOLDER = '/assets/lock-preview.png'
 
-const giftIcon = '/assets/gift-icon.png'
-
-function TeaserGrid({ src }: { src: string }) {
+/** The teaser is one 3×3 collage image; each tile shows its own cell so the grid gets rounded tiles and gaps. */
+function TeaserTiles({ src }: { src: string }) {
   return (
-    <img
-      src={src}
-      alt=""
-      className="aspect-square w-full object-cover lg:object-contain max-lg:h-[46svh] max-lg:aspect-auto"
-    />
+    <div className="grid grid-cols-3 gap-1.5" dir="ltr">
+      {Array.from({ length: 9 }, (_, index) => (
+        <div
+          key={index}
+          role="presentation"
+          className="aspect-square rounded-lg bg-[#F3EEE8] shadow-[0_1px_3px_rgba(90,60,30,0.08)]"
+          style={{
+            backgroundImage: `url("${src}")`,
+            backgroundSize: '300% 300%',
+            backgroundPosition: `${(index % 3) * 50}% ${Math.floor(index / 3) * 50}%`,
+          }}
+        />
+      ))}
+    </div>
   )
 }
 
-function ChildPackageCard({
-  childName,
-  gender,
-  age,
-  theme,
-  colorPreference,
-  pkg,
-  price,
-  originalPrice,
-  discountLabel,
-  onPurchase,
-  purchaseLabel,
-}: {
-  childName: string
+function collectCollageImages(
+  heroImage: string,
+  galleryImages: string[],
+  shoppingCategories: ThemePackage['shoppingCategories'],
+): string[] {
+  const seen = new Set<string>()
+  const images: string[] = []
+  const add = (url?: string) => {
+    if (url && !seen.has(url)) {
+      seen.add(url)
+      images.push(url)
+    }
+  }
+  for (const url of [heroImage, ...galleryImages]) add(url)
+  for (const category of shoppingCategories) {
+    for (const item of category.items) if (item.image?.startsWith('http')) add(item.image)
+  }
+  while (images.length < 8) images.push(PLACEHOLDER)
+  return images.slice(0, 8)
+}
+
+/** Without a designed teaser: package photos around a center tile with the theme name. */
+function CollageTiles({ images, theme }: { images: string[]; theme: string }) {
+  const tiles: (string | null)[] = [...images.slice(0, 4), null, ...images.slice(4, 8)]
+  return (
+    <div className="grid grid-cols-3 gap-1.5" dir="ltr">
+      {tiles.map((src, index) =>
+        src === null ? (
+          <div
+            key="center"
+            className="flex aspect-square flex-col items-center justify-center rounded-lg border border-[#EFE5DA] bg-[#FBF7F2] px-2 text-center"
+            dir="rtl"
+          >
+            <Sparkle className="h-3 w-3 text-[#C9A27E]" />
+            <p className="mt-1 text-[15px] leading-tight font-semibold text-[#2F3A4A]">{theme}</p>
+            <p className="mt-1 text-[10px] text-[#8A7A6B]">טעימה מהסגנון שלכם</p>
+          </div>
+        ) : (
+          <div key={`${src}-${index}`} className="aspect-square overflow-hidden rounded-lg bg-[#F3EEE8]">
+            {src.startsWith('http') ? (
+              <ProductImage src={src} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <img src={src} alt="" className="h-full w-full object-cover" />
+            )}
+          </div>
+        ),
+      )}
+    </div>
+  )
+}
+
+interface RoomCard {
+  name: string
   gender: CatalogGender
   age: number
+  ageLabel: string
   theme: string
   colorPreference: string
-  pkg: ThemePackage
-  price: number
-  originalPrice?: number
-  discountLabel?: string
-  onPurchase: () => void
-  purchaseLabel: string
-}) {
-  const navigate = useNavigate()
-  const { getPackageContent, getColorScaleForPreference } = useData()
-  const content = getPackageContent(pkg.id)
-  const colorScale = getColorScaleForPreference(colorPreference)
-  const design = resolveDesignPackageImagesForSelection(gender, age, theme, colorScale.id)
-  const roomImage = previewRoomImage(design) || content?.heroImage || pkg.heroImage
-  const ageGroup = getAgeGroup(getAgeGroupIdForAge(age))
-  const packageTitle = theme ? `חבילת ${theme}` : pkg.theme ? `חבילת ${pkg.theme}` : pkg.name
-  const scaleName = displayColorScaleName(colorPreference)
-  const styleDescription =
-    'כאן תמצאו סקיצה מלאה המותאמת לגיל, להעדפות ולסגנון שלכם. הקונספט העיצובי, כיוון העיצוב והנחיות הסטיילינג נבנו במיוחד כדי ליצור חדר חמים, רגוע ומלא קסם עבור ילדכם.'
+  package: ThemePackage
+  index: number
+}
 
-  const preview = roomImage ? (
-    <TeaserGrid src={roomImage} />
-  ) : (
-    <div className="flex aspect-square items-center justify-center bg-[#F7F4F0] px-6 text-center text-sm text-[#B5A99A]">
-      תמונת החבילה תתווסף בקרוב
-    </div>
-  )
+function RoomPreview({ card }: { card: RoomCard }) {
+  const { getPackageContent, getColorScaleForPreference } = useData()
+  const content = getPackageContent(card.package.id)
+  const colorScale = getColorScaleForPreference(card.colorPreference)
+  const design = resolveDesignPackageImagesForSelection(card.gender, card.age, card.theme, colorScale.id)
+  const themeName = card.theme || card.package.theme || card.package.name
+  const description = colorScaleDescription(colorScale)
+  const scaleName = displayColorScaleName(card.colorPreference) || colorScale.name
+  const roomImage = previewRoomImage(design) || content?.heroImage || card.package.heroImage
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-x-16 lg:gap-y-4">
-      <div className="order-2 flex flex-col justify-between gap-5 font-[family-name:var(--font-family)] lg:order-1 lg:row-span-2 lg:h-full">
-        <div className="text-center">
-          <h2 className="whitespace-nowrap text-[28px] font-normal leading-tight tracking-tight text-[#2F2B28] sm:text-[34px]">
-            <BrushMark className="px-8">חבילת העיצוב של {childName || 'הילד/ה'}</BrushMark>
-          </h2>
-          {discountLabel && <p className="mt-2 text-sm text-[#8A6A52]">{discountLabel}</p>}
-          <p className="mt-3 flex flex-wrap items-center justify-center gap-2.5 text-[16px] text-[#3C3834]">
-            <Sparkle className="h-3 w-3 text-[#C9A991]" />
-            {packageTitle} לגילאי {ageGroup.range[0]}–{ageGroup.range[1]}
-            {scaleName ? ` · ${scaleName}` : ''}
-            <Sparkle className="h-3 w-3 text-[#C9A991]" />
-          </p>
-        </div>
-
-        <div className="rounded-[14px] bg-[#EFE6DE] px-4 py-4">
-          <div className="grid items-start gap-4 sm:grid-cols-2 sm:gap-4">
-            <div className="flex flex-col items-center justify-center rounded-xl bg-white px-3 py-4 text-center">
-              <p className="text-[13px] text-[#5A544E]">סקלת הגוונים שנבחרה</p>
-              <p className="text-[22px] leading-tight text-[#2F2B28]">{scaleName || colorScale.name}</p>
-              <div className="mt-3 flex items-end justify-center gap-2">
-                {colorScale.colors.slice(0, 6).map((color) => (
-                  <div
-                    key={`${color.roleLabel}-${color.hex}`}
-                    className="h-[64px] w-[26px] rounded-[10px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-1">
-              <p className="mb-3 whitespace-nowrap text-center text-[15px] text-[#2F2B28]">
-                <BrushMark className="px-4">הצצה לסגנון שנבחר עבורכם</BrushMark>
-              </p>
-              <div className="flex items-start gap-3">
-                <p className="min-w-0 flex-1 text-[12.5px] leading-6 text-[#4A4540]">{styleDescription}</p>
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#F6F0EA]">
-                  <img src={giftIcon} alt="" className="h-10 w-10 object-contain" />
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-[12px] border border-[#D9D2CB] bg-white px-1 py-5">
-          <div className="grid grid-cols-2 gap-y-5 sm:grid-cols-4">
-            {[
-              {
-                icon: Rug,
-                title: 'סטיילינג בלבד',
-                text: 'חבילת העיצוב כוללת קונספט והנחיות סטיילינג בלבד. אינה כוללת פריטים עצמם או תכנון העמדה.',
-              },
-              {
-                icon: Armchair,
-                title: 'מתלבש על ריהוט קיים',
-                text: 'מיועד לריהוט בסיסי קיים בבית, עם המלצות לריהוט כבד באזור האישי.',
-              },
-              {
-                icon: CheckCircle2,
-                title: 'קל ליישום',
-                text: 'הנחיות סטיילינג פשוטות שמסתגלות לריהוט קיים ומשדרגות כל חדר.',
-              },
-              {
-                icon: Lock,
-                title: 'מותאם גיל והעדפות',
-                text: 'הקונספט נבנה בהתאמה לגיל הילד, להעדפותיו ולסגנון המשפחה.',
-              },
-            ].map(({ icon: Icon, title, text }, index) => (
-              <div
-                key={title}
-                className={`px-3 text-center ${index > 0 ? 'sm:border-s sm:border-[#EFE8E1]' : ''}`}
-              >
-                <Icon className="mx-auto mb-2.5 h-9 w-9 text-[#A27A5C]" strokeWidth={1.2} />
-                <p className="mb-1.5 text-[14px] font-medium text-[#2F2B28]">{title}</p>
-                <p className="text-[12px] leading-6 text-[#5A544E]">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate('/questionnaire')}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#E7DCD2] bg-white px-4 py-2 text-[12px] text-[#5A544E] hover:text-[#2F2B28]"
-          >
-            חזרה
-            <ArrowLeft className="h-3.5 w-3.5 text-[#A27A5C]" />
-          </button>
-          <button
-            type="button"
-            onClick={onPurchase}
-            className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#6E6758] px-4 py-3 text-[17px] text-white hover:bg-[#5A5548] sm:mx-6"
-          >
-            <Lock className="h-5 w-5" strokeWidth={1.5} />
-            {purchaseLabel}
-          </button>
-          {SHOW_PACKAGE_PRICE && (
-            <div className="flex shrink-0 flex-col items-end">
-              <div className="flex items-baseline gap-1.5">
-                {originalPrice && originalPrice > price && (
-                  <span className="text-sm font-light text-[#B5B0A8] line-through">{originalPrice}₪</span>
-                )}
-                <span className="text-[30px] tracking-tight text-[#1F1C1A]">{price}₪</span>
-              </div>
-              <span className="text-[11px] text-[#8B8B8B]">
-                {installmentAmount(price)} ש״ח ב-{INSTALLMENT_COUNT} תשלומים
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="order-1 lg:order-2 lg:self-start">
-        {preview}
-      </div>
-
-      <p className="order-3 flex items-center gap-3 text-[13px] leading-6 text-[#3C3834] lg:order-2 lg:self-end">
-        הצצה לחבילה והסגנון העיצובי הנבחר – כל הפרטים המלאים, הקישורים וההמלצות מחכים לכם לאחר הרכישה באזור האישי.
-        <Lock className="h-7 w-7 flex-shrink-0 text-[#A27A5C]" strokeWidth={1.2} />
+    <section className="text-center">
+      <h1 className="flex items-center justify-center gap-3 text-[26px] leading-tight font-bold text-[#2A2522] sm:text-[30px]">
+        <Sparkle className="h-5 w-5 text-[#D9A06C]" />
+        חבילת העיצוב של {card.name || 'הילד/ה'}
+        <Sparkle className="h-5 w-5 text-[#D9A06C]" />
+      </h1>
+      <p className="mx-auto mt-3 inline-block rounded-full bg-[#F4E7DB] px-6 py-1.5 text-[16px] font-medium text-[#6B4A35]">
+        חבילת {themeName} {card.ageLabel}
       </p>
-    </div>
+      {card.index > 0 && <p className="mt-1.5 text-sm text-[#7BA05B]">20% הנחה על חדר נוסף</p>}
+      <p className="mt-3 mb-3 text-[17px] text-[#6B4A35]">הצצה לסגנון החבילה שלכם</p>
+
+      {design.teaser ? (
+        <TeaserTiles src={design.teaser} />
+      ) : roomImage ? (
+        <img src={roomImage} alt={`הדמיית ${themeName}`} className="aspect-square w-full rounded-xl object-cover" />
+      ) : (
+        <CollageTiles
+          theme={themeName}
+          images={collectCollageImages(
+            content?.heroImage || card.package.heroImage,
+            content?.galleryImages || card.package.galleryImages,
+            content?.shoppingCategories || visibleShoppingCategories(card.package.shoppingCategories),
+          )}
+        />
+      )}
+
+      <div className="mt-3 rounded-2xl bg-[#F4EFEA] px-4 py-3">
+        <p className="text-[20px] font-bold text-[#2A2522]">{scaleName}</p>
+        {description && <p className="mt-0.5 text-[13px] text-[#4A4540]">{description}</p>}
+        <div className="mt-2.5 flex justify-center gap-2" dir="ltr">
+          {colorScale.colors.slice(0, 6).map((color) => (
+            <span
+              key={`${color.roleLabel}-${color.hex}`}
+              title={color.name}
+              className="h-10 w-14 rounded-lg shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]"
+              style={{ backgroundColor: color.hex }}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
+
+const FEATURES = [
+  { icon: ShoppingBag, label: <>מותאם גיל והעדפות</> },
+  {
+    icon: InfinityIcon,
+    label: (
+      <>
+        גישה לאזור האישי <strong className="font-semibold">לכל החיים</strong>
+      </>
+    ),
+  },
+  { icon: ShieldCheck, label: <>טיפים ליישום (בסרטונים)</> },
+  { icon: Sofa, label: <>מתלבש על ריהוט קיים</> },
+  { icon: Ticket, label: <>סטיילינג בלבד</> },
+]
 
 export function PackagePreviewPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { packages, findMatchingPackages, loading } = useData()
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
@@ -230,56 +191,92 @@ export function PackagePreviewPage() {
 
   const rooms = parseRoomsParam(searchParams.get('rooms'))
   const childName = searchParams.get('childName') || ''
-  const gender = (searchParams.get('gender') as 'boy' | 'girl' | 'unisex') || 'unisex'
+  const gender = (searchParams.get('gender') as CatalogGender) || 'unisex'
   const age = parseInt(searchParams.get('age') || '5', 10)
   const theme = searchParams.get('theme') || ''
   const colorPreference = searchParams.get('colorPreference') || ''
   const wallDesignOption = searchParams.get('wallDesignOption') || ''
   const additionalChildrenParam = searchParams.get('additionalChildren')
-  const additionalChildren: QuestionnaireChild[] = additionalChildrenParam
-    ? (JSON.parse(additionalChildrenParam) as QuestionnaireChild[])
-    : []
+  const additionalChildren: QuestionnaireChild[] = (() => {
+    try {
+      return additionalChildrenParam ? (JSON.parse(additionalChildrenParam) as QuestionnaireChild[]) : []
+    } catch {
+      return []
+    }
+  })()
 
-  const roomCards = (rooms
+  const ageLabelFor = (designAge: number, single: boolean, crossAge: boolean) => {
+    if (single && !crossAge) return `לגיל ${designAge}`
+    const group = getAgeGroup(getAgeGroupIdForAge(designAge))
+    return `לגילאי ${group.range[0]}–${group.range[1]}`
+  }
+
+  const baseCards = rooms
     ? rooms.map((room) => {
         const profile = roomDesignProfile(room)
         return {
           name: formatRoomNames(room.children),
           gender: profile.gender,
           age: profile.age,
+          ageLabel: ageLabelFor(profile.age, room.children.length === 1, isCrossAgeRoom(room)),
           theme: room.theme,
           colorPreference: room.colorPreference,
-          wallDesignOption: room.wallDesignOption,
         }
       })
     : [
-        { name: childName, gender, age, theme, colorPreference, wallDesignOption },
+        { name: childName, gender, age, ageLabel: `לגיל ${age}`, theme, colorPreference },
         ...additionalChildren.map((child) => ({
           name: child.name,
           gender: child.gender,
           age: child.age,
+          ageLabel: `לגיל ${child.age}`,
           theme: child.theme,
           colorPreference: child.colorPreference,
-          wallDesignOption: child.wallDesignOption,
         })),
       ]
-  ).map((card, index) => {
-    const matched = findMatchingPackages(card.gender, card.age, card.theme, card.colorPreference)
-    const pkg = matched[0] || packages[0]
-    return { ...card, package: pkg, price: pkg ? roomPackagePrice(ROOM_PACKAGE_PRICE, index) : 0 }
-  })
 
-  const mainCard = roomCards[0]
-  const mainPackage = mainCard?.package
+  const roomCards: RoomCard[] = baseCards
+    .map((card, index) => ({
+      ...card,
+      index,
+      package: findMatchingPackages(card.gender, card.age, card.theme, card.colorPreference)[0] || packages[0],
+    }))
+    .filter((card) => Boolean(card.package))
+
+  // Prices come from the server (admin settings); the constants are only a fallback.
+  const [serverTotal, setServerTotal] = useState<number | null>(null)
+  const roomCount = roomCards.length
+  useEffect(() => {
+    if (roomCount === 0) return
+    let cancelled = false
+    apiFetch<{ total: number }>('/api/checkout/quote', { body: { roomCount }, auth: false })
+      .then((quote) => !cancelled && setServerTotal(quote.total))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [roomCount])
+
+  const mainPackage = roomCards[0]?.package
 
   if (loading || !mainPackage) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#FBF8F5]">
         <Header />
-        <div className="mx-auto max-w-6xl px-4 py-24 text-center text-[#8B8B8B]">טוען...</div>
+        <div className="mx-auto max-w-xl px-4 py-24 text-center text-[#8B8B8B]">טוען...</div>
       </div>
     )
   }
+
+  const total =
+    serverTotal ?? roomCards.reduce((sum, _card, index) => sum + roomPackagePrice(ROOM_PACKAGE_PRICE, index), 0)
+  const monthly = Math.round(total / INSTALLMENT_COUNT)
+
+  // Progress: every questionnaire step is done; this screen and payment remain.
+  const questionnaireSteps = rooms ? buildQuestionnaireSteps(rooms).length : 6
+  const currentStep = questionnaireSteps + 1
+  const totalSteps = questionnaireSteps + 2
+  const percent = Math.round((currentStep / totalSteps) * 100)
 
   const handlePurchase = () => {
     const queryParams = rooms
@@ -303,60 +300,120 @@ export function PackagePreviewPage() {
     }
   }
 
-  const grandTotal = roomCards.reduce((sum, card) => sum + card.price, 0)
-  const totalSavings = roomCards.reduce(
-    (sum, card) => sum + (card.package ? ROOM_PACKAGE_PRICE - card.price : 0),
-    0,
-  )
-  const discountLabel = rooms ? 'הנחת חדר נוסף 20%' : 'הנחת אחים 20%'
-  const savingsLabel = rooms ? 'בהנחת חדר נוסף' : 'בהנחת אחים'
-  const monthlyPayment = installmentAmount(grandTotal)
-
-  const purchaseLabel = 'לרכישה מיידית'
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F6F1EC]">
       <Header />
 
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="space-y-16">
-          {roomCards.map((card, index) => (
-            <ChildPackageCard
-              key={`${card.name}-${index}`}
-              childName={card.name}
-              gender={card.gender}
-              age={card.age}
-              theme={card.theme}
-              colorPreference={card.colorPreference}
-              pkg={card.package}
-              price={card.price}
-              originalPrice={index > 0 ? ROOM_PACKAGE_PRICE : undefined}
-              discountLabel={index > 0 ? discountLabel : undefined}
-              onPurchase={handlePurchase}
-              purchaseLabel={purchaseLabel}
-            />
-          ))}
-        </div>
-
-        {SHOW_PACKAGE_PRICE && roomCards.length > 1 && (
-          <div className="mt-16 border-t border-[#F0EBE4] pt-10 text-center">
-            {roomCards.slice(1).map((card) => (
-              <p key={card.name} className="mb-2 text-sm text-[#8B8B8B]">
-                חבילת {card.name} · ₪{card.price}
-              </p>
-            ))}
-            {totalSavings > 0 && (
-              <p className="mb-4 text-sm text-[#8A6A52]">
-                חסכתם ₪{totalSavings} {savingsLabel}
-              </p>
-            )}
-            <p className="text-2xl font-light text-[#4A4A4A]">
-              סה״כ {monthlyPayment} ש״ח - לחודש ל-{INSTALLMENT_COUNT} תשלומים
-            </p>
-            <p className="mt-2 text-base text-[#8B8B8B]">או {grandTotal} בתשלום 1</p>
+      <main className="mx-auto max-w-xl px-3 py-4 sm:py-8">
+        <div className="rounded-[28px] border border-[#EFE6DD] bg-[#FDFBF9] px-3 pt-4 pb-5 shadow-[0_10px_40px_rgba(110,80,50,0.08)] sm:px-6">
+          <div className="mb-1.5 flex items-center justify-between px-2 text-sm font-medium text-[#3C3530]">
+            <span>
+              {currentStep} מתוך {totalSteps}
+            </span>
+            <span dir="ltr">{percent}%</span>
           </div>
-        )}
-      </div>
+          <div
+            className="mx-2 mb-4 h-2 overflow-hidden rounded-full bg-[#F1E4D8]"
+            role="progressbar"
+            aria-valuenow={percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div className="h-full rounded-full bg-gradient-to-l from-[#E7C3A0] to-[#C99A6E]" style={{ width: `${percent}%` }} />
+          </div>
+
+          <div className="rounded-3xl border border-[#F1E9E1] bg-white/60 px-3 py-4 sm:px-5">
+            <div className="space-y-10">
+              {roomCards.map((card) => (
+                <RoomPreview key={`${card.name}-${card.index}`} card={card} />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-stretch gap-4 rounded-2xl bg-[#F8EEE5] px-4 py-4">
+            <div className="flex-1 text-center">
+              <h2 className="text-[17px] leading-snug font-bold text-[#2A2522] sm:text-[20px]">
+                <span className="whitespace-nowrap">ברכישת החבילה מחכה לכם</span>
+                <br />
+                <span className="whitespace-nowrap">מדריך עיצוב מלא</span>
+              </h2>
+              <p className="mt-2 text-[13.5px] leading-6 text-[#3C3530]">
+                המותאם לגיל הילד, להעדפות ולסגנון שבחרתם. בפנים תמצאו קונספט עיצובי שלם, הנחיות ליישום וקישורים לפריטי
+                ההלבשה מאתרי און ליין במחירים נגישים, ללא פערי תיווך.
+              </p>
+            </div>
+            <span className="w-px shrink-0 bg-[#D9BFA8]" aria-hidden="true" />
+            <span className="flex shrink-0 items-center">
+              <Gift className="h-14 w-14 text-[#B07A50]" strokeWidth={1.2} />
+            </span>
+          </div>
+
+          <div className="mt-3 grid grid-cols-5 rounded-2xl border border-[#F1E9E1] bg-white px-1 py-3">
+            {FEATURES.map(({ icon: Icon, label }, index) => (
+              <div key={index} className={`px-1 text-center ${index > 0 ? 'border-s border-[#EADFD4]' : ''}`}>
+                <Icon className="mx-auto mb-1.5 h-7 w-7 text-[#B07A50]" strokeWidth={1.4} />
+                <p className="text-[11.5px] leading-4 text-[#3C3530]">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#FAF1EA] px-4 py-3">
+            <p className="flex-1 text-center text-[13px] leading-6 text-[#3C3530]">
+              פריטי ההלבשה אינם כלולים במחיר החבילה ונרכשים בנפרד, מאתרי און ליין במחירים נגישים, בהתאם לבחירתכם ולתקציב
+              שלכם.
+            </p>
+            <Tag className="h-7 w-7 shrink-0 text-[#B07A50]" strokeWidth={1.4} />
+          </div>
+
+          <button
+            type="button"
+            onClick={handlePurchase}
+            className="mt-3 block w-full rounded-2xl bg-gradient-to-l from-[#D2A57C] via-[#BE8C61] to-[#A9774F] px-4 py-3 text-center text-white shadow-[0_8px_20px_rgba(150,100,60,0.3)] transition-transform hover:scale-[1.01]"
+          >
+            <span className="block text-[15px] text-white/90">
+              {roomCards.length > 1 ? `לפתיחת ${roomCards.length} החבילות שלכם` : 'לפתיחת החבילה שלכם'}
+            </span>
+            <span className="mt-1 flex items-center justify-center gap-2 sm:gap-3">
+              <span className="text-[24px] leading-none font-bold whitespace-nowrap sm:text-[30px]">{monthly} ש״ח בלבד</span>
+              <span className="h-7 w-px bg-white/50" aria-hidden="true" />
+              <span className="flex gap-1.5 text-[15px] whitespace-nowrap sm:text-[17px]" dir="ltr">
+                <span>{INSTALLMENT_COUNT} X</span>
+                <span>חודשים</span>
+              </span>
+            </span>
+            <span className="mx-auto mt-2 block w-fit rounded-full bg-[#FDF8F3] px-6 py-1 text-[15px] font-semibold text-[#3C3530]">
+              או {total} ש״ח בתשלום אחד
+            </span>
+          </button>
+
+          <div ref={bottomRef} className="mt-4 flex items-center justify-between px-1">
+            <button
+              type="button"
+              onClick={() => navigate('/questionnaire')}
+              className="inline-flex items-center gap-2 text-[17px] text-[#2A2522] hover:text-[#6B4A35]"
+            >
+              <ArrowRight className="h-5 w-5" />
+              חזור
+            </button>
+            <button
+              type="button"
+              aria-label="גלילה למטה"
+              onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#6B4A35] shadow-[0_2px_8px_rgba(110,80,50,0.15)]"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handlePurchase}
+              className="inline-flex items-center gap-3 rounded-2xl bg-[#D6A47A] px-8 py-2.5 text-[17px] text-white shadow-[0_4px_12px_rgba(150,100,60,0.25)] hover:bg-[#C7956B]"
+            >
+              הבא
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

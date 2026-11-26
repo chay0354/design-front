@@ -1083,6 +1083,16 @@ function ColorScaleEditor({
           </div>
         </div>
         <div className="mt-4">
+          <label className={labelClass}>תיאור קצר (מוצג מתחת לשם הסקלה בעמוד החבילה)</label>
+          <input
+            type="text"
+            value={draft.description ?? ''}
+            onChange={(e) => update({ description: e.target.value })}
+            placeholder="למראה נקי ואלגנטי שיוצר שקט בעין..."
+            className={inputClass}
+          />
+        </div>
+        <div className="mt-4">
           <label className={labelClass}>
             מילות מפתח מהשאלון (מופרדות בפסיק — קובעות אילו צבעים מקבלים לכל בחירה)
           </label>
