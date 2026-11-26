@@ -588,20 +588,20 @@ export function QuestionnairePage() {
   const wide = current.kind === 'wall' || current.kind === 'color'
 
   return (
-    <div className="min-h-screen bg-[#F7F4EF]">
+    <div className="min-h-screen bg-[#F6F1EC]">
       <Header />
 
-      <div className={`mx-auto px-4 pt-2 pb-4 sm:px-6 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
-        <div className="mb-2 flex items-center justify-between text-sm text-[#8A847C] sm:mb-5">
+      <div className={`mx-auto px-4 pt-3 pb-6 sm:px-6 sm:py-12 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
+        <div className="mb-2 flex justify-start px-1 text-[13px] text-[#5C564F]">
           <span dir="ltr">
             {pad(stepNumber)} / {pad(totalSteps)}
-                    </span>
-                  </div>
-        <div className="mb-3 flex gap-1.5 sm:mb-6">
+          </span>
+        </div>
+        <div className="mb-4 flex gap-2 px-1">
           {steps.map((item, index) => (
             <span
               key={`${item.kind}-${index}`}
-              className={`h-1.5 flex-1 rounded-full ${index <= safeIndex ? 'bg-[#7E8B74]' : 'bg-[#E6E0D8]'}`}
+              className={`h-1.5 flex-1 rounded-full ${index <= safeIndex ? 'bg-[#7E8B74]' : 'bg-[#E7E0D6]'}`}
             />
           ))}
         </div>
@@ -615,7 +615,7 @@ export function QuestionnairePage() {
           </p>
         )}
 
-        <div className="rounded-[28px] border border-[#EAE3DB] bg-white p-4 shadow-[0_8px_30px_rgba(120,100,80,0.05)] sm:p-8">
+        <div className="rounded-[28px] border border-[#EFE8E0] bg-white px-5 py-7 shadow-[0_8px_30px_rgba(120,100,80,0.04)] sm:px-8">
           {current.kind === 'rooms' && (
             <RoomsStep
               rooms={rooms}
@@ -683,29 +683,29 @@ export function QuestionnairePage() {
             />
           )}
 
-          <div className="mt-5 flex items-center justify-between sm:mt-8">
-                          <button
-                            type="button"
+          <div className="mt-8 flex items-center justify-between">
+            <button
+              type="button"
               onClick={handleBack}
               disabled={safeIndex === 0}
-              className={`text-sm ${safeIndex === 0 ? 'cursor-not-allowed text-[#C5C5C5]' : 'text-[#8A847C]'}`}
+              className={`text-[16px] ${safeIndex === 0 ? 'cursor-not-allowed text-[#C5C5C5]' : 'text-[#5C564F]'}`}
             >
               חזרה
-                          </button>
-                      <button
-                        type="button"
+            </button>
+            <button
+              type="button"
               onClick={handleNext}
               disabled={!canProceed()}
-              className={`inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-full px-6 py-2 text-[15px] transition-colors ${
                 canProceed()
-                  ? 'bg-[#C4B49A] text-white hover:bg-[#B3A288]'
-                            : 'cursor-not-allowed bg-[#E8DED2] text-[#C5C5C5]'
-                        }`}
-                      >
+                  ? 'bg-[#E8DDD0] text-[#8A7B6A] hover:bg-[#DDD0C2]'
+                  : 'cursor-not-allowed bg-[#E8DDD0] text-[#8A7B6A]'
+              }`}
+            >
               {safeIndex === steps.length - 1 ? 'סיום' : 'המשך'}
               <ArrowLeft className="h-4 w-4" />
-                      </button>
-                    </div>
+            </button>
+          </div>
                   </div>
               </div>
             </div>
@@ -1043,13 +1043,11 @@ function ChildStep({
 }) {
   return (
     <div>
-      <h2 className="mb-2 text-center text-[1.7rem] font-light text-[#3C3834] sm:text-3xl">
-        קצת על {child.name}
-      </h2>
-      <p className="mb-6 text-center text-sm text-[#8A847C]">ספרו לנו עוד קצת</p>
+      <h2 className="text-center text-[1.65rem] font-normal text-[#2C2825]">קצת על {child.name}</h2>
+      <p className="mt-2 text-center text-[15px] text-[#8A847C]">ספרו לנו עוד קצת</p>
 
-      <p className="mb-3 text-center text-[#4A4540]">בן או בת?</p>
-      <div className="mb-8 grid grid-cols-2 gap-3">
+      <p className="mt-8 text-center text-[17px] text-[#3C3834]">בן או בת?</p>
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {genderOptions.map((option) => {
           const selected = child.gender === option.value
           return (
@@ -1057,29 +1055,23 @@ function ChildStep({
               key={option.value}
               type="button"
               onClick={() => onChange({ gender: option.value })}
-              className={`flex flex-col items-center gap-2 rounded-2xl border py-5 transition-all ${
-                selected
-                  ? 'border-[#D2CECA] bg-[#EEECEA] ring-1 ring-[#D2CECA]'
-                  : 'border-[#E7E1D8] bg-white hover:border-[#D4C4B0]'
+              className={`flex flex-col items-center gap-3 rounded-2xl border bg-white py-7 transition-colors ${
+                selected ? 'border-[#C9B8A4] bg-[#FBF8F4]' : 'border-[#E6E0D8] hover:border-[#D4C4B0]'
               }`}
             >
-              {option.value === 'girl' ? (
-                <GirlIcon className="h-7 w-7 text-[#C4B39A]" />
-              ) : (
-                <User className="h-7 w-7 text-[#C4B39A]" strokeWidth={1.4} />
-              )}
-              <span className="text-[#4A4540]">{option.label}</span>
+              <User className="h-8 w-8 text-[#C4B39A]" strokeWidth={1.3} />
+              <span className="text-[16px] text-[#4A4540]">{option.label}</span>
             </button>
           )
         })}
-          </div>
-
-      <p className="mb-2 text-center text-[#4A4540]">באיזה גיל?</p>
-      <div className="mb-4 text-center">
-        <div className="text-5xl font-light text-[#7E8B74]">{child.age}</div>
-        <div className="text-sm text-[#8A847C]">{child.age === 0 ? 'עד שנה' : 'שנים'}</div>
       </div>
-      <div dir="ltr">
+
+      <p className="mt-8 text-center text-[17px] text-[#3C3834]">באיזה גיל?</p>
+      <div className="mt-2 text-center">
+        <div className="text-[56px] leading-none text-[#7E8B74]">{child.age}</div>
+        <div className="mt-1 text-[15px] text-[#9A928A]">{child.age === 0 ? 'עד שנה' : child.age === 1 ? 'שנה' : 'שנים'}</div>
+      </div>
+      <div dir="ltr" className="mt-4 px-1">
         <Slider
           value={[child.age]}
           onValueChange={(value) => onChange({ age: value[0] })}
@@ -1087,7 +1079,7 @@ function ChildStep({
           max={12}
           step={1}
         />
-        <div className="mt-2 flex justify-between text-sm text-[#8A847C]">
+        <div className="mt-2 flex justify-between text-[14px] text-[#8A847C]">
           <span>0</span>
           <span>12</span>
         </div>
